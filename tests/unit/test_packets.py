@@ -111,6 +111,12 @@ def test_packet_data_lookups():
     with pytest.raises(KeyError):
         packet[10]
 
+    # Deprecated properties that can be removed in the future
+    with pytest.warns(UserWarning, match="The header property is deprecated"):
+        assert packet.header == {x: x for x in range(7)}
+    with pytest.warns(UserWarning, match="The user_data property is deprecated"):
+        assert packet.user_data == {x: x for x in range(7, 10)}
+
 
 def test_ccsds_packet_data_lookups():
     # Deprecated CCSDSPacket class with header/user_data fields
@@ -130,6 +136,9 @@ def test_ccsds_packet_data_lookups():
 
     with pytest.raises(KeyError):
         _ = packet[10]
+    # Deprecated CCSDSPacket class, an instance of the new Packet class
+    # can be removed in a future version
+    assert isinstance(packets.CCSDSPacket(), packets.Packet)
 
 
 def test_continuation_packets(test_data_dir):
