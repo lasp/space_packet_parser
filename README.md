@@ -20,9 +20,13 @@ Resources:
 pip install space_packet_parser
 ```
 
+## Proud Member of the Python in Heliophysics Community (PyHC)
+
+[<img src="https://heliopython.org/img/PyHC%20header%20logo%20500x500.png" alt="PyHC" height="70"/>](https://heliopython.org)
+
 ## Missions using Space Packet Parser
 
-[<img src="https://imap.princeton.edu/sites/g/files/toruqf1601/files/imap-mark-hor-multicolor-dark.png" alt="IMAP" height="70"/>](https://imap.princeton.edu/)
+[<img src="https://imap.princeton.edu/sites/g/files/toruqf7171/files/imap-mark-hor-multicolor-dark.png" alt="IMAP" height="70"/>](https://imap.princeton.edu/)
 [<img src="https://clarreo-pathfinder.larc.nasa.gov/wp-content/uploads/sites/133/2019/08/clarreo_pathfinder_mission_patch_design_v4_decal_1_24_17.png" alt="CLARREO" height="140"/>](https://clarreo-pathfinder.larc.nasa.gov/)
 [<img src="https://lasp.colorado.edu/libera/files/2021/02/Libera-Logo-HiRes.png" alt="Libera" height="70"/>](https://lasp.colorado.edu/libera/)
 [<img src="https://lasp.colorado.edu/ctim/files/2023/01/CTIM_LOGO_350x100_centered_transparent.png" alt="CTIM-FD" height="70"/>](https://lasp.colorado.edu/ctim/)
