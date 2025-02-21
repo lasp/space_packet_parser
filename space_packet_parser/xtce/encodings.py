@@ -75,30 +75,28 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
             Function object that adjusts a SizeInBits value by a linear function or None if no adjuster present
         """
         if (linear_adjustment_element := parent_element.find('LinearAdjustment')) is not None:
-            slope = (int(linear_adjustment_element.attrib['slope'])
-                     if 'slope' in linear_adjustment_element.attrib else 0)
-            intercept = (int(linear_adjustment_element.attrib['intercept'])
-                         if 'intercept' in linear_adjustment_element.attrib else 0)
+            # The XTCE XSD defines slope and intercept as "doubles" so we treat them as floats
+            # Often, the result of this adjustment is assumed to be an integer number of bits, for adjusting a size
+            # (e.g. from bytes to bits) but it's not necessarily the case
+            slope = (float(linear_adjustment_element.attrib['slope'])
+                     if 'slope' in linear_adjustment_element.attrib else 0.0)
+            intercept = (float(linear_adjustment_element.attrib['intercept'])
+                         if 'intercept' in linear_adjustment_element.attrib else 0.0)
 
-            def adjuster(x: int) -> int:
-                """Perform a linear adjustment to a size parameter
+            def adjuster(x: float) -> float:
+                """Perform a linear adjustment to a value
 
                 Parameters
                 ----------
-                x : int
-                    Unadjusted size parameter.
+                x : float
+                    Unadjusted value
 
                 Returns
                 -------
-                : int
-                    Adjusted size parameter
+                : float
+                    Adjusted valued
                 """
-                adjusted = (slope * float(x)) + intercept
-                if not adjusted.is_integer():
-                    raise ValueError(f"Error when adjusting a value with a LinearAdjustment. Got y=mx + b as "
-                                     f"{adjusted}={slope}*{x}+{intercept} returned a float. "
-                                     f"Should have been an int.")
-                return int(adjusted)
+                return (slope * x) + intercept
 
             return adjuster
         return None
@@ -271,6 +269,8 @@ class StringDataEncoding(DataEncoding):
                 buflen_bits = packet[self.dynamic_length_reference].raw_value
 
             if self.length_linear_adjuster:
+                # NOTE: This is assumed to be an integer value, represented as a float. If the linear adjuster
+                # returns a non integer, it will be truncated and probably lead to a parsing error later on.
                 buflen_bits = self.length_linear_adjuster(buflen_bits)
         else:
             raise ValueError("No raw length specifier found when decoding a string.")
@@ -910,8 +910,10 @@ class BinaryDataEncoding(DataEncoding):
                              "No fixed size, dynamic size, or dynamic lookup size were provided.")
 
         if self.linear_adjuster is not None:
+            # NOTE: This is assumed to be an integer value, represented as a float. If the linear adjuster
+            # returns a non integer, it will be truncated and probably lead to a parsing error later on.
             len_bits = self.linear_adjuster(len_bits)
-        return len_bits
+        return int(len_bits)
 
     def parse_value(self, packet: packets.CCSDSPacket) -> common.BinaryParameter:
         """Parse a value from packet data, possibly using previously parsed data items to inform parsing.
