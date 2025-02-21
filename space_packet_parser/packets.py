@@ -97,10 +97,7 @@ class RawPacketData(bytes):
         Section 4.1.3.5.3 The length count C shall be expressed as:
         C = (Total Number of Octets in the Packet Data Field) – 1
         """
-        # This has already been parsed previously to give us the length of the packet
-        # so avoid the extract_bits call again and calculate it based on the length of the data
-        # Subtract 6 bytes for the header and 1 for the length count
-        return len(self) - RawPacketData.HEADER_LENGTH_BYTES - 1
+        return (self[4] << 8) | self[5] + 1
 
     @cached_property
     def header_values(self) -> tuple[int, ...]:
@@ -348,12 +345,12 @@ def ccsds_generator(
             read_buffer += result
         # Skip the header bytes
         current_pos += skip_header_bytes
-        header_bytes = read_buffer[current_pos:current_pos + RawPacketData.HEADER_LENGTH_BYTES]
 
         # per the CCSDS spec
         # 4.1.3.5.3 The length count C shall be expressed as:
         #   C = (Total Number of Octets in the Packet Data Field) – 1
-        n_bytes_data = _extract_bits(header_bytes, 32, 16) + 1
+        # Use direct bitshift here rather than _extract_bits for speed
+        n_bytes_data = (read_buffer[current_pos + 4] << 8) | read_buffer[current_pos + 5] + 1
         n_bytes_packet = RawPacketData.HEADER_LENGTH_BYTES + n_bytes_data
 
         # Fill the buffer enough to read a full packet, taking into account the user data length
