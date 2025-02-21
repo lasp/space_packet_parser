@@ -282,7 +282,10 @@ class CCSDSPacket(Packet):
     make up the user data (accessed with ``CCSDSPacket.user_data``). To access the
     raw bytes of the packet, use the ``CCSDSPacket.raw_data`` attribute.
     """
-    pass
+    def __init__(self, *args, **kwargs):
+        warnings.warn("The CCSDSPacket class is deprecated and will be removed in a future release. "
+                    "Use the Packet class instead (no CCSDS prefix).")
+        super().__init__(*args, **kwargs)
 
 
 def ccsds_generator(

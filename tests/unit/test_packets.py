@@ -146,7 +146,8 @@ def test_ccsds_packet_data_lookups():
         _ = packet[10]
     # Deprecated CCSDSPacket class, an instance of the new Packet class
     # can be removed in a future version
-    assert isinstance(packets.CCSDSPacket(), packets.Packet)
+    with pytest.warns(UserWarning, match="The CCSDSPacket class is deprecated"):
+        assert isinstance(packets.CCSDSPacket(), packets.Packet)
 
 
 def test_continuation_packets(test_data_dir):

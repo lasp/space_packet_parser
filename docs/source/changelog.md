@@ -14,8 +14,8 @@ Release notes for the `space_packet_parser` library
 - Add support for creating a packet definition from Python objects and serializing it as XML.
 - BUGFIX: Fix kbps calculation in packet generator for showing progress.
 - Add support for string and float encoded enumerated lookup parameters.
-- Add properties to extract the CCSDS Header items from the ``RawPacketData`` object directly.
-  e.g. ``RawPacketData.apid``
+- Add properties to extract the CCSDS Header items from the ``CCSDSPacketBytes`` object directly.
+  e.g. ``CCSDSPacketBytes.apid``
 - Add a ``create_ccsds_packet`` function that can create a CCSDS Packet
   with the given header items and data. This is useful for creating
   mock packets in testing and experimentation for creating debugging
