@@ -95,9 +95,9 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
                 """
                 adjusted = (slope * float(x)) + intercept
                 if not adjusted.is_integer():
-                    raise ValueError(f"Error when adjusting a value with a LinearAdjustment. Got y=mx + b as "
-                                     f"{adjusted}={slope}*{x}+{intercept} returned a float. "
-                                     f"Should have been an int.")
+                    raise ValueError("Error when adjusting a value with a LinearAdjustment. The function "
+                                     f"{adjusted}={slope}*{x}+{intercept} (y=m*x + b) returned a float that "
+                                     "should have been an int because LinearAdjustments are only for adjusting sizes.")
                 return int(adjusted)
 
             return adjuster
