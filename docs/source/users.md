@@ -45,7 +45,7 @@ We aim to provide examples of usage patterns. Please see the `examples` director
 a specific example you want to see demonstrated, please open a GitHub Issue or Discussion for support.
 
 ## Packet Objects
-The object returned from the `packet_generator` is a `CCSDSPacket` (unless you're yielding parsing
+The object returned from the `packet_generator` is a `Packet` (unless you're yielding parsing
 exceptions for debugging). This object subclasses a python dictionary and behaves as a dictionary. To retrieve
 a parameter value from the yielded packet, you can iterate over its `items()` or you can access individual parameters
 by name.
