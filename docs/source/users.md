@@ -1,5 +1,3 @@
-from space_packet_parser.definitions import XtcePacketDefinition
-
 # User Documentation (Getting Started)
 ## Installation
 This package is distributed via PyPI. To install it with pip, run:
