@@ -78,10 +78,8 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
             # The XTCE XSD defines slope and intercept as "doubles" so we treat them as floats
             # Often, the result of this adjustment is assumed to be an integer number of bits, for adjusting a size
             # (e.g. from bytes to bits) but it's not necessarily the case
-            slope = (float(linear_adjustment_element.attrib['slope'])
-                     if 'slope' in linear_adjustment_element.attrib else 0.0)
-            intercept = (float(linear_adjustment_element.attrib['intercept'])
-                         if 'intercept' in linear_adjustment_element.attrib else 0.0)
+            slope = float(linear_adjustment_element.attrib.get('slope', 0))
+            intercept = float(linear_adjustment_element.attrib.get('intercept', 0))
 
             def adjuster(x: float) -> float:
                 """Perform a linear adjustment to a value
