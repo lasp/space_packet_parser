@@ -97,7 +97,7 @@ class RawPacketData(bytes):
         Section 4.1.3.5.3 The length count C shall be expressed as:
         C = (Total Number of Octets in the Packet Data Field) – 1
         """
-        return (self[4] << 8) | self[5] + 1
+        return (self[4] << 8) | self[5]
 
     @cached_property
     def header_values(self) -> tuple[int, ...]:
