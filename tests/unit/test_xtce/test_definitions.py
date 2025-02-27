@@ -5,7 +5,7 @@ import pytest
 from lxml import etree as ElementTree
 
 import space_packet_parser.xtce.parameter_types
-from space_packet_parser.xtce import containers, definitions, encodings, parameters, comparisons
+from space_packet_parser.xtce import comparisons, containers, definitions, encodings, parameters
 
 
 @pytest.mark.parametrize(
@@ -97,7 +97,7 @@ def test_parsing_xtce_document(test_data_dir, xtcedoc, xtce_ns_prefix):
 def test_generating_xtce_from_objects():
     """Tests our ability to create an XTCE definition directly from Python objects"""
     uint1 = space_packet_parser.xtce.parameter_types.IntegerParameterType(
-        name=f"UINT1_Type",
+        name="UINT1_Type",
         encoding=encodings.IntegerDataEncoding(
             size_in_bits=1,
             encoding="unsigned"
@@ -105,7 +105,7 @@ def test_generating_xtce_from_objects():
     )
 
     uint2 = space_packet_parser.xtce.parameter_types.IntegerParameterType(
-        name=f"UINT2_Type",
+        name="UINT2_Type",
         encoding=encodings.IntegerDataEncoding(
             size_in_bits=2,
             encoding="unsigned"
@@ -113,7 +113,7 @@ def test_generating_xtce_from_objects():
     )
 
     uint3 = space_packet_parser.xtce.parameter_types.IntegerParameterType(
-        name=f"UINT3_Type",
+        name="UINT3_Type",
         encoding=encodings.IntegerDataEncoding(
             size_in_bits=3,
             encoding="unsigned"
@@ -121,7 +121,7 @@ def test_generating_xtce_from_objects():
     )
 
     uint11 = space_packet_parser.xtce.parameter_types.IntegerParameterType(
-        name=f"UINT11_Type",
+        name="UINT11_Type",
         encoding=encodings.IntegerDataEncoding(
             size_in_bits=11,
             encoding="unsigned"
@@ -129,7 +129,7 @@ def test_generating_xtce_from_objects():
     )
 
     uint14 = space_packet_parser.xtce.parameter_types.IntegerParameterType(
-        name=f"UINT14_Type",
+        name="UINT14_Type",
         encoding=encodings.IntegerDataEncoding(
             size_in_bits=14,
             encoding="unsigned"
@@ -137,7 +137,7 @@ def test_generating_xtce_from_objects():
     )
 
     uint16 = space_packet_parser.xtce.parameter_types.IntegerParameterType(
-        name=f"UINT16_Type",
+        name="UINT16_Type",
         encoding=encodings.IntegerDataEncoding(
             size_in_bits=16,
             encoding="unsigned"

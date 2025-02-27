@@ -1,9 +1,13 @@
 # User Documentation (Getting Started)
 ## Installation
-This package is distributed via PyPI. To install it with pip, run:
-
-```shell
+From PyPI
+```bash
 pip install space_packet_parser
+```
+
+From Anaconda
+```bash
+conda install -c lasp space_packet_parser
 ```
 
 ## Basic Usage

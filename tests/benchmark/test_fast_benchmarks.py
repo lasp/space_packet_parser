@@ -3,6 +3,7 @@ import pytest
 
 from space_packet_parser import packets
 
+
 @pytest.mark.benchmark
 def test_benchmark__read_as_int__aligned(benchmark):
     """Benchmark performance of reading byte-aligned ints from a bytes object

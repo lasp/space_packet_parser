@@ -73,7 +73,7 @@ def _get_minimum_numpy_datatype(
     ----------
     name : str
         The variable name.
-    definition : definitions.XtcePacketDefinition
+    definition : xtce.definitions.XtcePacketDefinition
         The XTCE packet definition. Used to examine data types to infer their niminal numpy representation.
     use_raw_value : bool
         Default False. If True, uses the data type of the raw value for each parameter.
@@ -133,7 +133,7 @@ def create_dataset(
     ----------
     packet_files : Union[str, Path, Iterable[Union[str, Path]]]
         Packet files
-    xtce_packet_definition : Union[str, Path, XtcePacketDefinition]
+    xtce_packet_definition : Union[str, Path, xtce.definitions.XtcePacketDefinition]
         Packet definition for parsing the packet data
     use_raw_values: bool
         Default False. If True, saves parameter raw values to the resulting DataSet.

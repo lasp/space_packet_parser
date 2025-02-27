@@ -36,6 +36,7 @@ Release notes for the `space_packet_parser` library
 - BUGFIX: update list of allowed float encodings to match XTCE spec
 - Add benchmark tests and documentation overview of benchmarks.
 - Improve XML namespace handling when parsing and serializing XTCE.
+- Package for Anaconda distribution via the `lasp` channel
 
 ### v5.0.1 (released)
 - BUGFIX: Allow raw_value representation for enums with falsy raw values. Previously these defaulted to the enum label.
