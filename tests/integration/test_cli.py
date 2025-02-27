@@ -1,7 +1,6 @@
 """Unit tests for the Space Packet Parser `spp` CLI"""
-import pytest
-
 from click.testing import CliRunner
+
 from space_packet_parser import cli
 
 

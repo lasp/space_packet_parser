@@ -1,12 +1,12 @@
 """Tests for parameters"""
 import io
 
-import pytest
 import lxml.etree as ElementTree
+import pytest
 
 import space_packet_parser.xtce.parameter_types
 from space_packet_parser import common, packets
-from space_packet_parser.xtce import XTCE_1_2_XMLNS, parameters, encodings, comparisons, calibrators, definitions
+from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, definitions, encodings, parameters
 
 
 def test_invalid_parameter_type_error(test_data_dir):
@@ -111,8 +111,9 @@ def test_unsupported_parameter_type_error(test_data_dir):
             encodings.StringDataEncoding(
                 discrete_lookup_length=[
                     comparisons.DiscreteLookup([
-                        comparisons.Comparison(7, 'P1', '>'),
-                        comparisons.Comparison(99, 'P2', '==', use_calibrated_value=False)
+                        comparisons.Comparison("7", 'P1', '>'),
+                        comparisons.Comparison("99", 'P2', '==',
+                                               use_calibrated_value=False)
                     ], lookup_value=64)
                 ]
             )),
@@ -161,7 +162,7 @@ def test_unsupported_parameter_type_error(test_data_dir):
                 fixed_raw_length=160,
                 encoding="UTF-8",
                 termination_character='00')),
-         "false_is_truthy".encode("UTF-8") + b'\x00ABCD',
+         b"false_is_truthy" + b'\x00ABCD',
          0,
          b'false_is_truthy\x00ABCD',
          'false_is_truthy'),
@@ -227,7 +228,8 @@ def test_string_parameter_parsing(parameter_type, raw_data, current_pos, expecte
     ('parameter_type', 'raw_data', 'current_pos', 'expected'),
     [
         # 16-bit unsigned starting at byte boundary
-        (space_packet_parser.xtce.parameter_types.IntegerParameterType('TEST_INT', encodings.IntegerDataEncoding(16, 'unsigned')),
+        (space_packet_parser.xtce.parameter_types.IntegerParameterType(
+            'TEST_INT', encodings.IntegerDataEncoding(16, 'unsigned')),
          0b1000000000000000.to_bytes(length=2, byteorder='big'),
          0,
          32768),
@@ -239,7 +241,8 @@ def test_string_parameter_parsing(parameter_type, raw_data, current_pos, expecte
          0,
          128),
         # 16-bit signed starting at byte boundary
-        (space_packet_parser.xtce.parameter_types.IntegerParameterType('TEST_INT', encodings.IntegerDataEncoding(16, 'signed')),
+        (space_packet_parser.xtce.parameter_types.IntegerParameterType(
+            'TEST_INT', encodings.IntegerDataEncoding(16, 'signed')),
          0b1111111111010110.to_bytes(length=2, byteorder='big'),
          0,
          -42),
@@ -268,35 +271,40 @@ def test_string_parameter_parsing(parameter_type, raw_data, current_pos, expecte
          0,
          -79),
         # 12-bit unsigned integer starting at bit 4 of the first byte
-        (space_packet_parser.xtce.parameter_types.IntegerParameterType('TEST_INT', encodings.IntegerDataEncoding(12, 'unsigned')),
+        (space_packet_parser.xtce.parameter_types.IntegerParameterType(
+            'TEST_INT', encodings.IntegerDataEncoding(12, 'unsigned')),
          # 11111000 00000000
          #     |--uint:12--|
          0b1111100000000000.to_bytes(length=2, byteorder='big'),
          4,
          2048),
         # 13-bit unsigned integer starting on bit 2 of the second byte
-        (space_packet_parser.xtce.parameter_types.IntegerParameterType('TEST_INT', encodings.IntegerDataEncoding(13, 'unsigned')),
+        (space_packet_parser.xtce.parameter_types.IntegerParameterType(
+            'TEST_INT', encodings.IntegerDataEncoding(13, 'unsigned')),
          # 10101010 11100000 00000001
          #            |--uint:13---|
          0b101010101110000000000001.to_bytes(length=3, byteorder='big'),
          10,
          4096),
         # 16-bit unsigned integer starting on bit 2 of the first byte
-        (space_packet_parser.xtce.parameter_types.IntegerParameterType('TEST_INT', encodings.IntegerDataEncoding(16, 'unsigned')),
+        (space_packet_parser.xtce.parameter_types.IntegerParameterType(
+            'TEST_INT', encodings.IntegerDataEncoding(16, 'unsigned')),
          # 10101010 11100000 00000001
          #   |----uint:16-----|
          0b101010101110000000000001.to_bytes(length=3, byteorder='big'),
          2,
          43904),
         # 12-bit signed integer starting on bit 4 of the first byte
-        (space_packet_parser.xtce.parameter_types.IntegerParameterType('TEST_INT', encodings.IntegerDataEncoding(12, 'signed')),
+        (space_packet_parser.xtce.parameter_types.IntegerParameterType(
+            'TEST_INT', encodings.IntegerDataEncoding(12, 'signed')),
          # 11111000 00000000
          #     |---int:12--|
          0b1111100000000000.to_bytes(length=2, byteorder='big'),
          4,
          -2048),
         # 12-bit signed integer starting on bit 6 of the first byte
-        (space_packet_parser.xtce.parameter_types.IntegerParameterType('TEST_INT', encodings.IntegerDataEncoding(12, 'signed')),
+        (space_packet_parser.xtce.parameter_types.IntegerParameterType(
+            'TEST_INT', encodings.IntegerDataEncoding(12, 'signed')),
          # 12-bit signed integer starting on bit 4 of the first byte
          #  11111110 00000000 00111111 10101010
          #        |---int:12---|
@@ -313,7 +321,9 @@ def test_string_parameter_parsing(parameter_type, raw_data, current_pos, expecte
          0b11111100000000100011111110101010.to_bytes(length=4, byteorder='big'),
          6,
          -2048),
-        (space_packet_parser.xtce.parameter_types.IntegerParameterType('TEST_INT', encodings.IntegerDataEncoding(3, 'twosComplement')),
+        (space_packet_parser.xtce.parameter_types.IntegerParameterType(
+            'TEST_INT',
+            encodings.IntegerDataEncoding(3, 'twosComplement')),
          # 3-bit signed integer starting at bit 7 of the first byte
          #  00000001      11000000       00000000
          #         |-int:3-|
@@ -335,7 +345,8 @@ def test_integer_parameter_parsing(parameter_type, raw_data, current_pos, expect
     ('parameter_type', 'raw_data', 'expected'),
     [
         # Test big endion 32-bit IEEE float
-        (space_packet_parser.xtce.parameter_types.FloatParameterType('TEST_FLOAT', encodings.FloatDataEncoding(32)),
+        (space_packet_parser.xtce.parameter_types.FloatParameterType('TEST_FLOAT',
+                                                                     encodings.FloatDataEncoding(32)),
          0b01000000010010010000111111010000.to_bytes(length=4, byteorder='big'),
          3.14159),
         # Test little endian 32-bit IEEE float
@@ -345,7 +356,8 @@ def test_integer_parameter_parsing(parameter_type, raw_data, current_pos, expect
          0b01000000010010010000111111010000.to_bytes(length=4, byteorder='little'),
          3.14159),
         # Test big endian 64-bit float
-        (space_packet_parser.xtce.parameter_types.FloatParameterType('TEST_FLOAT', encodings.FloatDataEncoding(64)),
+        (space_packet_parser.xtce.parameter_types.FloatParameterType('TEST_FLOAT',
+                                                                     encodings.FloatDataEncoding(64)),
          b'\x3F\xF9\xE3\x77\x9B\x97\xF4\xA8',  # 64-bit IEEE 754 value of Phi
          1.6180339),
         # Test float parameter type encoded as big endian 16-bit integer with contextual polynomial calibrator
@@ -471,27 +483,29 @@ def test_float_parameter_parsing(parameter_type, raw_data, expected):
          0b1111111111010110.to_bytes(length=2, byteorder='big'),
          -42,
          'VAL_LOW'),
-        (space_packet_parser.xtce.parameter_types.EnumeratedParameterType(name='TEST_FLOAT_ENUM',
-                                                                          encoding=encodings.FloatDataEncoding(
-                                                size_in_bits=32,
-                                                encoding='IEEE754',
-                                                byte_order="mostSignificantByteFirst"),
-                                                                          # NOTE: Duplicate final value is on purpose to make sure we handle that case
-                                                                          enumeration={0.0: 'BOOT_POR', 3.5: 'BOOT_RETURN', 2.2: 'OP_LOW',
-                                                         3.3: 'OP_HIGH',
-                                                         4.4: 'OP_HIGH'}),
+        (space_packet_parser.xtce.parameter_types.EnumeratedParameterType(
+            name='TEST_FLOAT_ENUM',
+            encoding=encodings.FloatDataEncoding(
+                size_in_bits=32,
+                encoding='IEEE754',
+                byte_order="mostSignificantByteFirst"),
+            # NOTE: Duplicate final value is on purpose to make sure we handle that case
+            enumeration={0.0: 'BOOT_POR', 3.5: 'BOOT_RETURN', 2.2: 'OP_LOW',
+                         3.3: 'OP_HIGH',
+                         4.4: 'OP_HIGH'}),
          0b01000000011000000000000000000000.to_bytes(length=4, byteorder='big'),
          3.5,
          "BOOT_RETURN"
-         ),
-        (space_packet_parser.xtce.parameter_types.EnumeratedParameterType(name='TEST_ENUM_Type',
-                                                                          encoding=encodings.StringDataEncoding(fixed_raw_length=16),
-                                                                          # NOTE: Duplicate final value is on purpose to make sure we handle that case
-                                                                          enumeration={b"AA": 'BOOT_POR',
-                                                         b"BB": 'BOOT_RETURN',
-                                                         b"CC": 'OP_LOW',
-                                                         b"DD": 'OP_HIGH',
-                                                         b"EE": 'OP_HIGH'}),
+        ),
+        (space_packet_parser.xtce.parameter_types.EnumeratedParameterType(
+            name='TEST_ENUM_Type',
+            encoding=encodings.StringDataEncoding(fixed_raw_length=16),
+            # NOTE: Duplicate final value is on purpose to make sure we handle that case
+            enumeration={b"AA": 'BOOT_POR',
+                         b"BB": 'BOOT_RETURN',
+                         b"CC": 'OP_LOW',
+                         b"DD": 'OP_HIGH',
+                         b"EE": 'OP_HIGH'}),
          b'CCXXXX',
          b'CC',
          "OP_LOW")
@@ -597,10 +611,10 @@ def test_boolean_parameter_parsing(parameter_type, raw_data, current_pos, expect
 @pytest.mark.parametrize(
     ('parameter_type', 'raw_data', 'current_pos', 'expected_raw', 'expected_derived'),
     [
-        (space_packet_parser.xtce.parameter_types.AbsoluteTimeParameterType(name='TEST_PARAM_Type', unit='seconds',
-                                                                            encoding=encodings.IntegerDataEncoding(size_in_bits=32,
-                                                                                     encoding="unsigned"),
-                                                                            epoch="TAI", offset_from="MilliSeconds"),
+        (space_packet_parser.xtce.parameter_types.AbsoluteTimeParameterType(
+            name='TEST_PARAM_Type', unit='seconds',
+            encoding=encodings.IntegerDataEncoding(size_in_bits=32, encoding="unsigned"),
+            epoch="TAI", offset_from="MilliSeconds"),
          # Exactly 64 bits so neatly goes into a bytes object without padding
          0b0011010000110010010100110000000001001011000000000100100100000000.to_bytes(length=8, byteorder='big'),
          0,
@@ -648,7 +662,10 @@ def test_absolute_time_parameter_parsing(parameter_type, raw_data, current_pos, 
     ("param_xml", "param_object"),
     [
         (f"""
-<xtce:Parameter xmlns:xtce="{XTCE_1_2_XMLNS}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="TEST_INT" parameterTypeRef="TEST_INT_Type" shortDescription="Param short desc">
+<xtce:Parameter
+    xmlns:xtce="{XTCE_1_2_XMLNS}"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    name="TEST_INT" parameterTypeRef="TEST_INT_Type" shortDescription="Param short desc">
   <xtce:LongDescription>This is a long description of the parameter</xtce:LongDescription>
 </xtce:Parameter>
 """,
@@ -664,4 +681,5 @@ def test_absolute_time_parameter_parsing(parameter_type, raw_data, current_pos, 
 )
 def test_parameter(elmaker, xtce_parser, param_xml, param_object):
     """Test Parameter"""
-    assert ElementTree.tostring(param_object.to_xml(elmaker=elmaker), pretty_print=True) == ElementTree.tostring(ElementTree.fromstring(param_xml, parser=xtce_parser), pretty_print=True)
+    assert (ElementTree.tostring(param_object.to_xml(elmaker=elmaker), pretty_print=True)
+            == ElementTree.tostring(ElementTree.fromstring(param_xml, parser=xtce_parser), pretty_print=True))

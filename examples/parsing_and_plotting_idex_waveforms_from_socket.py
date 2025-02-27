@@ -8,17 +8,18 @@ the binary blob fields of the packets, which contain the science data arrays.
 The packet definition used here is intended for IDEX, which is basically a rebuild of the idex instrument.
 The data used here is IDEX data but the fields are parsed using IDEX naming conventions.
 
-Note: This example requires the matplotlib library which is not part of the base dependency spec for space_packet_parser.
+Note: This example requires the matplotlib library which is not part of the base
+dependency spec for space_packet_parser. It can be installed with the `examples` extra.
+`pip install space_packet_parser[examples]`
 """
-# Standard
-from multiprocessing import Process
-from pathlib import Path
 import random
 import socket
 import time
-# Installed
+from multiprocessing import Process
+from pathlib import Path
+
 import matplotlib.pyplot as plt
-# Local
+
 from space_packet_parser.xtce import definitions
 
 
@@ -37,9 +38,9 @@ def send_data(sender: socket.socket, file: Path) -> None:
         stream = fh.read()
         pos = 0
         while pos < len(stream):
-            time.sleep(random.random() * .1)  # Random sleep up to 1s
+            time.sleep(random.random() * .1)  # noqa S311 Random sleep up to 1s
             # Send binary data to socket in random chunk sizes
-            random_n_bytes = random.randint(1024, 2048)
+            random_n_bytes = random.randint(1024, 2048)  # noqa S311
             n_bytes_to_send = 8 * random_n_bytes
             if pos + n_bytes_to_send > len(stream):
                 n_bytes_to_send = len(stream) - pos
@@ -99,7 +100,6 @@ if __name__ == "__main__":
     idex_test_data_dir = Path("../tests/test_data/idex")
     idex_xtce = idex_test_data_dir / 'idex_combined_science_definition.xml'
     idex_definition = definitions.XtcePacketDefinition.from_xtce(xtce_document=idex_xtce)
-    assert isinstance(idex_definition, definitions.XtcePacketDefinition)
     idex_packet_file = idex_test_data_dir / 'sciData_2023_052_14_45_05'
 
     sender, receiver = socket.socketpair()

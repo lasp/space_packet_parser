@@ -2,8 +2,9 @@
 
 Each test in this suite tests a specific metric over time
 """
+from collections.abc import Iterable
+
 import pytest
-from typing import Iterable
 
 from space_packet_parser import packets
 from space_packet_parser.xtce import definitions
@@ -18,6 +19,9 @@ def test_benchmark_complex_xtce_definition_parsing(benchmark, suda_test_data_dir
         definitions.XtcePacketDefinition.from_xtce,
         suda_test_data_dir / "suda_combined_science_definition.xml"
     )
+    assert len(definition.parameters) == 207
+    assert len(definition.parameter_types) == 207
+    assert len(definition.containers) == 9
 
 
 @pytest.mark.benchmark

@@ -1,10 +1,18 @@
 # Space Packet Parser
 
-[![Test Status](https://github.com/lasp/space_packet_parser/actions/workflows/tests.yml/badge.svg)](https://github.com/lasp/space_packet_parser/actions/workflows/tests.yml)
-[![Doc Status](https://readthedocs.org/projects/space-packet-parser/badge/?version=latest)](https://readthedocs.org/projects/space-packet-parser/)
+[![Conda](https://img.shields.io/conda/vn/lasp/space_packet_parser?color=42B029&logo=anaconda&logoColor=white)](https://anaconda.org/lasp/space_packet_parser)
+[![PyPI](https://img.shields.io/pypi/v/space_packet_parser?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/space-packet-parser/)
 [![DOI](https://zenodo.org/badge/612253190.svg)](https://doi.org/10.5281/zenodo.7735001)
 
-Documentation: [https://space-packet-parser.readthedocs.io/en/latest/](https://space-packet-parser.readthedocs.io/en/latest/)
+[![Test Status](https://github.com/lasp/space_packet_parser/actions/workflows/tests.yml/badge.svg)](https://github.com/lasp/space_packet_parser/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/lasp/space_packet_parser/graph/badge.svg?token=VUFIN94O05)](https://codecov.io/gh/lasp/space_packet_parser)
+
+**Documentation:** [https://space-packet-parser.readthedocs.io/en/latest/](https://space-packet-parser.readthedocs.io/en/latest/)
+
+| **Stable ReadTheDocs Build** | [![Stable Docs](https://readthedocs.org/projects/space-packet-parser/badge/?version=stable)](https://app.readthedocs.org/projects/space-packet-parser/builds/?version__slug=stable)   |
+|------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Latest ReadTheDocs Build** | [!["Latest Docs"](https://readthedocs.org/projects/space-packet-parser/badge/?version=latest)](https://app.readthedocs.org/projects/space-packet-parser/builds/?version__slug=latest) |
+
 
 Space Packet Parser is a package for decoding CCSDS telemetry packets according to an XTCE packet structure definition.
 It is based on the UML model of the XTCE spec and aims to support all but the most esoteric elements of the
@@ -16,8 +24,14 @@ Resources:
 - [XTCE (Blue Book - Recommended Standard)](https://public.ccsds.org/Pubs/660x0b2.pdf)
 
 ## Installation
+From PyPI
 ```bash
 pip install space_packet_parser
+```
+
+From Anaconda (distributed on the `lasp` channel):
+```bash
+conda install -c lasp space_packet_parser
 ```
 
 ## Proud Member of the Python in Heliophysics Community (PyHC)

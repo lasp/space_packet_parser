@@ -85,11 +85,17 @@ That is,
 
 ### Automatic Release Process
 We use GitHub Actions for automatic release process that responds to pushes of git tags. When a tag matching
-a semantic version (`[0-9]+.[0-9]+.[0-9]+*` or `test-release/[0-9]+.[0-9]+.[0-9]+*`) is pushed,
-a workflow runs that builds the package, pushes the artifacts to PyPI or TestPyPI
-(if tag is prefixed with `test-release`),
-and creates a GitHub Release from the distributed artifacts. Release notes
-are automatically generated from commit history and the Release name is taken from the basename of the tag.
+a semantic version (`[0-9]+.[0-9]+.[0-9]+*` or `test-release/[0-9]+.[0-9]+.[0-9]+*`) is pushed, the release workflow
+runs as follows:
+
+1. Build distribution artifacts for both Anaconda and PyPI distribution.
+2. Push the PyPI distribution artifacts to PyPI. Pushes to TestPyPI if tag starts with `test-release`.
+3. Push the Anaconda distribution to the `lasp` Anaconda channel.
+   Pushes to the `test-release` labeled channel if tag starts with `test-release`.
+4. Create a GitHub Release from the distributed artifacts.
+
+Release notes are automatically generated from commit history and the Release name is taken from
+the basename of the tag.
 
 #### Official Releases
 Official releases are published to the public PyPI (even if they are release candidates like `1.2.3rc1`). This differs
@@ -97,8 +103,9 @@ from test releases, which are only published to TestPyPI and are not published t
 If the semantic version has any suffixes (e.g. `rc1`), the release will be marked as
 a prerelease in GitHub and PyPI.
 
-To trigger an official release, push a tag referencing the commit you want to release. The commit _MUST_ be on
-the `main` branch. Never publish an official release from a commit that hasn't been merged to `main`!
+To trigger an official release, push a tag referencing the commit you want to release. Unless you are publishing a
+release candidate or dev build, the commit _MUST_ be on
+the `main` branch. Never publish a non-suffixed release from a commit that hasn't been pushed to `main`.
 
 ```bash
 git checkout main

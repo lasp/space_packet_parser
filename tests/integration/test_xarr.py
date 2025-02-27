@@ -1,7 +1,8 @@
 """Test creating an xarray dataset from CCSDS packets"""
 import pytest
-pytest.importorskip("xarray")
-pytest.importorskip("numpy")
+
+pytest.importorskip("xarray", reason="xarray not installed")
+pytest.importorskip("numpy", reason="numpy not installed")
 import numpy as np
 
 from space_packet_parser.xarr import create_dataset
@@ -51,5 +52,6 @@ def test_create_xarray_dataset_suda(suda_test_data_dir):
     """SUDA contains a polymorphic packet structure so can't be read into an xarray dataset"""
     packet_file = suda_test_data_dir / "sciData_2022_130_17_41_53.spl"
     definition_file = suda_test_data_dir / "suda_combined_science_definition.xml"
-    with pytest.raises(ValueError):  # SUDA has a polymorphic packet structure
+    # SUDA has a polymorphic packet structure
+    with pytest.raises(ValueError, match="Packet fields do not match for APID 1425"):
         create_dataset(packet_file, definition_file, skip_header_bytes=4)

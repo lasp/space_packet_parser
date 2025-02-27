@@ -12,6 +12,7 @@ on:
       - 'test-release/[0-9]+.[0-9]+.[0-9]+*'  # Push events for test release tags
 
 jobs:
+  # Job that builds PyPI style distribution artifacts
   build-dist-artifacts:
     # This job uses vanilla Python tools rather than Poetry, so we don't have to use third party GitHub actions
     # e.g. pip, build, twine
@@ -50,7 +51,7 @@ jobs:
   # Job that pushes dist artifacts to public PyPI for official release tags
   official-pypi-publish:
     name: Upload official release to PyPI
-    # Prevent running on any PEP 440 suffixed tags or on test-release tags
+    # Prevent running on test-release tags
     if: startsWith(github.ref, 'refs/tags/test-release') == false
     needs:
       - build-dist-artifacts
@@ -100,12 +101,74 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
 
+  # Job that builds Conda package for distribution
+  anaconda-build-publish:
+    name: Build Conda Package
+    runs-on: ubuntu-latest
+    environment:
+      name: conda-publish-environment
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          channels: conda-forge,defaults
+          auto-update-conda: true
+          python-version: "3.11"
+          activate-environment: "test"
+
+      - name: Store conda-bld Location
+        # This allows us to use this in multiple other steps
+        run: echo "CONDA_BLD_PATH=/usr/share/miniconda/envs/test/conda-bld" >> $GITHUB_ENV
+
+      - name: Build Conda Package
+        shell: bash -l {0}
+        run: |
+          python --version
+          conda install -y conda-build conda-verify anaconda-client
+          conda build .
+          conda build --output .
+
+      - name: Test Built Package from Local Channel
+        shell: bash -l {0}
+        run: |
+          echo $CONDA_BLD_PATH
+          python --version
+          conda create -n test-env -y -c file://$CONDA_BLD_PATH space_packet_parser
+          conda activate test-env
+          python -c "import space_packet_parser"
+          which spp
+          cat $(which spp)
+          spp --version
+          conda deactivate
+
+      # This makes the artifacts available for publishing to a GitHub release later
+      - name: Upload Conda Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: conda-package
+          path: ${{ env.CONDA_BLD_PATH }}/**/space_packet_parser-*
+
+      - name: Publish to Anaconda
+        shell: bash -l {0}
+        env:
+          # We set "--channel test-release" if the tag starts with refs/tags/test-release
+          ANACONDA_CHANNEL_OPTION: ${{ startsWith(github.ref, 'refs/tags/test-release') && '--channel test-release' || '' }}
+          ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+        run: |
+          anaconda upload --user ${{ vars.ANACONDA_USER_NAME }} $ANACONDA_CHANNEL_OPTION ${{ env.CONDA_BLD_PATH }}/**/space_packet_parser-*.conda
+
   # Job that publishes an official Release to GitHub after pushing to PyPI
   # This only runs if we have pushed to public PyPI (not TestPyPI)
+  # AND published to Anaconda
   create-github-release:
     name: Upload dist artifacts to GitHub Release
     needs:
       - official-pypi-publish
+      - anaconda-build-publish
     runs-on: ubuntu-latest
     environment:
       name: create-github-release-environment
@@ -114,23 +177,32 @@ jobs:
       contents: write  # IMPORTANT: mandatory for making GitHub Releases
 
     steps:
-      - name: Download the artifacts 📦
+      - name: Download the PyPI artifacts 📦
         uses: actions/download-artifact@v4
         with:
           name: python-package-distributions
-          path: dist/
+          path: dist/pypi/
+
+      - name: Download the Conda artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: conda-package
+          path: dist/conda/
 
       - name: Sign the dists 📦 with Sigstore 🔑
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
           inputs: >-
-            ./dist/*.tar.gz
-            ./dist/*.whl
+            ./dist/pypi/*
+            ./dist/conda/*
 
       - name: Determine if the release is a prerelease
-        # Checks the regex form of the tag.
+        # Checks the regex form of the tag to see if there is a suffix after the semver
         # Marks final releases only for tags matching the regex (no version suffixes)
         # All other releases are marked as prereleases
+        # Sets the behavior by setting the PRE_RELEASE_OPTION environment variable in the GITHUB_ENV file.
+        # Note: This environment variable is only available to later steps via the ${{ env.PRE_RELEASE_OPTION }}
+        # syntax
         run: |
           if [[ ${{ github.ref_name }} =~ '^.*[0-9]*\.[0-9]*\.[0-9]*$' ]]; then
           echo "PRE_RELEASE_OPTION=''" >> $GITHUB_ENV  # Not a prerelease
@@ -141,6 +213,7 @@ jobs:
       - name: Get latest non-prerelease release
         # This fetches the "latest" (non-prerelease) release ref,
         # so we can generate release notes from that point instead of the most recent prerelease.
+        # Sets LATEST_RELEASE environment variable in the GITHUB_ENV file
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
