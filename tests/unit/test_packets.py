@@ -22,17 +22,28 @@ def test_create_ccsds_packet_input_range(input_var, input_value):
         assert getattr(p, input_var) == input_value
 
 
-@pytest.mark.parametrize(("input_var", "input_value"),
-                         [("version_number", -1), ("version_number", 8),
-                          ("type", -1), ("type", 2),
-                          ("secondary_header_flag", -1), ("secondary_header_flag", 2),
-                          ("apid", -1), ("apid", 2**11),
-                          ("sequence_flags", -1), ("sequence_flags", 4),
-                          ("sequence_count", -1), ("sequence_count", 2**14),
-                          ("data", bytes(0)), pytest.param("data", bytes(65537), id="max-bytes")])
-def test_create_ccsds_packet_value_range_error(input_var, input_value):
+@pytest.mark.parametrize(
+    ("input_var", "input_value", "err_msg"),
+    [
+        ("version_number", -1, "version_number must be between 0 and 7"),
+        ("version_number", 8, "version_number must be between 0 and 7"),
+        ("type", -1, "type_ must be 0 or 1"), ("type", 2, "type_ must be 0 or 1"),
+        ("secondary_header_flag", -1, "secondary_header_flag must be 0 or 1"),
+        ("secondary_header_flag", 2, "secondary_header_flag must be 0 or 1"),
+        ("apid", -1, "apid must be between 0 and 2047"), ("apid", 2**11, "apid must be between 0 and 2047"),
+        ("sequence_flags", -1, "sequence_flags must be between 0 and 3"),
+        ("sequence_flags", 4, "sequence_flags must be between 0 and 3"),
+        ("sequence_count", -1, "sequence_count must be between 0 and 16383"),
+        ("sequence_count", 2**14, "sequence_count must be between 0 and 16383"),
+        ("data", bytes(0), r"length of data \(in bytes\) must be between 1 and 65536"),
+        pytest.param(
+            "data", bytes(65537), r"length of data \(in bytes\) must be between 1 and 65536", id="max-bytes"
+        )
+    ]
+)
+def test_create_ccsds_packet_value_range_error(input_var, input_value, err_msg):
     """Validate the min/max integer inputs"""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=err_msg):
         packets.create_ccsds_packet(**{input_var: input_value})
 
 @pytest.mark.parametrize("input_var", ["version_number", "type", "secondary_header_flag", "apid",
@@ -80,7 +91,8 @@ def test_raw_packet_reads(raw_value, start, nbits, expected):
     # Reset the position and read again but as raw bytes this time
     raw_packet.pos = start
     # the value 0 has a bit_length of 0, so we need to ensure we have at least 1 byte
-    assert raw_packet.read_as_bytes(nbits) == expected.to_bytes((max(expected.bit_length(), 1) + 7) // 8, "big")
+    assert raw_packet.read_as_bytes(nbits) == expected.to_bytes((max(expected.bit_length(), 1) + 7) // 8,
+                                                                "big")
     assert raw_packet.pos == start + nbits
 
 
@@ -118,27 +130,36 @@ def test_continuation_packets(test_data_dir):
     remove_keys(orig_packets[0])
 
     # Now we will split the data across 2 CCSDS packets, but expect them to be combined into one for parsing purposes
-    p0 = packets.create_ccsds_packet(data=b"0"*64, apid=11, sequence_flags=packets.SequenceFlags.FIRST, sequence_count=0)
-    p1 = packets.create_ccsds_packet(data=b"0"*1, apid=11, sequence_flags=packets.SequenceFlags.LAST, sequence_count=1)
+    p0 = packets.create_ccsds_packet(
+        data=b"0"*64, apid=11, sequence_flags=packets.SequenceFlags.FIRST, sequence_count=0)
+    p1 = packets.create_ccsds_packet(
+        data=b"0"*1, apid=11, sequence_flags=packets.SequenceFlags.LAST, sequence_count=1)
     raw_bytes = p0 + p1
     result_packets = list(d.packet_generator(raw_bytes, combine_segmented_packets=True))
     remove_keys(result_packets[0])
     assert result_packets == orig_packets
 
     # Now we will split the data across 3 CCSDS packets and test the sequence_count wrap-around
-    p0 = packets.create_ccsds_packet(data=b"0"*63, apid=11, sequence_flags=packets.SequenceFlags.FIRST, sequence_count=16382)
-    p1 = packets.create_ccsds_packet(data=b"0"*1, apid=11, sequence_flags=packets.SequenceFlags.CONTINUATION, sequence_count=16383)
-    p2 = packets.create_ccsds_packet(data=b"0"*1, apid=11, sequence_flags=packets.SequenceFlags.LAST, sequence_count=0)
+    p0 = packets.create_ccsds_packet(
+        data=b"0"*63, apid=11, sequence_flags=packets.SequenceFlags.FIRST, sequence_count=16382)
+    p1 = packets.create_ccsds_packet(
+        data=b"0"*1, apid=11, sequence_flags=packets.SequenceFlags.CONTINUATION, sequence_count=16383)
+    p2 = packets.create_ccsds_packet(
+        data=b"0"*1, apid=11, sequence_flags=packets.SequenceFlags.LAST, sequence_count=0)
     raw_bytes = p0 + p1 + p2
     result_packets = list(d.packet_generator(raw_bytes, combine_segmented_packets=True))
     remove_keys(result_packets[0])
     assert result_packets == orig_packets
 
-    # Test stripping secondary headers (4 bytes per packet), should keep the first packet's header, but skip the following
+    # Test stripping secondary headers (4 bytes per packet), should keep the first packet's header,
+    # but skip the following
     # Add in 4 1s to the 2nd and 3rd packet that should be removed
-    p0 = packets.create_ccsds_packet(data=b"0"*63, apid=11, sequence_flags=packets.SequenceFlags.FIRST, sequence_count=16382)
-    p1 = packets.create_ccsds_packet(data=b"1"*4 + b"0"*1, apid=11, sequence_flags=packets.SequenceFlags.CONTINUATION, sequence_count=16383)
-    p2 = packets.create_ccsds_packet(data=b"1"*4 + b"0"*1, apid=11, sequence_flags=packets.SequenceFlags.LAST, sequence_count=0)
+    p0 = packets.create_ccsds_packet(
+        data=b"0"*63, apid=11, sequence_flags=packets.SequenceFlags.FIRST, sequence_count=16382)
+    p1 = packets.create_ccsds_packet(
+        data=b"1"*4 + b"0"*1, apid=11, sequence_flags=packets.SequenceFlags.CONTINUATION, sequence_count=16383)
+    p2 = packets.create_ccsds_packet(
+        data=b"1"*4 + b"0"*1, apid=11, sequence_flags=packets.SequenceFlags.LAST, sequence_count=0)
     raw_bytes = p0 + p1 + p2
     result_packets = list(d.packet_generator(raw_bytes, combine_segmented_packets=True, secondary_header_bytes=4))
     remove_keys(result_packets[0])
@@ -150,8 +171,10 @@ def test_continuation_packet_warnings(test_data_dir):
     d = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
 
     # CONTINUATION / LAST without FIRST
-    p0 = packets.create_ccsds_packet(data=b"0"*65, apid=11, sequence_flags=packets.SequenceFlags.CONTINUATION)
-    p1 = packets.create_ccsds_packet(data=b"0"*65, apid=11, sequence_flags=packets.SequenceFlags.LAST)
+    p0 = packets.create_ccsds_packet(
+        data=b"0"*65, apid=11, sequence_flags=packets.SequenceFlags.CONTINUATION)
+    p1 = packets.create_ccsds_packet(
+        data=b"0"*65, apid=11, sequence_flags=packets.SequenceFlags.LAST)
     raw_bytes = p0 + p1
     with pytest.warns(match="Continuation packet found without declaring the start"):
         list(d.packet_generator(raw_bytes, combine_segmented_packets=True))
@@ -159,8 +182,10 @@ def test_continuation_packet_warnings(test_data_dir):
         assert len(list(d.packet_generator(raw_bytes, combine_segmented_packets=True))) == 0
 
     # Out of sequence packets
-    p0 = packets.create_ccsds_packet(data=b"0"*65, apid=11, sequence_flags=packets.SequenceFlags.FIRST, sequence_count=1)
-    p1 = packets.create_ccsds_packet(data=b"0"*65, apid=11, sequence_flags=packets.SequenceFlags.LAST, sequence_count=0)
+    p0 = packets.create_ccsds_packet(
+        data=b"0"*65, apid=11, sequence_flags=packets.SequenceFlags.FIRST, sequence_count=1)
+    p1 = packets.create_ccsds_packet(
+        data=b"0"*65, apid=11, sequence_flags=packets.SequenceFlags.LAST, sequence_count=0)
     raw_bytes = p0 + p1
 
     with pytest.warns(match="not in sequence"):
@@ -168,10 +193,10 @@ def test_continuation_packet_warnings(test_data_dir):
         assert len(list(d.packet_generator(raw_bytes, combine_segmented_packets=True))) == 0
 
 
-@pytest.mark.parametrize("start, nbits", [(0, 1), (0, 16), (0, 8), (0, 9),
-                                          (3, 5), (3, 8), (3, 13),
-                                          (7, 1), (7, 2), (7, 8),
-                                          (8, 1), (8, 8), (15, 1)])
+@pytest.mark.parametrize(
+    ("start", "nbits"),
+    [(0, 1), (0, 16), (0, 8), (0, 9), (3, 5), (3, 8), (3, 13), (7, 1), (7, 2), (7, 8), (8, 1), (8, 8), (15, 1)]
+)
 def test__extract_bits(start, nbits):
     """Test the _extract_bits function with various start and nbits values"""
     # Test extracting bits from a bitstream

@@ -1,20 +1,19 @@
-[tool.poetry]
+[project]
 name = "space_packet_parser"
-version = "5.1.0rc1"
+version = "6.0.0rc1"
 description = "A CCSDS telemetry packet decoding library based on the XTCE packet format description standard."
-license = "BSD-3-Clause"
+license = { text = "BSD-3-Clause" }
 readme = "README.md"
-include = ["LICENSE.txt", "CITATION.cff"]
+requires-python = ">=3.9"
 authors = [
-    "Gavin Medley <gavin.medley@lasp.colorado.edu>",
-    "Michael Chambliss <michael.chambliss@lasp.colorado.edu>",
-    "Greg Lucas <greg.lucas@lasp.colorado.edu>",
+    { name = "Gavin Medley", email = "gavin.medley@lasp.colorado.edu" },
+    { name = "Greg Lucas", email = "greg.lucas@lasp.colorado.edu" },
+    { name = "Michael Chambliss", email = "michael.chambliss@lasp.colorado.edu" }
 ]
 maintainers = [
-    "Gavin Medley <gavin.medley@lasp.colorado.edu>"
+    { name = "Gavin Medley", email = "gavin.medley@lasp.colorado.edu" },
+    { name = "Greg Lucas", email = "greg.lucas@lasp.colorado.edu" }
 ]
-repository = "https://github.com/lasp/space_packet_parser"
-homepage = "https://space-packet-parser.readthedocs.io"
 keywords = [
     "ccsds",
     "xtce",
@@ -33,28 +32,77 @@ keywords = [
     "binary data",
     "python"
 ]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: BSD License"
+]
+# These are the dependencies used for metadata when building the project
+dependencies = [
+    "lxml>=4.8.0",
+    "click>=8.0",
+    "rich>=13.0"
+]
 
-[tool.poetry.dependencies]
-python = ">=3.9"
-lxml = ">=4.8.0"
-click = "^8.0"
-rich = "^13.0"
-# Extras dependencies
-xarray = { version = ">2024.0.0", optional = true }
-numpy = { version = "^2.0.0", optional = true }
-pre-commit = { version = "*", optional = true }
-pytest = { version = "*", optional = true }
-pytest-benchmark = { version = "*", optional = true }
-pytest-randomly = { version = "*", optional = true }
-pytest-cov = { version = "*", optional = true }
-pyyaml = { version = "*", optional = true }
-ruff = { version = "*", optional = true }
-sphinx = { version = "*", optional = true }
-myst-parser = { version = "*", optional = true }
-sphinx-autoapi = { version = "*", optional = true }
-sphinx-rtd-theme = { version = "*", optional = true }
+[project.urls]
+repository = "https://github.com/lasp/space_packet_parser"
+homepage = "https://github.com/lasp/space_packet_parser"
+documentation = "https://space-packet-parser.readthedocs.io"
 
-[tool.poetry.group.dev.dependencies]
+[project.scripts]
+spp = "space_packet_parser.cli:spp"
+
+# These are the project extras used for metadata when building the project
+[project.optional-dependencies]
+xarray = [
+    "xarray>2024.0.0",
+    "numpy>=2.0.0"
+]
+examples = [
+    "matplotlib>=3.4"
+]
+test = [
+    "pre-commit",
+    "pytest",
+    "pytest-benchmark",
+    "pytest-randomly",
+    "pytest-cov",
+    "pyyaml",  # needed by check_metadata.py
+    "ruff",
+    "tomli",  # for support of python<3.11 toml parsing in check_metadata.py
+    "xarray",  # for testing extra
+    "numpy"  # for testing extra
+]
+docs = [
+    "pyyaml",
+    "sphinx",
+    "myst-parser",
+    "sphinx-autoapi",
+    "sphinx-rtd-theme"
+]
+
+[tool.poetry]
+packages = [
+    { include = "space_packet_parser" }
+]
+include = [
+    "LICENSE.txt",
+    "CITATION.cff"
+]
+
+[tool.poetry.group.xarray.dependencies]
+xarray = ">2024.0.0"
+numpy = ">=2.0.0"
+
+[tool.poetry.group.examples.dependencies]
+matplotlib = ">=3.4"
+
+[tool.poetry.group.test.dependencies]
 pre-commit = "*"
 pytest = "*"
 pytest-benchmark = "*"
@@ -62,30 +110,17 @@ pytest-randomly = "*"
 pytest-cov = "*"
 pyyaml = "*"
 ruff = "*"
+tomli = "*"
+
+[tool.poetry.group.docs.dependencies]
+pyyaml = "*"
 sphinx = "*"
 myst-parser = "*"
 sphinx-autoapi = "*"
 sphinx-rtd-theme = "*"
-coverage = "*"
-
-[tool.poetry.group.examples]
-optional = true
-
-[tool.poetry.group.examples.dependencies]
-matplotlib = ">=3.4"
-memory-profiler = "^0.61.0"
-
-[tool.poetry.extras]
-xarray = ["xarray", "numpy"]
-test = ["pytest", "pytest-benchmark", "pytest-randomly", "pytest-cov"]
-dev = ["xarray", "numpy", "pre-commit", "pytest", "pytest-benchmark", "pytest-randomly",
-       "pytest-cov", "ruff", "pyyaml", "sphinx", "myst-parser", "sphinx-autoapi", "sphinx-rtd-theme"]
-
-[tool.poetry.scripts]
-spp = "space_packet_parser.cli:spp"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=2.0.1"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
@@ -94,9 +129,25 @@ filterwarnings = [
     "ignore:You are encoding a BooleanParameterType:UserWarning"
 ]
 
+# Note: Ruff uses the "nearest" configuration file at runtime so configurations may be overridden
+# e.g. see ruff.toml in the tests directory
 [tool.ruff]
-target-version = "py39"
 line-length = 120
-lint.select = ["E", "F", "I", "S", "W", "PT", "UP"]
-include = ["space_packet_parser/**/*.py"]
-exclude = ["docs", "examples", "tests"]
+extend-include = [
+    "space_packet_parser/**/*.py",
+    "examples/**/*.py",
+    "tests/**/*.py"
+]
+extend-exclude = []
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort import sorting
+    "S",  # flake8-bandit security
+    "PT",  # flake8-pytest-style
+    "UP"  # pyupgrade syntax upgrader
+]
+per-file-ignores = { "tests/*" = ["S"] }

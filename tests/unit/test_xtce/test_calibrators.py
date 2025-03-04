@@ -1,6 +1,6 @@
 """Tests for calibrators"""
-import pytest
 import lxml.etree as ElementTree
+import pytest
 
 from space_packet_parser import common
 from space_packet_parser.exceptions import CalibrationError

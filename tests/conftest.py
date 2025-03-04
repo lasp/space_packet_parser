@@ -1,13 +1,13 @@
 """Test fixtures"""
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
 from lxml import etree
 from lxml.builder import ElementMaker
 
 from space_packet_parser import common
-from space_packet_parser.xtce import DEFAULT_XTCE_NSMAP, DEFAULT_XTCE_NS_PREFIX, XTCE_1_2_XMLNS
+from space_packet_parser.xtce import DEFAULT_XTCE_NS_PREFIX, DEFAULT_XTCE_NSMAP, XTCE_1_2_XMLNS
 
 
 @pytest.fixture(scope="session")

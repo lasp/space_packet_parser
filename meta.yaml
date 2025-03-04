@@ -1,0 +1,61 @@
+package:
+  name: "space_packet_parser"
+  version: "6.0.0rc1"
+
+source:
+  path: .
+
+build:
+  number: 0
+  # Uses pip to install since Poetry isn't natively supported in Conda builds
+  script: |
+    pip install .
+  noarch: python
+  entry_points:
+    - spp = space_packet_parser.cli:spp
+
+requirements:
+  build:
+    - python>=3.9
+    - pip
+    - poetry-core>=2.0.1
+  run:
+    - python>=3.9
+    - lxml>=4.8.0
+    - click>=8.0
+    - rich>=13.0
+    - xarray>2024.0.0
+    - numpy>=2.0.0
+
+test:
+  imports:
+    - space_packet_parser
+  requires:
+    - pre-commit
+    - pytest
+    - pytest-benchmark
+    - pytest-randomly
+    - pytest-cov
+    - pyyaml
+    - ruff
+    - tomli
+    - xarray
+    - numpy
+  source_files:
+    - tests
+  commands:
+    - pytest tests
+
+about:
+  home: https://github.com/lasp/space_packet_parser
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENSE.txt
+  description: "A CCSDS telemetry packet decoding library based on the XTCE packet format description standard."
+  dev_url: https://github.com/lasp/space_packet_parser
+  doc_url: https://space-packet-parser.readthedocs.io
+
+extra:
+  files:
+    - README.md
+    - CITATION.cff

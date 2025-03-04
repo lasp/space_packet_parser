@@ -1,5 +1,6 @@
 """Test parsing of CTIM instrument data"""
 import pytest
+
 # Local
 from space_packet_parser.xtce import definitions
 

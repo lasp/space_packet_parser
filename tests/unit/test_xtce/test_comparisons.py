@@ -1,6 +1,6 @@
 """Tests for comparisons"""
-import pytest
 import lxml.etree as ElementTree
+import pytest
 
 from space_packet_parser import common
 from space_packet_parser.exceptions import ComparisonError
@@ -113,15 +113,15 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, comparisons
     ]
 )
 @pytest.mark.filterwarnings("ignore:Performing a comparison against a current value")
-def test_comparison(elmaker, xtce_parser, xml_string, test_parsed_data, current_parsed_value, expected_comparison_result):
+def test_comparison(elmaker, xtce_parser,
+                    xml_string, test_parsed_data, current_parsed_value, expected_comparison_result):
     """Test Comparison object"""
     element = ElementTree.fromstring(xml_string, parser=xtce_parser)
+    comparison = comparisons.Comparison.from_xml(element)
     if isinstance(expected_comparison_result, Exception):
         with pytest.raises(type(expected_comparison_result)):
-            comparison = comparisons.Comparison.from_xml(element)
             comparison.evaluate(test_parsed_data, current_parsed_value)
     else:
-        comparison = comparisons.Comparison.from_xml(element)
         assert comparison.evaluate(test_parsed_data, current_parsed_value) == expected_comparison_result
         # Recover XML and re-parse it to check it's reproducible
         result_string = ElementTree.tostring(comparison.to_xml(elmaker=elmaker), pretty_print=True).decode()

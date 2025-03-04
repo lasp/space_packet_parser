@@ -16,7 +16,7 @@ repos:
     - id: no-commit-to-branch
       args: [--branch, main, --branch, dev]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.9.6'
+    rev: 'v0.9.8'
     hooks:
     - id: ruff
       args: [--fix]
@@ -26,3 +26,12 @@ repos:
     hooks:
       - id: codespell
         files: ^.*\.(py|md|rst|yml)$
+  - repo: local
+    hooks:
+      - id: check-space-packet-parser-metadata
+        name: check space_packet_parser metadata
+        entry: python scripts/check_metadata.py
+        language: python
+        additional_dependencies:
+          - pyyaml
+          - tomli

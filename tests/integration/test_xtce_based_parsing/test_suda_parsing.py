@@ -4,8 +4,8 @@ The packet definition used here is intended for IDEX, which is basically a rebui
 The data used here is SUDA data but the fields are parsed using IDEX naming conventions.
 """
 # Local
-from space_packet_parser.xtce import definitions
 from space_packet_parser import packets
+from space_packet_parser.xtce import definitions
 
 
 def parse_hg_waveform(waveform_raw: str):
@@ -70,7 +70,6 @@ def test_suda_xtce_packet_parsing(suda_test_data_dir):
                     print(scitype)
                     if scitype == 1:  # beginning of an event
                         data = {}
-                        event_header = p
                         # Each time we encounter a new scitype, we create a new array.
                         p = next(suda_packet_generator)
                         scitype = p['IDX__SCIFETCHTYPE'].raw_value

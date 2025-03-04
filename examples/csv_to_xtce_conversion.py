@@ -12,11 +12,11 @@ Reference for CCSDSPy CSV format: https://docs.ccsdspy.org/en/1.3.2/user-guide/l
 This example was generated based on documentation of CCSDSPy version 1.3.2
 """
 import csv
-from pathlib import Path
 import re
 import warnings
+from pathlib import Path
 
-from space_packet_parser.xtce import definitions, encodings, parameters, containers, parameter_types
+from space_packet_parser.xtce import containers, definitions, encodings, parameter_types, parameters
 
 # This regex is for detecting a dynamically sized field where its bit_length is
 # the integer value of another field. If you need byte -> bit conversion consider manually editing the
@@ -219,6 +219,6 @@ if __name__ == "__main__":
     with packet_file.open("rb") as packet_fh:
         packets = list(xtce_definition.packet_generator(packet_fh))
 
-    assert len(packets) == 7200
+    assert len(packets) == 7200  # noqa S101
     print(packets[3])
     print(len(packets))

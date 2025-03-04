@@ -1,9 +1,9 @@
 """Mock socket streaming and listener that decodes on the fly"""
-from contextlib import closing
-from threading import Thread
 import random
 import socket
 import time
+from contextlib import closing
+from threading import Thread
 
 import pytest
 
@@ -51,8 +51,8 @@ def test_parsing_from_socket(jpss_test_data_dir):
         t.start()
 
         packet_generator = xdef.packet_generator(receiver, buffer_read_size_bytes=4096)
-        with pytest.raises(socket.timeout):
-            packets = []
+        packets = []
+        with pytest.raises(socket.timeout):  # noqa PT012
             for p in packet_generator:
                 packets.append(p)
         t.join()

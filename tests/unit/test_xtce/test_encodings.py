@@ -1,8 +1,8 @@
 """DataEncoding Tests"""
-import pytest
 import lxml.etree as ElementTree
+import pytest
 
-from space_packet_parser.xtce import encodings, comparisons, calibrators, XTCE_1_2_XMLNS
+from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, encodings
 
 
 @pytest.mark.parametrize(
