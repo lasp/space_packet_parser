@@ -156,7 +156,7 @@ jobs:
         shell: bash -l {0}
         env:
           # We set "--channel test-release" if the tag starts with refs/tags/test-release
-          ANACONDA_CHANNEL_OPTION: ${{ startsWith(github.ref, 'refs/tags/test-release') && '--channel test-release' }}
+          ANACONDA_CHANNEL_OPTION: ${{ startsWith(github.ref, 'refs/tags/test-release') && '--channel test-release' || '' }}
           ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
         run: |
           anaconda upload --user ${{ vars.ANACONDA_USER_NAME }} $ANACONDA_CHANNEL_OPTION ${{ env.CONDA_BLD_PATH }}/**/space_packet_parser-*.conda
