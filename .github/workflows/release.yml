@@ -18,19 +18,19 @@ jobs:
     # e.g. pip, build, twine
     # If we even want to, we could switch to using something like actions/setup-poetry (but do a search for current
     # best implementations)
-    name: Build distribution artifacts 📦
+    name: Build PyPI artifacts
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Python 🐍
+      - name: Install Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install project dependencies
+      - name: Install build dependencies
         run: python -m pip install build twine
 
       - name: Build wheel and source distribution
@@ -41,7 +41,7 @@ jobs:
         run: twine check dist/*
 
       # Save ("upload") the distribution artifacts for use by downstream Actions jobs
-      - name: Upload distribution artifacts 📦
+      - name: Upload distribution artifacts
         uses: actions/upload-artifact@v4  # This allows us to persist the dist directory after the job has completed
         with:
           name: python-package-distributions
@@ -64,17 +64,16 @@ jobs:
 
     steps:
       # This downloads the build artifacts from the build job
-      - name: Download all the dists 📦
+      - name: Download distribution artifacts
         uses: actions/download-artifact@v4
         with:
           name: python-package-distributions
           path: dist/
 
-      - name: Publish distribution artifacts 📦 to PyPI
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.12.4
 
   # Job that pushes dist artifacts to TestPyPI for test release tags
-  # This will fail if the version (according to package metadata) has already been pushed
   test-pypi-publish:
     name: Upload testing release to TestPyPI
     # Only run on test-release tags
@@ -90,29 +89,29 @@ jobs:
 
     steps:
       # This downloads the build artifacts from the build job
-      - name: Download all the dists 📦
+      - name: Download distribution artifacts
         uses: actions/download-artifact@v4
         with:
           name: python-package-distributions
           path: dist/
 
-      - name: Publish distribution artifacts 📦 to TestPyPI
+      - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@v1.12.4
         with:
           repository-url: https://test.pypi.org/legacy/
 
   # Job that builds Conda package for distribution
   anaconda-build-publish:
-    name: Build Conda Package
+    name: Build and publish Anaconda package
     runs-on: ubuntu-latest
     environment:
       name: conda-publish-environment
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set Up Miniconda
+      - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
           channels: conda-forge,defaults
@@ -120,11 +119,11 @@ jobs:
           python-version: "3.11"
           activate-environment: "test"
 
-      - name: Store conda-bld Location
+      - name: Store conda-bld location
         # This allows us to use this in multiple other steps
         run: echo "CONDA_BLD_PATH=/usr/share/miniconda/envs/test/conda-bld" >> $GITHUB_ENV
 
-      - name: Build Conda Package
+      - name: Build Conda package
         shell: bash -l {0}
         run: |
           python --version
@@ -132,7 +131,7 @@ jobs:
           conda build .
           conda build --output .
 
-      - name: Test Built Package from Local Channel
+      - name: Test installing package from local channel
         shell: bash -l {0}
         run: |
           echo $CONDA_BLD_PATH
@@ -146,7 +145,7 @@ jobs:
           conda deactivate
 
       # This makes the artifacts available for publishing to a GitHub release later
-      - name: Upload Conda Build Artifacts
+      - name: Upload Conda build artifact
         uses: actions/upload-artifact@v4
         with:
           name: conda-package
@@ -161,14 +160,9 @@ jobs:
         run: |
           anaconda upload --user ${{ vars.ANACONDA_USER_NAME }} $ANACONDA_CHANNEL_OPTION ${{ env.CONDA_BLD_PATH }}/**/space_packet_parser-*.conda
 
-  # Job that publishes an official Release to GitHub after pushing to PyPI
-  # This only runs if we have pushed to public PyPI (not TestPyPI)
-  # AND published to Anaconda
+  # Job that publishes a release to GitHub
   create-github-release:
-    name: Upload dist artifacts to GitHub Release
-    needs:
-      - official-pypi-publish
-      - anaconda-build-publish
+    name: Create GitHub Release
     runs-on: ubuntu-latest
     environment:
       name: create-github-release-environment
@@ -177,25 +171,6 @@ jobs:
       contents: write  # IMPORTANT: mandatory for making GitHub Releases
 
     steps:
-      - name: Download the PyPI artifacts 📦
-        uses: actions/download-artifact@v4
-        with:
-          name: python-package-distributions
-          path: dist/pypi/
-
-      - name: Download the Conda artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: conda-package
-          path: dist/conda/
-
-      - name: Sign the dists 📦 with Sigstore 🔑
-        uses: sigstore/gh-action-sigstore-python@v3.0.0
-        with:
-          inputs: >-
-            ./dist/pypi/**
-            ./dist/conda/**
-
       - name: Determine if the release is a prerelease
         # Checks the regex form of the tag to see if there is a suffix after the semver
         # Marks final releases only for tags matching the regex (no version suffixes)
@@ -205,9 +180,9 @@ jobs:
         # syntax
         run: |
           if [[ ${{ github.ref_name }} =~ '^.*[0-9]*\.[0-9]*\.[0-9]*$' ]]; then
-          echo "PRE_RELEASE_OPTION=''" >> $GITHUB_ENV  # Not a prerelease
+            echo "PRE_RELEASE_OPTION=''" >> $GITHUB_ENV  # Not a prerelease
           else
-          echo "PRE_RELEASE_OPTION=--prerelease" >> $GITHUB_ENV  # Is a prerelease
+            echo "PRE_RELEASE_OPTION=--prerelease" >> $GITHUB_ENV  # Is a prerelease
           fi
 
       - name: Get latest non-prerelease release
@@ -238,14 +213,3 @@ jobs:
           ${{ env.PRE_RELEASE_OPTION }}
           --generate-notes
           --notes-start-tag '${{ env.LATEST_RELEASE_TAG }}'
-
-      - name: Upload artifact 📦 signatures to GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        # Upload to GitHub Release using the `gh` CLI.
-        # `dist/` contains the built packages, and the
-        # sigstore-produced signatures and certificates.
-        run: >-
-          gh release upload
-          '${{ github.ref_name }}' dist/**
-          --repo '${{ github.repository }}'
