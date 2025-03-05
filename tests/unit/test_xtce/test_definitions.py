@@ -515,7 +515,9 @@ def test_parse_methods(test_data_dir):
     xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
 
     # Test parsing a packet
-    empty_packet_data = packets.create_ccsds_packet(data=bytes(80), apid=11, sequence_flags=packets.SequenceFlags.UNSEGMENTED)
+    empty_packet_data = packets.create_ccsds_packet(data=bytes(80),
+                                                    apid=11,
+                                                    sequence_flags=packets.SequenceFlags.UNSEGMENTED)
 
     # Full packet object with a RawPacketData reader
     empty_packet = packets.Packet(raw_data=packets.RawPacketData(empty_packet_data))
