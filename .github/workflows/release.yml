@@ -193,8 +193,8 @@ jobs:
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
           inputs: >-
-            ./dist/pypi/*
-            ./dist/conda/*
+            ./dist/pypi/**
+            ./dist/conda/**
 
       - name: Determine if the release is a prerelease
         # Checks the regex form of the tag to see if there is a suffix after the semver
