@@ -7,7 +7,7 @@ Release notes for the `space_packet_parser` library
 
 ### v6.0.0 (unreleased)
 - *BREAKING*: `XtcePacketDefinition` no longer accepts a file object as input.
-  Use `spp.xtce.definitions.XtcePacketDefinition.from_document()` or `spp.load_xml()` instead.
+  Use `spp.xtce.definitions.XtcePacketDefinition.from_xtce()` or `spp.load_xtce()` instead.
 - *BREAKING*: Reorganization of the project into different submodules for more explicit handling
   of imports. There is now an `space_packet_parser.xtce` module with xtce representations separated
   into modules underneath that.
