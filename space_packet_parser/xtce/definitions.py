@@ -465,7 +465,8 @@ class XtcePacketDefinition(common.AttrComparable):
             A Packet object containing header and data attributes.
         """
         warnings.warn("parse_ccsds_packet is deprecated and will be removed in a future release. "
-                      "Use the parse_packet method instead, XTCE has no notion of the ccsds standard.")
+                      "Use the parse_packet method instead, XTCE has no notion of the ccsds standard.",
+                      DeprecationWarning, stacklevel=2)
         return self.parse_packet(packet, root_container_name=root_container_name)
 
 
