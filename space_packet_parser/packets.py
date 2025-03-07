@@ -432,7 +432,7 @@ def ccsds_generator(
         elif ccsds_packet.sequence_flags == SequenceFlags.FIRST:
             _segmented_packets[ccsds_packet.apid] = [ccsds_packet]
             continue
-        elif not _segmented_packets.get(ccsds_packet.apid, []):
+        elif not _segmented_packets.get(ccsds_packet.apid, False):
             warnings.warn("Continuation packet found without declaring the start, "
                           f"skipping packet with apid {ccsds_packet.apid}.")
             continue
@@ -443,19 +443,19 @@ def ccsds_generator(
             _segmented_packets[ccsds_packet.apid].append(ccsds_packet)
             # We have received the final packet, close it up and combine all of
             # the segmented packets into a single "packet" for XTCE parsing
-            sequence_counts = [p.sequence_count for p in _segmented_packets[ccsds_packet.apid]]
+            packets = _segmented_packets.pop(ccsds_packet.apid)
+            sequence_counts = [p.sequence_count for p in packets]
             if not all((sequence_counts[i + 1] - sequence_counts[i]) % 16384 == 1
                         for i in range(len(sequence_counts) - 1)):
                 warnings.warn(f"Continuation packets for apid {ccsds_packet.apid} "
                               f"are not in sequence {sequence_counts}, skipping these packets.")
                 continue
             # Add all content (including header) from the first packet
-            raw_data = _segmented_packets[ccsds_packet.apid][0]
+            raw_data = packets[0]
             # Add the continuation packets to the first packet, skipping the headers
-            for p in _segmented_packets[ccsds_packet.apid][1:]:
+            for p in packets[1:]:
                 raw_data += p[header_length_bytes + secondary_header_bytes:]
             yield CCSDSPacketBytes(raw_data)
-
 
 
     if show_progress:
