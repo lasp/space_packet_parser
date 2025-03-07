@@ -88,7 +88,7 @@ We use GitHub Actions for automatic release process that responds to pushes of g
 a semantic version (`[0-9]+.[0-9]+.[0-9]+*` or `test-release/[0-9]+.[0-9]+.[0-9]+*`) is pushed, the release workflow
 runs as follows:
 
-1. Build distribution artifacts for and PyPI.
+1. Build distribution artifacts for PyPI.
 2. Push the PyPI distribution artifacts to PyPI. Pushes to TestPyPI if tag starts with `test-release`.
 3. Build and push the Anaconda distribution to the `lasp` Anaconda channel.
    Pushes with a `test-release` label if tag starts with `test-release`, otherwise labels as `main`.
