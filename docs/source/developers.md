@@ -70,7 +70,7 @@ That is,
    or by running `poetry version X.Y.Z` or bumping according to a valid bump rule like `poetry version minor`
    (see poetry docs: https://python-poetry.org/docs/cli/#version).
 
-3. Update the version identifier in `CITATION.cff`.
+3. Update the version identifier in `CITATION.cff` and `meta.yaml`.
 
 4. Update `changelog.md` to reflect that the version is now "released" and revisit `README.md` to keep it up to date.
 
@@ -81,21 +81,18 @@ That is,
 6. When you are satisfied that the release branch is ready, merge the PR into `main`.
 
 7. Check out the `main` branch, pull the merged changes, and tag the newly created merge commit with the
-   desired version `X.Y.Z` and push the tag upstream.
+   desired version `X.Y.Z` and push the tag upstream. This will kick off the automatic release process.
 
 ### Automatic Release Process
 We use GitHub Actions for automatic release process that responds to pushes of git tags. When a tag matching
 a semantic version (`[0-9]+.[0-9]+.[0-9]+*` or `test-release/[0-9]+.[0-9]+.[0-9]+*`) is pushed, the release workflow
 runs as follows:
 
-1. Build distribution artifacts for both Anaconda and PyPI distribution.
+1. Build distribution artifacts for PyPI.
 2. Push the PyPI distribution artifacts to PyPI. Pushes to TestPyPI if tag starts with `test-release`.
-3. Push the Anaconda distribution to the `lasp` Anaconda channel.
-   Pushes to the `test-release` labeled channel if tag starts with `test-release`.
-4. Create a GitHub Release from the distributed artifacts.
-
-Release notes are automatically generated from commit history and the Release name is taken from
-the basename of the tag.
+3. Build and push the Anaconda distribution to the `lasp` Anaconda channel.
+   Pushes with a `test-release` label if tag starts with `test-release`, otherwise labels as `main`.
+4. Create a GitHub Release that includes auto-generated release notes and the source code.
 
 #### Official Releases
 Official releases are published to the public PyPI (even if they are release candidates like `1.2.3rc1`). This differs

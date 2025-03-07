@@ -130,7 +130,6 @@ filterwarnings = [
 ]
 
 # Note: Ruff uses the "nearest" configuration file at runtime so configurations may be overridden
-# e.g. see ruff.toml in the tests directory
 [tool.ruff]
 line-length = 120
 extend-include = [
