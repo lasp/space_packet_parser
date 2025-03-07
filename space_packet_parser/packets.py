@@ -257,14 +257,16 @@ class Packet(dict):
     def header(self) -> dict:
         """The header content of the packet."""
         warnings.warn("The header property is deprecated and will be removed in a future release. "
-                      "To access the header fields of a CCSDS packet, use the CCSDSPacketBytes class.")
+                      "To access the header fields of a CCSDS packet, use the CCSDSPacketBytes class.",
+                      DeprecationWarning, stacklevel=2)
         return dict(list(self.items())[:7])
 
     @property
     def user_data(self) -> dict:
         """The user data content of the packet."""
         warnings.warn("The user_data property is deprecated and will be removed in a future release. "
-                      "To access the user_data fields of a CCSDS packet, use the CCSDSPacketBytes class.")
+                      "To access the user_data fields of a CCSDS packet, use the CCSDSPacketBytes class.",
+                      DeprecationWarning, stacklevel=2)
         return dict(list(self.items())[7:])
 
 class CCSDSPacket(Packet):
@@ -284,7 +286,8 @@ class CCSDSPacket(Packet):
     """
     def __init__(self, *args, **kwargs):
         warnings.warn("The CCSDSPacket class is deprecated and will be removed in a future release. "
-                    "Use the Packet class instead (no CCSDS prefix).")
+                      "Use the Packet class instead (no CCSDS prefix).",
+                      DeprecationWarning, stacklevel=2)
         super().__init__(*args, **kwargs)
 
 

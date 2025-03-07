@@ -502,10 +502,10 @@ def test_uniqueness_of_reused_sequence_container(jpss_test_data_dir):
 
 def test_deprecated_definition_class(test_data_dir):
     """Test that the deprecated XtcePacketDefinition class still works"""
-    with pytest.warns(UserWarning, match="The space_packet_parser.definitions module is deprecated"):
+    with pytest.warns(DeprecationWarning, match="The space_packet_parser.definitions module is deprecated"):
         from space_packet_parser.definitions import XtcePacketDefinition as DeprecatedXtcePacketDefinition
 
-    with pytest.warns(UserWarning, match="This class is deprecated"):
+    with pytest.warns(DeprecationWarning, match="This class is deprecated"):
         xtce = DeprecatedXtcePacketDefinition(test_data_dir / "test_xtce.xml")
     assert xtce.containers == definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml").containers
 
@@ -529,5 +529,5 @@ def test_parse_methods(test_data_dir):
 
     # Deprecated method, can be removed in a future version
     empty_packet = packets.Packet(raw_data=packets.RawPacketData(empty_packet_data))
-    with pytest.warns(UserWarning, match="parse_ccsds_packet is deprecated"):
+    with pytest.warns(DeprecationWarning, match="parse_ccsds_packet is deprecated"):
         assert packet == xdef.parse_ccsds_packet(empty_packet)
