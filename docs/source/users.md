@@ -19,7 +19,7 @@ import space_packet_parser as spp
 
 packet_file = Path('my_packets.pkts')
 xtce_document = Path('my_xtce_document.xml')
-packet_definition = spp.load_xml(xtce_document)
+packet_definition = spp.load_xtce(xtce_document)
 packets = list(packet_definition.packet_generator(packet_file.open('rb')))
 
 # You can introspect the packet definition to learn about what was parsed

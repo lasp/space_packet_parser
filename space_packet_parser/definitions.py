@@ -11,7 +11,7 @@ warnings.warn("The space_packet_parser.definitions module is deprecated. "
 class XtcePacketDefinition(definitions.XtcePacketDefinition):
     def __init__(self, xtce_document, **kwargs):
         warnings.warn("This class is deprecated. To load a packet definition from a file "
-                      "use space_packet_parser.load_xml() or "
+                      "use space_packet_parser.load_xtce() or "
                       "space_packet_parser.xtce.definitions.XtcePacketDefinition.from_xtce() instead.")
         other = definitions.XtcePacketDefinition.from_xtce(xtce_document)
         self.__dict__.update(other.__dict__)

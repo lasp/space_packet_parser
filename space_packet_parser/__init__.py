@@ -5,7 +5,7 @@ from typing import Union
 from space_packet_parser.xtce.definitions import XtcePacketDefinition
 
 
-def load_xml(filename: Union[str, Path]) -> XtcePacketDefinition:
+def load_xtce(filename: Union[str, Path]) -> XtcePacketDefinition:
     """Create an XtcePacketDefinition object from an XTCE XML file
 
     Parameters
