@@ -428,7 +428,8 @@ def ccsds_generator(
             _segmented_packets[ccsds_packet.apid] = [ccsds_packet]
             continue
         elif not _segmented_packets.get(ccsds_packet.apid, []):
-            warnings.warn("Continuation packet found without declaring the start, skipping this packet.")
+            warnings.warn("Continuation packet found without declaring the start, "
+                          f"skipping packet with apid {ccsds_packet.apid}.")
             continue
         elif ccsds_packet.sequence_flags == SequenceFlags.CONTINUATION:
             _segmented_packets[ccsds_packet.apid].append(ccsds_packet)
