@@ -302,8 +302,10 @@ def ccsds_generator(
 ) -> Iterator[CCSDSPacketBytes]:
     """A generator that reads raw packet data from a filelike object or a socket.
 
-    Each iteration of the generator yields a ``RawPacketData`` object that makes up
-    a single CCSDS packet.
+    Each iteration of the generator yields a ``CCSDSPacketBytes`` object that makes up
+    a single CCSDS packet. If combining segmented packets is enabled, the generator will
+    combine segmented packets into a single packet for parsing. This is useful for parsing
+    packets that are split into multiple packets due to size constraints.
 
     Parameters
     ----------
