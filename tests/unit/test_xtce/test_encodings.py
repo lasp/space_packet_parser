@@ -131,6 +131,31 @@ def test_string_data_encoding(elmaker, xtce_parser, xml_string: str, expectation
 
 
 @pytest.mark.parametrize(
+    ("args", "kwargs", "expected_error", "expected_error_msg"),
+    [
+        ((), {"encoding": "bad"}, ValueError,
+         "Encoding must be one of"),
+        ((), {"encoding": "UTF-16"}, ValueError,
+         "Byte order must be specified for multi-byte character encodings."),
+        ((), {"byte_order": "invalid"}, ValueError,
+         "If specified, byte order must be one of"),
+        ((), {"termination_character": "FF", "leading_length_size": 8}, ValueError,
+         "Got both a termination character and a leading size"),
+        ((), {}, ValueError,
+         "Expected exactly one of dynamic length reference, discrete length lookup, or fixed length"),
+        ((), {"length_linear_adjuster": lambda x: x, "fixed_raw_length": 32}, ValueError,
+         "Got a length linear adjuster for a string whose length is not specified by a dynamic"),
+        ((), {"fixed_raw_length": 32, "termination_character": "0F0F"}, ValueError,
+         "Expected a hex string representation of a single character"),
+    ]
+)
+def test_string_data_encoding_validation(args, kwargs, expected_error, expected_error_msg):
+    """Test initialization errors for StringDataEncoding"""
+    with pytest.raises(expected_error, match=expected_error_msg):
+        encodings.StringDataEncoding(*args, **kwargs)
+
+
+@pytest.mark.parametrize(
     ('xml_string', 'expectation'),
     [
         (f"""
@@ -228,6 +253,19 @@ def test_integer_data_encoding(elmaker, xtce_parser, xml_string: str, expectatio
         result_string = ElementTree.tostring(result.to_xml(elmaker=elmaker), pretty_print=True).decode()
         full_circle = encodings.IntegerDataEncoding.from_xml(ElementTree.fromstring(result_string, parser=xtce_parser))
         assert full_circle == expectation
+
+
+@pytest.mark.parametrize(
+    ("args", "kwargs", "expected_error", "expected_error_msg"),
+    [
+        ((32, "invalid-encoding"), {}, ValueError, "Encoding must be one of"),
+        ((32, "unsigned"), {"byte_order": "noSignificantBitsAtAll!"}, ValueError, "Byte order must be one of"),
+    ]
+)
+def test_integer_data_encoding_validation(args, kwargs, expected_error, expected_error_msg):
+    """Test initialization errors for IntegerDataEncoding"""
+    with pytest.raises(expected_error, match=expected_error_msg):
+        encodings.IntegerDataEncoding(*args, **kwargs)
 
 
 @pytest.mark.parametrize(
@@ -335,6 +373,22 @@ def test_float_data_encoding(elmaker, xtce_parser, xml_string: str, expectation)
 
 
 @pytest.mark.parametrize(
+    ("args", "kwargs", "expected_error", "expected_error_msg"),
+    [
+        ((32,), {"encoding": "foo"}, ValueError, "Invalid encoding type"),
+        ((32,), {"encoding": "DEC"}, NotImplementedError, "Although the XTCE spec allows"),
+        ((16,), {"encoding": "MILSTD_1750A"}, ValueError, "MIL-1750A encoded floats must be 32 bits"),
+        ((8,), {"encoding": "IEEE754"}, ValueError, "Invalid size_in_bits value for IEEE754 FloatDataEncoding"),
+        ((8,), {"encoding": "IEEE754_1985"}, ValueError, "Invalid size_in_bits value for IEEE754 FloatDataEncoding"),
+    ]
+)
+def test_float_data_encoding_validation(args, kwargs, expected_error, expected_error_msg):
+    """Test initialization errors for FloatDataEncoding"""
+    with pytest.raises(expected_error, match=expected_error_msg):
+        encodings.FloatDataEncoding(*args, **kwargs)
+
+
+@pytest.mark.parametrize(
     ('xml_string', 'expectation'),
     [
         (f"""
@@ -392,3 +446,15 @@ def test_binary_data_encoding(elmaker, xtce_parser, xml_string: str, expectation
         result_string = ElementTree.tostring(result.to_xml(elmaker=elmaker), pretty_print=True).decode()
         full_circle = encodings.BinaryDataEncoding.from_xml(ElementTree.fromstring(result_string, parser=xtce_parser))
         assert full_circle == expectation
+
+
+@pytest.mark.parametrize(
+    ("args", "kwargs", "expected_error", "expected_error_msg"),
+    [
+        ((), {}, ValueError, "Binary data encoding initialized with no way to determine a size"),
+    ]
+)
+def test_binary_data_encoding_validation(args, kwargs, expected_error, expected_error_msg):
+    """Test initialization errors for BinaryDataEncoding"""
+    with pytest.raises(expected_error, match=expected_error_msg):
+        encodings.BinaryDataEncoding(*args, **kwargs)
