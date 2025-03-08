@@ -20,7 +20,7 @@ Release notes for the `space_packet_parser` library
   with the given header items and data. This is useful for creating
   mock packets in testing and experimentation for creating debugging
   streams as needed.
-- Add a ``ccsds_packet_generator()`` function that iterates through raw
+- Add a ``ccsds_generator()`` function that iterates through raw
   bytes and yields individual CCSDS packets.
 - Add continuation packet support to the XTCE parsing and packet generation.
   This adds logic to concatenate packet data fields together across successive
@@ -28,7 +28,7 @@ Release notes for the `space_packet_parser` library
   was logically better to split by other teams).
   - Add warnings if packets are out of sequence within a given apid.
   - Add ability to remove secondary header bytes from subsequent packets.
-    ``definition.packet_generator(data, combine_segmented_packets=True, secondary_header_bytes=4)``
+    ``ccsds_generator(data, combine_segmented_packets=True, secondary_header_bytes=4)``
 - Add a command line interface (spp) to enable quick and easy access to
   some common tasks and utilities.
 - Add function to directly create an `xarray.DataSet` from a packet file and XTCE definition.
