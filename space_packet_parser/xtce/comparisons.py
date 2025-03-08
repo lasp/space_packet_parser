@@ -6,7 +6,8 @@ from typing import Any, Optional, Union
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
 
-from space_packet_parser import common, packets
+import space_packet_parser as spp
+from space_packet_parser import common
 from space_packet_parser.exceptions import ComparisonError
 
 
@@ -31,13 +32,13 @@ class MatchCriteria(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
 
     @abstractmethod
     def evaluate(self,
-                 packet: packets.Packet,
+                 packet: spp.Packet,
                  current_parsed_value: Optional[Union[int, float]] = None) -> bool:
         """Evaluate match criteria down to a boolean.
 
         Parameters
         ----------
-        packet : packets.Packet
+        packet : space_packet_parser.Packet
             Packet data used to evaluate truthyness of the match criteria.
         current_parsed_value : any, Optional
             Uncalibrated value that is currently being matched (e.g. as a candidate for calibration).
@@ -158,14 +159,14 @@ class Comparison(MatchCriteria):
         )
 
     def evaluate(self,
-                 packet: packets.Packet,
+                 packet: spp.Packet,
                  current_parsed_value: Optional[Union[int, float]] = None) -> bool:
         """Evaluate comparison down to a boolean. If the parameter to compare is not present in the parsed_data dict,
         we assume that we are comparing against the current raw value in current_parsed_value.
 
         Parameters
         ----------
-        packet : packets.Packet
+        packet : space_packet_parser.Packet
             Packet data used to evaluate truthyness of the match criteria.
         current_parsed_value : Union[int, float]
             Optional. Uncalibrated value that is currently a candidate for calibration and so has not yet been added
@@ -364,13 +365,13 @@ class Condition(MatchCriteria):
         return condition
 
     def evaluate(self,
-                 packet: packets.Packet,
+                 packet: spp.Packet,
                  current_parsed_value: Optional[Union[int, float]] = None) -> bool:
         """Evaluate match criteria down to a boolean.
 
         Parameters
         ----------
-        packet : packets.Packet
+        packet : space_packet_parser.Packet
             Packet data used to evaluate truthyness of the match criteria.
         current_parsed_value : Optional[Union[int, float]]
             Ignored.
@@ -496,13 +497,13 @@ class BooleanExpression(MatchCriteria):
         raise ValueError(f"Failed to parse {element}")
 
     def evaluate(self,
-                 packet: packets.Packet,
+                 packet: spp.Packet,
                  current_parsed_value: Optional[Union[int, float]] = None) -> bool:
         """Evaluate the criteria in the BooleanExpression down to a single boolean.
 
         Parameters
         ----------
-        packet : packets.Packet
+        packet : space_packet_parser.Packet
             Packet data used to evaluate truthyness of the match criteria.
         current_parsed_value : Optional[Union[int, float]]
             Ignored.
@@ -654,12 +655,12 @@ class DiscreteLookup(common.AttrComparable, common.XmlObject):
             value=str(self.lookup_value)
         )
 
-    def evaluate(self, packet: packets.Packet, current_parsed_value: Optional[Union[int, float]] = None) -> Any:
+    def evaluate(self, packet: spp.Packet, current_parsed_value: Optional[Union[int, float]] = None) -> Any:
         """Evaluate the lookup to determine if it is valid.
 
         Parameters
         ----------
-        packet : packets.Packet
+        packet : space_packet_parser.Packet
             Packet data used to evaluate truthyness of the match criteria.
         current_parsed_value: Optional[Union[int, float]]
             If referenced parameter in criterion isn't in the packet, we assume we are comparing against this

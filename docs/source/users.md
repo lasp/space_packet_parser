@@ -11,16 +11,58 @@ conda install -c lasp space_packet_parser
 ```
 
 ## Basic Usage
-Usage with XTCE packet definition:
+
+The typical workflow for parsing packets is to
+
+1. Load a packet definition
+
+    Packet definitions are the XTCE configuration documents that describe how to parse
+    and extract binary chunks of data into Python variables.
+
+   ```python
+   definition = spp.load_xtce("/path/to/xtce_definition.xml")
+   ```
+
+2. Iterate over binary data
+
+    You can load binary data from a file all at once, or continually read from a socket stream.
+    To parse individual packets, you can iterate over that binary data to yield individual
+    binary packet chunks one at a time. There is a built-in generator for CCSDS packets.
+    Other binary packet generators can be used as well if your packets follow a different
+    protocol from CCSDS.
+
+    ```python
+    for binary_packet in spp.ccsds_packet_generator("/path/to/packet_file.ccsds"):
+        # Print out each packet's header
+        print(binary_packet)
+    ```
+
+3. Parse the binary packet data into a dictionary of parsed items
+
+    With a definition (1) and a stream of individual packets (2), one can
+    then parse the contents of that binary data into Python objects. The packet
+    definition defines a lookup structure based on ``Parameter`` names,
+    which are returned as a python dictionary of `{ParameterName: value}` items.
+
+    ```python
+    packet = definition.parse_bytes(binary_packet)
+    # All items within the packet
+    print(packet)
+    # An individual item
+    print(packet["my_uint3_param"])
+    ```
+
+Putting this all together in an example script:
 
 ```python
 from pathlib import Path
 import space_packet_parser as spp
 
-packet_file = Path('my_packets.pkts')
 xtce_document = Path('my_xtce_document.xml')
 packet_definition = spp.load_xtce(xtce_document)
-packets = list(packet_definition.packet_generator(packet_file.open('rb')))
+with open("my_packets.pkts", "rb") as packet_file:
+    packet_generator = spp.ccsds_packet_generator(packet_file.open('rb'))
+    packets = [packet_definition.parse_bytes(ccsds_packet) for ccsds_packet in packet_generator]
 
 # You can introspect the packet definition to learn about what was parsed
 # Look up a type (includes unit and encoding info)

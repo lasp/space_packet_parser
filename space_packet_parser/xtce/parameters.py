@@ -5,7 +5,8 @@ from typing import Optional
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
 
-from space_packet_parser import common, packets
+import space_packet_parser as spp
+from space_packet_parser import common
 from space_packet_parser.xtce import parameter_types
 
 
@@ -29,7 +30,7 @@ class Parameter(common.Parseable, common.XmlObject):
     short_description: Optional[str] = None
     long_description: Optional[str] = None
 
-    def parse(self, packet: packets.Packet) -> None:
+    def parse(self, packet: spp.Packet) -> None:
         """Parse this parameter from the packet data.
 
         Parse the parameter and add it to the packet dictionary.
