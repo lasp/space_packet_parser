@@ -155,9 +155,9 @@ def create_dataset(
         packet_files = [packet_files]
 
     # Set up containers to store our data
-    # We are getting a packet file that may contain multiple apids
-    # Each apid is expected to contain consistent data fields, so we want to create a
-    # dataset per apid.
+    # We are getting a packet file that may contain multiple APIDs
+    # Each APID is expected to contain consistent data fields, so we want to create a
+    # dataset per APID.
     # {apid1: dataset1, apid2: dataset2, ...}
     data_dict: dict[int, dict] = {}
     # Also keep track of the datatype mapping for each field
@@ -167,37 +167,37 @@ def create_dataset(
 
     for packet_file in packet_files:
         with open(packet_file, "rb") as f:
-            packet_generator = list(xtce_packet_definition.packet_generator(f, **packet_generator_kwargs))
+            packet_generator = xtce_packet_definition.packet_generator(f, **packet_generator_kwargs)
 
-        for packet in packet_generator:
-            apid = packet.raw_data.apid
-            if apid not in data_dict:
-                # This is the first packet for this APID
-                data_dict[apid] = collections.defaultdict(list)
-                datatype_mapping[apid] = {}
-                variable_mapping[apid] = packet.keys()
+            for packet in packet_generator:
+                apid = packet.raw_data.apid
+                if apid not in data_dict:
+                    # This is the first packet for this APID
+                    data_dict[apid] = collections.defaultdict(list)
+                    datatype_mapping[apid] = {}
+                    variable_mapping[apid] = set(packet.keys())
 
-            if variable_mapping[apid] != packet.keys():
-                raise ValueError(
-                    f"Packet fields do not match for APID {apid}. This could be "
-                    f"due to a conditional (polymorphic) packet definition in the XTCE, while this "
-                    f"function currently only supports flat packet definitions."
-                    f"\nExpected: {variable_mapping[apid]},\ngot: {list(packet.keys())}"
-                )
-
-            for key, value in packet.items():
-                if use_raw_values:
-                    # Use the derived value if it exists, otherwise use the raw value
-                    val = value.raw_value
-                else:
-                    val = value
-
-                data_dict[apid][key].append(val)
-                if key not in datatype_mapping[apid]:
-                    # Add this datatype to the mapping
-                    datatype_mapping[apid][key] = _get_minimum_numpy_datatype(
-                        key, xtce_packet_definition, use_raw_value=use_raw_values
+                if variable_mapping[apid] != packet.keys():
+                    raise ValueError(
+                        f"Packet fields do not match for APID {apid}. This could be "
+                        f"due to a conditional (polymorphic) packet definition in the XTCE, while this "
+                        f"function currently only supports flat packet definitions."
+                        f"\nExpected: {variable_mapping[apid]},\ngot: {list(packet.keys())}"
                     )
+
+                for key, value in packet.items():
+                    if use_raw_values:
+                        # Use the derived value if it exists, otherwise use the raw value
+                        val = value.raw_value
+                    else:
+                        val = value
+
+                    data_dict[apid][key].append(val)
+                    if key not in datatype_mapping[apid]:
+                        # Add this datatype to the mapping
+                        datatype_mapping[apid][key] = _get_minimum_numpy_datatype(
+                            key, xtce_packet_definition, use_raw_value=use_raw_values
+                        )
 
     # Turn the dict into an xarray dataset
     dataset_by_apid = {}
