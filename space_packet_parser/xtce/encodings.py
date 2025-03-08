@@ -638,7 +638,50 @@ class NumericDataEncoding(DataEncoding, metaclass=ABCMeta):
 
 class IntegerDataEncoding(NumericDataEncoding):
     """<xtce:IntegerDataEncoding>"""
+    _encodings = ("unsigned", "signed", "twosCompliment", "twosComplement")
+    _byte_orders = ("leastSignificantByteFirst", "mostSignificantByteFirst")
     _data_return_class = common.IntParameter
+
+    def __init__(self,
+                 size_in_bits: int,
+                 encoding: str,
+                 *,
+                 byte_order: str = "mostSignificantByteFirst",
+                 default_calibrator: Optional[calibrators.Calibrator] = None,
+                 context_calibrators: Optional[list[calibrators.ContextCalibrator]] = None):
+        """Constructor
+
+        Parameters
+        ----------
+        size_in_bits : int
+            Size of the integer
+        encoding : str
+            String indicating the type of encoding for the integer. FSW seems to use primarily 'signed' and 'unsigned',
+            though 'signed' is not actually a valid specifier according to XTCE. 'twosCompliment' [sic] should be used
+            instead, though we support the unofficial 'signed' specifier here.
+            For supported specifiers, see XTCE spec 4.3.2.2.5.6.2
+        byte_order : str
+            Description of the byte order. Default is 'mostSignficantByteFirst' (big-endian).
+        default_calibrator : Optional[Calibrator]
+            Optional Calibrator object, containing information on how to transform the integer-encoded data, e.g. via
+            a polynomial conversion or spline interpolation.
+        context_calibrators : Optional[List[ContextCalibrator]]
+            List of ContextCalibrator objects, containing match criteria and corresponding calibrators to use in
+            various scenarios, based on other parameters.
+        """
+        if encoding not in self._encodings:
+            raise ValueError(f"Encoding must be one of {self._encodings}")
+
+        if byte_order not in self._byte_orders:
+            raise ValueError(f"Byte order must be one of {self._byte_orders}")
+
+        super().__init__(
+            size_in_bits,
+            encoding,
+            byte_order=byte_order,
+            default_calibrator=default_calibrator,
+            context_calibrators=context_calibrators
+        )
 
     def _get_raw_value(self, packet: packets.CCSDSPacket) -> int:
         # Extract the bits from the data in big-endian order from the packet
@@ -873,6 +916,11 @@ class BinaryDataEncoding(DataEncoding):
             Function that linearly adjusts a size. e.g. if the size reference parameter gives a length in bytes, the
             linear adjuster should multiply by 8 to give the size in bits.
         """
+        if not any([fixed_size_in_bits, size_reference_parameter, size_discrete_lookup_list]):
+            raise ValueError("Binary data encoding initialized with no way to determine a size. "
+                             "You must provide one of "
+                             "fixed_size_in_bits, size_reference_parameter, size_discrete_lookup_list.")
+
         self.fixed_size_in_bits = fixed_size_in_bits
         self.size_reference_parameter = size_reference_parameter
         self.use_calibrated_value = use_calibrated_value
@@ -895,7 +943,7 @@ class BinaryDataEncoding(DataEncoding):
                 len_bits = packet[field_length_reference]
             else:
                 len_bits = packet[field_length_reference].raw_value
-        elif self.size_discrete_lookup_list is not None:
+        else:  # self.size_discrete_lookup_list is not None:
             for discrete_lookup in self.size_discrete_lookup_list:
                 len_bits = discrete_lookup.evaluate(packet)
                 if len_bits is not None:
@@ -903,9 +951,6 @@ class BinaryDataEncoding(DataEncoding):
             else:
                 raise ValueError('List of discrete lookup values being used for determining length of '
                                  f'string {self} found no matches based on {packet}.')
-        else:
-            raise ValueError("Unable to parse BinaryDataEncoding. "
-                             "No fixed size, dynamic size, or dynamic lookup size were provided.")
 
         if self.linear_adjuster is not None:
             # NOTE: This is assumed to be an integer value, represented as a float. If the linear adjuster

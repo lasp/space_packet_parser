@@ -1,4 +1,6 @@
 """Tests for packets"""
+import socket
+
 import pytest
 
 from space_packet_parser import packets
@@ -112,7 +114,7 @@ def test_ccsds_packet_data_lookups():
     assert packet.user_data == {x: x for x in range(7, 10)}
 
     with pytest.raises(KeyError):
-        packet[10]
+        _ = packet[10]
 
 
 def test_continuation_packets(test_data_dir):
@@ -204,3 +206,36 @@ def test__extract_bits(start, nbits):
     data = int(s, 2).to_bytes(2, byteorder="big")
 
     assert packets._extract_bits(data, start, nbits) == int(s[start:start + nbits], 2)
+
+
+def test_ccsds_generator(jpss_test_data_dir):
+    """Test ccsds_generator"""
+    test_data_file = jpss_test_data_dir / "J01_G011_LZ_2021-04-09T00-00-00Z_V01.DAT1"
+    test_packet = packets.create_ccsds_packet()  # defaults
+
+    # From file
+    with test_data_file.open('rb') as f:
+        assert next(packets.ccsds_generator(f))
+
+    # From socket
+    send, recv = socket.socketpair()
+    send.send(test_packet)
+    assert next(packets.ccsds_generator(recv))
+    send.close()
+    recv.close()
+
+    # From bytes
+    # This covers show_progress conditional code and also the end of the iterator
+    gen_from_bytes = packets.ccsds_generator(test_packet, show_progress=True)
+    assert next(gen_from_bytes)
+    with pytest.raises(StopIteration):
+        next(gen_from_bytes)
+
+    # From Text file (error)
+    with test_data_file.open('rt') as f:
+        with pytest.raises(OSError, match="Packet data file opened in TextIO mode"):
+            next(packets.ccsds_generator(f))
+
+    # Unrecognized source (error)
+    with pytest.raises(OSError, match="Unrecognized data source"):
+        next(packets.ccsds_generator(1))

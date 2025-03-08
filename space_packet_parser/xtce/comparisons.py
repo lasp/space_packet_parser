@@ -1,5 +1,4 @@
 """Matching logical objects"""
-import warnings
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from typing import Any, Optional, Union
@@ -55,8 +54,13 @@ class MatchCriteria(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
 class Comparison(MatchCriteria):
     """<xtce:Comparison>"""
 
-    def __init__(self, required_value: str, referenced_parameter: str,
-                 operator: str = "==", use_calibrated_value: bool = True):
+    def __init__(
+            self,
+            required_value: str,
+            referenced_parameter: str,
+            operator: str = "==",
+            use_calibrated_value: bool = True
+    ):
         """Constructor
 
         Parameters
@@ -176,18 +180,11 @@ class Comparison(MatchCriteria):
         if self.referenced_parameter in packet:
             if self.use_calibrated_value:
                 parsed_value = packet[self.referenced_parameter]
-                if not parsed_value:
-                    raise ComparisonError(f"Comparison {self} was instructed to useCalibratedValue (the default)"
-                                          f"but {self.referenced_parameter} does not appear to have a derived value.")
             else:
                 parsed_value = packet[self.referenced_parameter].raw_value
         elif current_parsed_value is not None:
             # Assume then that the comparison is a reference to its own uncalibrated value
             parsed_value = current_parsed_value
-            if self.use_calibrated_value:
-                warnings.warn("Performing a comparison against a current value (e.g. a Comparison within a "
-                              "context calibrator contains a reference to its own uncalibrated value but use_"
-                              "calibrated_value is set to true. This is nonsensical. Using the uncalibrated value...")
         else:
             raise ValueError("Attempting to resolve a Comparison expression but the referenced parameter does not "
                              "appear in the parsed data so far and no current raw value was passed "
@@ -200,9 +197,6 @@ class Comparison(MatchCriteria):
         except ValueError as err:
             raise ComparisonError(f"Unable to coerce {self.required_value} of type {type(self.required_value)} to "
                                   f"type {t_comparate} for comparison evaluation.") from err
-        if required_value is None or parsed_value is None:
-            raise ValueError(f"Error in Comparison. Cannot compare {required_value} with {parsed_value}. "
-                             "Neither should be None.")
 
         # x.__le__(y) style call
         return getattr(parsed_value, operator)(required_value)
@@ -379,7 +373,7 @@ class Condition(MatchCriteria):
         packet : packets.CCSDSPacket
             Packet data used to evaluate truthyness of the match criteria.
         current_parsed_value : Optional[Union[int, float]]
-            Current value being parsed. NOTE: This is currently ignored. See the TODO item below.
+            Ignored.
 
         Returns
         -------
@@ -389,21 +383,8 @@ class Condition(MatchCriteria):
 
         def _get_parsed_value(parameter_name: str, use_calibrated: bool):
             """Retrieves the previously parsed value from the passed in packet"""
-            try:
-                return packet[parameter_name] if use_calibrated \
-                    else packet[parameter_name].raw_value
-            except KeyError as e:
-                raise ComparisonError(f"Attempting to perform a Condition evaluation on {self.left_param} but "
-                                      "the referenced parameter does not appear in the hitherto parsed data passed to "
-                                      "the evaluate method. If you intended a comparison against the raw value of the "
-                                      "parameter currently being parsed, unfortunately that is not currently supported."
-                                      ) from e
+            return packet[parameter_name] if use_calibrated else packet[parameter_name].raw_value
 
-        # TODO: Consider allowing one of the parameters to be the parameter currently being evaluated.
-        #    This isn't explicitly provided for in the XTCE spec but it seems reasonable to be able to
-        #    perform conditionals against the current raw value of a parameter, e.g. while determining if it
-        #    should be calibrated. Note that only one of the parameters can be used this way and it must reference
-        #    an uncalibrated value so the logic and error handling must be done carefully.
         left_value = _get_parsed_value(self.left_param, self.left_use_calibrated_value)
         # Convert XML operator representation to a python-compatible operator (e.g. '&gt;' to '__gt__')
         operator = self._valid_operators[self.operator]
@@ -415,8 +396,6 @@ class Condition(MatchCriteria):
             right_value = t_left_param(self.right_value)
         else:
             raise ValueError(f"Error when evaluating condition {self}. Neither right_param nor right_value is set.")
-        if left_value is None or right_value is None:
-            raise ComparisonError(f"Error comparing {left_value} and {right_value}. Neither should be None.")
 
         # x.__le__(y) style call
         return getattr(left_value, operator)(right_value)
@@ -526,7 +505,7 @@ class BooleanExpression(MatchCriteria):
         packet : packets.CCSDSPacket
             Packet data used to evaluate truthyness of the match criteria.
         current_parsed_value : Optional[Union[int, float]]
-            Current value being parsed.
+            Ignored.
 
         Returns
         -------
