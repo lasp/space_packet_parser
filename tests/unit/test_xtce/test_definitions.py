@@ -520,7 +520,7 @@ def test_parse_methods(test_data_dir):
                                                     apid=11,
                                                     sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED)
 
-    # Full packet object with a RawPacketData reader
+    # Full packet object with read methods attached
     empty_packet = spp.Packet(binary_data=empty_packet_data)
     packet = xdef.parse_packet(empty_packet)
     # With a CCSDSPacketBytes object

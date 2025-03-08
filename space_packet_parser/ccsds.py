@@ -1,8 +1,8 @@
-"""Packet containers and parsing utilities for space packets.
+"""Parsing utilities for CCSDS packets.
 
 The parsing begins with binary data representing CCSDS Packets. A user can then create a generator
 from the binary data reading from a filelike object or a socket. The ``ccsds_generator`` function yields
-``RawPacketData`` objects that are the raw bytes of a single CCSDS packet. The ``RawPacketData``
+``CCSDSPacketBytes`` objects that are the raw binary data of a single CCSDS packet. The ``CCSDSPacketBytes``
 class can be used to inspect the CCSDS header fields of the packet, but it does not have any
 parsed content from the data field. This generator is useful for debugging and passing off
 to other parsing functions.
@@ -254,7 +254,7 @@ def ccsds_generator(
     header_length_bytes = CCSDSPacketBytes.HEADER_LENGTH_BYTES
     # Used to keep track of any continuation packets that we encounter
     # gathering them all up before combining them into a single packet, lookup is by APID.
-    # _segmented_packets[APID] = [RawPacketData, ...]
+    # _segmented_packets[APID] = [CCSDSPacketBytes, ...]
     _segmented_packets = {}
 
     # ========
@@ -335,7 +335,7 @@ def ccsds_generator(
         # current_pos is still before the header, so we are reading the entire packet here
         packet_bytes = read_buffer[current_pos:current_pos + n_bytes_packet]
         current_pos += n_bytes_packet
-        # Wrap the bytes in a RawPacketData object that adds convenience methods for parsing the header
+        # Wrap the bytes in an object that adds convenience methods for parsing the header
         ccsds_packet = CCSDSPacketBytes(packet_bytes)
 
         if not combine_segmented_packets or ccsds_packet.sequence_flags == SequenceFlags.UNSEGMENTED:
