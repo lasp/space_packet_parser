@@ -1,12 +1,11 @@
 """Common mixins"""
 import inspect
+import warnings
 from abc import ABCMeta, abstractmethod
 from typing import Optional, Protocol, Union
 
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
-
-from space_packet_parser import packets
 
 
 class NamespaceAwareElement(ElementTree.ElementBase):
@@ -193,7 +192,7 @@ class XmlObject(metaclass=ABCMeta):
 
 class Parseable(Protocol):
     """Defines an object that can be parsed from packet data."""
-    def parse(self, packet: packets.Packet) -> None:
+    def parse(self, packet: "Packet") -> None:
         """Parse this entry from the packet data and add the necessary items to the packet."""
 
 
@@ -247,3 +246,144 @@ class StrParameter(_Parameter, str):
 
 
 ParameterDataTypes = Union[BinaryParameter, BoolParameter, FloatParameter, IntParameter, StrParameter]
+
+
+class Packet(dict):
+    """Packet representing parsed data items.
+
+    Container that stores the binary packet data (bytes) as an instance attribute and the parsed
+    data items in a dictionary interface. A ``Packet`` generally begins as an empty dictionary that gets
+    filled as the packet is parsed. To access the raw bytes of the packet, use the ``Packet.binary_data`` attribute.
+
+    Parameters
+    ----------
+    *args : Mapping or Iterable
+        Initial items to store in the packet, passed to the dict() constructor.
+    binary_data : bytes, optional
+        The binary data for a single packet as a bytes object / subclass. This binary data is stored
+        and used for parsing the data items. Internally we are tracking the parsing position within
+        this binary_data object and trying to read specific bit ranges from it.
+    **kwargs : dict
+        Additional packet items to store, passed to the dict() constructor.
+    """
+    def __init__(self, *args, binary_data: bytes = b"", **kwargs):
+        if "raw_data" in kwargs:
+            warnings.warn("The 'raw_data' keyword argument is deprecated and will be removed in a future release. "
+                          "Use 'binary_data' instead.", DeprecationWarning, stacklevel=2)
+            binary_data = kwargs.pop("raw_data")
+        self.binary_data = binary_data
+        self._parsing_pos = 0
+        super().__init__(*args, **kwargs)
+
+    @property
+    def header(self) -> dict:
+        """The header content of the packet."""
+        warnings.warn("The header property is deprecated and will be removed in a future release. "
+                      "To access the header fields of a CCSDS packet, use the CCSDSPacketBytes class.",
+                      DeprecationWarning, stacklevel=2)
+        return dict(list(self.items())[:7])
+
+    @property
+    def user_data(self) -> dict:
+        """The user data content of the packet."""
+        warnings.warn("The user_data property is deprecated and will be removed in a future release. "
+                      "To access the user_data fields of a CCSDS packet, use the CCSDSPacketBytes class.",
+                      DeprecationWarning, stacklevel=2)
+        return dict(list(self.items())[7:])
+
+    @property
+    def raw_data(self) -> bytes:
+        """The raw binary data of the packet."""
+        warnings.warn("The raw_data property is deprecated and will be removed in a future release. "
+                      "Use the binary_data property instead.", DeprecationWarning, stacklevel=2)
+        return self.binary_data
+
+    def _read_from_binary_as_bytes(self, nbits: int) -> bytes:
+        """Read a number of bits from the binary packet data as bytes.
+
+        Reads the minimum number of complete bytes required to
+        capture `nbits`. Moves `_parsing_pos` cursor `nbits` forward, even if `nbits` is not an integer number of bytes.
+
+        Parameters
+        ----------
+        nbits : int
+            Number of bits to read
+
+        Returns
+        -------
+        : bytes
+            Raw bytes from the packet data
+        """
+        if self._parsing_pos + nbits > len(self.binary_data) * 8:
+            raise ValueError("Tried to read beyond the end of the packet data. "
+                             f"Tried to read {nbits} bits from position {self._parsing_pos} "
+                             f"in a packet of length {len(self.binary_data) * 8} bits.")
+        if self._parsing_pos % 8 == 0 and nbits % 8 == 0:
+            # If the read is byte-aligned, we can just return the bytes directly
+            data = self.binary_data[self._parsing_pos//8:self._parsing_pos//8 + (nbits+7) // 8]
+            self._parsing_pos += nbits
+            return data
+        # We are non-byte aligned, so we need to extract the bits and convert to bytes
+        bytes_as_int = _extract_bits(self.binary_data, self._parsing_pos, nbits)
+        self._parsing_pos += nbits
+        return int.to_bytes(bytes_as_int, (nbits + 7) // 8, "big")
+
+    def _read_from_binary_as_int(self, nbits: int) -> int:
+        """Read a number of bits from the binary packet data as an integer.
+
+        Parameters
+        ----------
+        nbits : int
+            Number of bits to read
+
+        Returns
+        -------
+        : int
+            Integer representation of the bits read from the packet
+        """
+        if self._parsing_pos + nbits > len(self.binary_data) * 8:
+            raise ValueError("Tried to read beyond the end of the packet data. "
+                             f"Tried to read {nbits} bits from position {self._parsing_pos} "
+                             f"in a packet of length {len(self.binary_data) * 8} bits.")
+        int_data = _extract_bits(self.binary_data, self._parsing_pos, nbits)
+        self._parsing_pos += nbits
+        return int_data
+
+
+
+def _extract_bits(data: bytes, start_bit: int, nbits: int):
+    """Extract nbits from the data starting from the least significant end.
+
+    If data = 00110101 11001010, start_bit = 2, nbits = 9, then the bits extracted are "110101110".
+    Those bits are turned into a Python integer and returned.
+
+    Parameters
+    ----------
+    data : bytes
+        Data to extract bits from
+    start_bit : int
+        Starting bit location within the data
+    nbits : int
+        Number of bits to extract
+
+    Returns
+    -------
+    int
+        Extracted bits as an integer
+    """
+    # Get the bits from the packet data
+    # Select the bytes that contain the bits we want.
+    start_byte = start_bit // 8  # Byte index containing the start_bit
+    start_bit_within_byte = start_bit % 8  # Bit index within the start_byte
+    end_byte = start_byte + (start_bit_within_byte + nbits + 7) // 8
+    data = data[start_byte:end_byte]  # Chunk of bytes containing the data item we want to parse
+    # Convert the bytes to an integer for bitwise operations
+    value = int.from_bytes(data, byteorder="big")
+    if start_bit_within_byte == 0 and nbits % 8 == 0:
+        # If we're extracting whole bytes starting at a byte boundary, we don't need any bitshifting
+        # This is faster, especially for large binary chunks
+        return value
+
+    # Shift the value to the right to move the LSB of the data item we want to parse
+    # to the least significant position, then mask out the number of bits we want to keep
+    return (value >> (len(data) * 8 - start_bit_within_byte - nbits)) & (2 ** nbits - 1)

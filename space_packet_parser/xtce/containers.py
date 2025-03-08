@@ -5,7 +5,8 @@ from typing import Optional, Union
 from lxml import etree as ElementTree
 from lxml.builder import ElementMaker
 
-from space_packet_parser import common, packets
+import space_packet_parser as spp
+from space_packet_parser import common
 from space_packet_parser.exceptions import ElementNotFoundError
 from space_packet_parser.xtce import comparisons, parameter_types, parameters
 
@@ -47,7 +48,7 @@ class SequenceContainer(common.Parseable, common.XmlObject):
         self.restriction_criteria = self.restriction_criteria or []
         self.inheritors = self.inheritors or []
 
-    def parse(self, packet: packets.Packet) -> None:
+    def parse(self, packet: spp.Packet) -> None:
         """Parse the entry list of parameters/containers in the order they are expected in the packet.
 
         This could be recursive if the entry list contains SequenceContainers.

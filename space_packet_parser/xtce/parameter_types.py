@@ -6,7 +6,8 @@ from typing import Optional, Union
 from lxml import etree as ElementTree
 from lxml.builder import ElementMaker
 
-from space_packet_parser import common, packets
+import space_packet_parser as spp
+from space_packet_parser import common
 from space_packet_parser.xtce import calibrators, encodings
 
 
@@ -154,7 +155,7 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         raise ValueError(f"No Data Encoding element found for Parameter Type "
                          f"{parameter_type_element.tag}: {parameter_type_element.attrib}")
 
-    def parse_value(self, packet: packets.Packet) -> common.ParameterDataTypes:
+    def parse_value(self, packet: spp.Packet) -> common.ParameterDataTypes:
         """Using the parameter type definition and associated data encoding, parse a value from a bit stream starting
         at the current cursor position.
 
@@ -346,7 +347,7 @@ class EnumeratedParameterType(ParameterType):
                          "Supported encodings for enums are FloatDataEncoding, IntegerDataEncoding, "
                          "and StringDataEncoding.")
 
-    def parse_value(self, packet: packets.Packet) -> common.StrParameter:
+    def parse_value(self, packet: spp.Packet) -> common.StrParameter:
         """Using the parameter type definition and associated data encoding, parse a value from a bit stream starting
         at the current cursor position.
 
@@ -407,7 +408,7 @@ class BooleanParameterType(ParameterType):
                           f"encoded booleans is not specified in XTCE. e.g. is the string \"0\" truthy?")
         super().__init__(name, encoding, unit)
 
-    def parse_value(self, packet: packets.Packet):
+    def parse_value(self, packet: spp.Packet):
         """Using the parameter type definition and associated data encoding, parse a value from a bit stream starting
         at the current cursor position.
 

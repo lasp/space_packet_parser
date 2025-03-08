@@ -4,7 +4,7 @@ The packet definition used here is intended for IDEX, which is basically a rebui
 The data used here is SUDA data but the fields are parsed using IDEX naming conventions.
 """
 # Local
-from space_packet_parser import packets
+import space_packet_parser as spp
 from space_packet_parser.xtce import definitions
 
 
@@ -54,11 +54,10 @@ def test_suda_xtce_packet_parsing(suda_test_data_dir):
                                                                  skip_header_bytes=4,
                                                                  show_progress=True)
         for suda_packet in suda_packet_generator:
-            assert isinstance(suda_packet, packets.Packet)
+            assert isinstance(suda_packet, spp.Packet)
             assert suda_packet['PKT_APID'] == 1425, "APID is not as expected."
             assert suda_packet['VERSION'] == 0, "CCSDS header VERSION incorrect."
 
-        suda_binary_data.pos = 0
         suda_packet_generator = suda_definition.packet_generator(suda_binary_data,
                                                                  skip_header_bytes=4)
 
