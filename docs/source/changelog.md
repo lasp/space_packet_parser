@@ -22,7 +22,7 @@ Release notes for the `space_packet_parser` library
   streams as needed.
 - Add a ``ccsds_generator()`` function that iterates through raw
   bytes and yields individual CCSDS packets.
-- Add continuation packet support to the XTCE parsing and packet generation.
+- Add continuation packet support to the ccsds packet generation.
   This adds logic to concatenate packet data fields together across successive
   packets (if there was too much data to fit in a single CCSDS packet or it
   was logically better to split by other teams).
