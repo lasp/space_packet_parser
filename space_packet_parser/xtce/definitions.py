@@ -478,8 +478,6 @@ class XtcePacketDefinition(common.AttrComparable):
             parse_bad_pkts: bool = True,
             root_container_name: Optional[str] = None,
             ccsds_headers_only: bool = False,
-            combine_segmented_packets: bool = False,
-            secondary_header_bytes: int = 0,
             yield_unrecognized_packet_errors: bool = False,
             show_progress: bool = False,
             buffer_read_size_bytes: Optional[int] = None,
@@ -507,15 +505,6 @@ class XtcePacketDefinition(common.AttrComparable):
             Default False. If True, only parses the packet headers (does not use the provided packet definition).
             ``space_packet_parser.ccsds.ccsds_packet_generator`` can be used directly to parse only the CCSDS headers
             without needing a packet definition.
-        combine_segmented_packets : bool
-            Default False. If True, combines segmented packets into a single packet for parsing. This is useful for
-            parsing packets that are split into multiple packets due to size constraints. The packet data is combined
-            by concatenating the data from each packet together. The combined packet is then parsed as a single packet.
-        secondary_header_bytes : int
-            Default 0. The length of the secondary header in bytes.
-            This is used to skip the secondary header of segmented packets.
-            The byte layout within the returned packet has all data concatenated together as follows:
-            [packet0header, packet0secondaryheader, packet0data, packet1data, packet2data, ...].
         yield_unrecognized_packet_errors : bool
             Default False.
             If False, UnrecognizedPacketTypeErrors are caught silently and parsing continues to the next packet.
@@ -547,9 +536,7 @@ class XtcePacketDefinition(common.AttrComparable):
         for raw_packet_data in ccsds.ccsds_generator(binary_data,
                                                      buffer_read_size_bytes=buffer_read_size_bytes,
                                                      show_progress=show_progress,
-                                                     skip_header_bytes=skip_header_bytes,
-                                                     combine_segmented_packets=combine_segmented_packets,
-                                                     secondary_header_bytes=secondary_header_bytes):
+                                                     skip_header_bytes=skip_header_bytes):
             if ccsds_headers_only:
                 yield raw_packet_data
                 continue

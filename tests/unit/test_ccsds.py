@@ -95,7 +95,8 @@ def test_continuation_packets(test_data_dir):
     p1 = ccsds.create_ccsds_packet(
         data=b"0"*1, apid=11, sequence_flags=ccsds.SequenceFlags.LAST, sequence_count=1)
     raw_bytes = p0 + p1
-    result_packets = list(d.packet_generator(raw_bytes, combine_segmented_packets=True))
+    result_packets = [d.parse_bytes(packet)
+                      for packet in ccsds.ccsds_generator(raw_bytes, combine_segmented_packets=True)]
     remove_keys(result_packets[0])
     assert result_packets == orig_packets
 
@@ -107,7 +108,8 @@ def test_continuation_packets(test_data_dir):
     p2 = ccsds.create_ccsds_packet(
         data=b"0"*1, apid=11, sequence_flags=ccsds.SequenceFlags.LAST, sequence_count=0)
     raw_bytes = p0 + p1 + p2
-    result_packets = list(d.packet_generator(raw_bytes, combine_segmented_packets=True))
+    result_packets = [d.parse_bytes(packet)
+                      for packet in ccsds.ccsds_generator(raw_bytes, combine_segmented_packets=True)]
     remove_keys(result_packets[0])
     assert result_packets == orig_packets
 
@@ -121,7 +123,10 @@ def test_continuation_packets(test_data_dir):
     p2 = ccsds.create_ccsds_packet(
         data=b"1"*4 + b"0"*1, apid=11, sequence_flags=ccsds.SequenceFlags.LAST, sequence_count=0)
     raw_bytes = p0 + p1 + p2
-    result_packets = list(d.packet_generator(raw_bytes, combine_segmented_packets=True, secondary_header_bytes=4))
+    result_packets = [d.parse_bytes(packet)
+                      for packet in ccsds.ccsds_generator(raw_bytes,
+                                                          combine_segmented_packets=True,
+                                                          secondary_header_bytes=4)]
     remove_keys(result_packets[0])
     assert result_packets == orig_packets
 
@@ -137,9 +142,9 @@ def test_continuation_packet_warnings(test_data_dir):
         data=b"0"*65, apid=11, sequence_flags=ccsds.SequenceFlags.LAST)
     raw_bytes = p0 + p1
     with pytest.warns(match="Continuation packet found without declaring the start"):
-        list(d.packet_generator(raw_bytes, combine_segmented_packets=True))
         # Nothing expected to be returned
-        assert len(list(d.packet_generator(raw_bytes, combine_segmented_packets=True))) == 0
+        assert len([d.parse_bytes(packet)
+                      for packet in ccsds.ccsds_generator(raw_bytes, combine_segmented_packets=True)]) == 0
 
     # Out of sequence packets
     p0 = ccsds.create_ccsds_packet(
@@ -150,4 +155,5 @@ def test_continuation_packet_warnings(test_data_dir):
 
     with pytest.warns(match="not in sequence"):
         # Nothing expected to be returned
-        assert len(list(d.packet_generator(raw_bytes, combine_segmented_packets=True))) == 0
+        assert len([d.parse_bytes(packet)
+                      for packet in ccsds.ccsds_generator(raw_bytes, combine_segmented_packets=True)]) == 0
