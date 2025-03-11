@@ -17,7 +17,7 @@ from space_packet_parser.xtce import definitions, encodings, parameter_types
 
 
 def _min_dtype_for_encoding(data_encoding: encodings.DataEncoding):
-    """Find the minimum data type capaable of representing an XTCE data encoding.
+    """Find the minimum data type capable of representing an XTCE data encoding.
 
     This only works for raw values and does not apply to calibrated or otherwise derived values.
 
@@ -91,6 +91,10 @@ def _get_minimum_numpy_datatype(
         # If we are using raw values, we can determine the minimal dtype from the parameter data encoding
         return _min_dtype_for_encoding(data_encoding)
 
+    if isinstance(parameter_type, parameter_types.EnumeratedParameterType):
+        # Enums are always strings in their derived state
+        return "str"
+
     if isinstance(data_encoding, encodings.NumericDataEncoding):
         if not (data_encoding.context_calibrators is not None or data_encoding.default_calibrator is not None):
             # If there are no calibrators attached to the encoding, then we can proceed as if we're using
@@ -102,10 +106,6 @@ def _get_minimum_numpy_datatype(
 
     if isinstance(data_encoding, encodings.BinaryDataEncoding):
         return "bytes"
-
-    if isinstance(parameter_type, parameter_types.EnumeratedParameterType):
-        # Enums are always strings in their derived state
-        return "str"
 
     if isinstance(data_encoding, encodings.StringDataEncoding):
         return "str"

@@ -423,7 +423,7 @@ class XtcePacketDefinition(common.AttrComparable):
 
     def packet_generator(
             self,
-            binary_data: Union[BinaryIO, socket.socket],
+            binary_data: Union[BinaryIO, socket.socket, bytes],
             *,
             parse_bad_pkts: bool = True,
             root_container_name: Optional[str] = None,
