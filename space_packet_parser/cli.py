@@ -43,7 +43,17 @@ DISPLAY_HEADER_FIELDS = ("VER", "TYPE", "SHFLG", "APID", "SEQFLG", "SEQCNT", "PK
 def spp(verbose, quiet, log_level):
     """Command line utility for working with CCSDS packets."""
     # Set logging level
-    loglevel = logging.getLevelNamesMapping()[log_level]
+    # Map log level names to numeric values for Python versions < 3.11
+    # TODO: Change this to logging.getLevelNamesMapping() when we support only 3.11+
+    level_mapping = {
+        "CRITICAL": logging.CRITICAL,
+        "ERROR": logging.ERROR,
+        "WARNING": logging.WARNING,
+        "INFO": logging.INFO,
+        "DEBUG": logging.DEBUG,
+        "NOTSET": logging.NOTSET,
+    }
+    loglevel = level_mapping.get(log_level.upper(), logging.INFO)
     if verbose:
         loglevel = logging.DEBUG
     elif quiet:
