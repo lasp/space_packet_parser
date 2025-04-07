@@ -4,7 +4,7 @@ ci:
   skip: [no-commit-to-branch]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
     - id: check-added-large-files
       args: ['--maxkb=1000']
@@ -16,13 +16,13 @@ repos:
     - id: no-commit-to-branch
       args: [--branch, main, --branch, dev]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.9.8'
+    rev: 'v0.11.4'
     hooks:
     - id: ruff
       args: [--fix]
     # - id: ruff-format
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
+    rev: v2.4.1
     hooks:
       - id: codespell
         files: ^.*\.(py|md|rst|yml)$
