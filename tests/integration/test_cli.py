@@ -62,3 +62,12 @@ def test_parse_suda(suda_test_data_dir):
     result = runner.invoke(cli.parse, [packet_file, definition_file, "--skip-header-bytes=4"])
     print(result.output)
     assert result.exit_code == 0
+
+
+def test_log_level():
+    # Failed on Python < 3.11 due to bad setting of log level
+    runner = CliRunner()
+    print()
+    result = runner.invoke(cli.spp, ["describe-packets", "--help"])
+    print(result.output)
+    assert result.exit_code == 0
