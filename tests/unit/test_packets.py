@@ -179,8 +179,7 @@ def test_continuation_packet_warnings(test_data_dir):
         data=b"0"*65, apid=11, sequence_flags=packets.SequenceFlags.LAST)
     raw_bytes = p0 + p1
     with pytest.warns(match="Continuation packet found without declaring the start"):
-        list(d.packet_generator(raw_bytes, combine_segmented_packets=True))
-        # Nothing expected to be returned
+        # Expect a warning issued but nothing expected to be returned since we don't have a starting packet
         assert len(list(d.packet_generator(raw_bytes, combine_segmented_packets=True))) == 0
 
     # Out of sequence packets
