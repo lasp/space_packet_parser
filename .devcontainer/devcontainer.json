@@ -53,5 +53,8 @@
     "CLAUDE_CONFIG_DIR": "/home/sppdev/.claude",
     "POWERLEVEL9K_DISABLE_GITSTATUS": "true"
   },
-  "postCreateCommand": "poetry install && pre-commit install && pre-commit install-hooks && sudo /usr/local/bin/init-firewall.sh"
+  "mounts": [
+    "source=${localEnv:HOME}/.gitconfig,target=/home/sppdev/.gitconfig,type=bind,consistency=cached"
+  ],
+  "postCreateCommand": "poetry install && pre-commit install && pre-commit install-hooks && .devcontainer/setup-git-signing.sh && sudo /usr/local/bin/init-firewall.sh"
 }
