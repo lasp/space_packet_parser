@@ -83,6 +83,11 @@ USER root
 RUN chmod +x /usr/local/bin/init-firewall.sh && \
   echo "$USERNAME ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/node-firewall && \
   chmod 0440 /etc/sudoers.d/node-firewall
+
+# Copy and set up dev environment script
+COPY setup-dev-environment.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/setup-dev-environment.sh
+
 USER $USERNAME
 
 # Copy CLAUDE.md and settings to Claude config directory
