@@ -26,6 +26,7 @@
         "anthropic.claude-code"
       ],
       "settings": {
+        "dev.containers.copyGitConfig": true,
         "python.terminal.activateEnvironment": true,
         "python.linting.enabled": true,
         "python.linting.ruffEnabled": true,
@@ -51,10 +52,10 @@
   "remoteEnv": {
     "NODE_OPTIONS": "--max-old-space-size=4096",
     "CLAUDE_CONFIG_DIR": "/home/sppdev/.claude",
-    "POWERLEVEL9K_DISABLE_GITSTATUS": "true"
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
+    "COMMIT_GPGSIGN": "true",
+    "TAG_GPGSIGN": "true"
   },
-  "mounts": [
-    "source=${localEnv:HOME}/.gitconfig,target=/home/sppdev/.gitconfig,type=bind,consistency=cached"
-  ],
-  "postCreateCommand": "poetry install && pre-commit install && pre-commit install-hooks && .devcontainer/setup-git-signing.sh && sudo /usr/local/bin/init-firewall.sh"
+  "postCreateCommand": "sudo /usr/local/bin/init-firewall.sh",
+  "postAttachCommand": "/usr/local/bin/setup-dev-environment.sh"
 }
