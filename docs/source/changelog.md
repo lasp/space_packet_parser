@@ -11,6 +11,7 @@ Release notes for the `space_packet_parser` library
 - *BREAKING*: Reorganization of the project into different submodules for more explicit handling
   of imports. There is now an `space_packet_parser.xtce` module with xtce representations separated
   into modules underneath that.
+- Add `spp.create_packet_list` function to directly create a list from packet files and a definition.
 - Add support for creating a packet definition from Python objects and serializing it as XML.
 - BUGFIX: Fix kbps calculation in packet generator for showing progress.
 - Add support for string and float encoded enumerated lookup parameters.
