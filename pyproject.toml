@@ -1,6 +1,6 @@
 [project]
 name = "space_packet_parser"
-version = "6.0.0rc2"
+version = "6.0.0rc3"
 description = "A CCSDS telemetry packet decoding library based on the XTCE packet format description standard."
 license = { text = "BSD-3-Clause" }
 readme = "README.md"
@@ -61,7 +61,7 @@ spp = "space_packet_parser.cli:spp"
 [project.optional-dependencies]
 xarray = [
     "xarray>2024.0.0",
-    "numpy>=2.0.0"
+    "numpy>=1.20.0"
 ]
 examples = [
     "matplotlib>=3.4"
@@ -97,7 +97,7 @@ include = [
 
 [tool.poetry.group.xarray.dependencies]
 xarray = ">2024.0.0"
-numpy = ">=2.0.0"
+numpy = ">=1.20.0"
 
 [tool.poetry.group.examples.dependencies]
 matplotlib = ">=3.4"
