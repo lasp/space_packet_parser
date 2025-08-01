@@ -72,22 +72,15 @@ def test_raw_packet_attributes():
 
 def test_ccsds_packet_data_lookups():
     # Deprecated CCSDSPacket class with header/user_data fields
-    packet = ccsds.CCSDSPacket(raw_data=b"123")
-    assert packet.raw_data == b"123"
+    with pytest.warns(DeprecationWarning, match="The CCSDSPacket class is deprecated"):
+        packet = ccsds.CCSDSPacket(binary_data=b"123")
+    assert packet.binary_data == b"123"
     # There are no items yet, so it should be an empty dictionary
     assert packet == {}
-    assert packet.header == {}
-    assert packet.user_data == {}
-    # Now populate some packet items
-    packet.update({x: x for x in range(10)})
-    assert packet[5] == 5
-    assert packet == {x: x for x in range(10)}
-    # The header is the first 7 items
-    assert packet.header == {x: x for x in range(7)}
-    assert packet.user_data == {x: x for x in range(7, 10)}
-
-    with pytest.raises(KeyError):
-        _ = packet[10]
+    with pytest.warns(DeprecationWarning, match="The header property"):
+        assert packet.header == {}
+    with pytest.warns(DeprecationWarning, match="The user_data property"):
+        assert packet.user_data == {}
     # Deprecated CCSDSPacket class, an instance of the new Packet class
     # can be removed in a future version
     with pytest.warns(DeprecationWarning, match="The CCSDSPacket class is deprecated"):
@@ -174,7 +167,7 @@ def test_continuation_packet_warnings(test_data_dir):
 
     with pytest.warns(match="not in sequence"):
         # Nothing expected to be returned
-        assert len(list(d.packet_generator(raw_bytes, combine_segmented_packets=True))) == 0
+        assert len(list(ccsds.ccsds_generator(raw_bytes, combine_segmented_packets=True))) == 0
 
 
 @pytest.mark.parametrize(

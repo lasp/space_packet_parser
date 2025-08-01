@@ -2,9 +2,8 @@
 import lxml.etree as ElementTree
 import pytest
 
-from space_packet_parser import common
+from space_packet_parser import Packet, common
 from space_packet_parser.exceptions import ComparisonError
-from space_packet_parser.packets import CCSDSPacket
 from space_packet_parser.xtce import XTCE_1_2_XMLNS, comparisons
 
 
@@ -15,82 +14,82 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, comparisons
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="==" value="678" parameterRef="MSN__PARAM"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(678, 3)}), None, True),
+         Packet(**{'MSN__PARAM': common.FloatParameter(678, 3)}), None, True),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="eq" value="678" parameterRef="MSN__PARAM"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(668, 3)}), None, False),
+         Packet(**{'MSN__PARAM': common.FloatParameter(668, 3)}), None, False),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="!=" value="678" parameterRef="MSN__PARAM"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(678, 3)}), None, False),
+         Packet(**{'MSN__PARAM': common.FloatParameter(678, 3)}), None, False),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="neq" value="678" parameterRef="MSN__PARAM"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(658, 3)}), None, True),
+         Packet(**{'MSN__PARAM': common.FloatParameter(658, 3)}), None, True),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="&lt;" value="678" parameterRef="MSN__PARAM"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(679, 3)}), None, False),
+         Packet(**{'MSN__PARAM': common.FloatParameter(679, 3)}), None, False),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="lt" value="678" parameterRef="MSN__PARAM"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(670, 3)}), None, True),
+         Packet(**{'MSN__PARAM': common.FloatParameter(670, 3)}), None, True),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="&gt;" value="678" parameterRef="MSN__PARAM"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(678, 3)}), None, False),
+         Packet(**{'MSN__PARAM': common.FloatParameter(678, 3)}), None, False),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="gt" value="678" parameterRef="MSN__PARAM"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(679, 3)}), None, True),
+         Packet(**{'MSN__PARAM': common.FloatParameter(679, 3)}), None, True),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="&lt;=" value="678" parameterRef="MSN__PARAM"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(660, 3)}), None, True),
+         Packet(**{'MSN__PARAM': common.FloatParameter(660, 3)}), None, True),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="leq" value="678" parameterRef="MSN__PARAM"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(690, 3)}), None, False),
+         Packet(**{'MSN__PARAM': common.FloatParameter(690, 3)}), None, False),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="&gt;=" value="678" parameterRef="MSN__PARAM"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(660, 3)}), None, False),
+         Packet(**{'MSN__PARAM': common.FloatParameter(660, 3)}), None, False),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="geq" value="678" parameterRef="MSN__PARAM"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(690, 3)}), None, True),
+         Packet(**{'MSN__PARAM': common.FloatParameter(690, 3)}), None, True),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="==" value="678" parameterRef="MSN__PARAM" useCalibratedValue="false"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(690, 678)}), None, True),
+         Packet(**{'MSN__PARAM': common.FloatParameter(690, 678)}), None, True),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="==" value="678" parameterRef="MSN__PARAM" useCalibratedValue="true"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(678, 3)}), None, True),
+         Packet(**{'MSN__PARAM': common.FloatParameter(678, 3)}), None, True),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="==" value="foostring" parameterRef="MSN__PARAM" useCalibratedValue="false"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.StrParameter('calibratedfoostring', 'foostring')}), None, True),
+         Packet(**{'MSN__PARAM': common.StrParameter('calibratedfoostring', 'foostring')}), None, True),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="==" value="3.14" parameterRef="MSN__PARAM"/>
 """,
-         CCSDSPacket(**{'MSN__PARAM': common.FloatParameter(3.14, 1)}), None, True),
+         Packet(**{'MSN__PARAM': common.FloatParameter(3.14, 1)}), None, True),
         (f"""
 <xtce:Comparison xmlns:xtce="{XTCE_1_2_XMLNS}"
     comparisonOperator="==" value="3.0" parameterRef="REFERENCE_TO_OWN_RAW_VAL"/>
@@ -150,7 +149,7 @@ def test_comparison_validity_check(args, kwargs, expected_error, expected_error_
     <xtce:ParameterInstanceRef parameterRef="P2"/>
 </xtce:Condition>
 """,
-         CCSDSPacket(**{'P1': common.IntParameter(700, 4),
+         Packet(**{'P1': common.IntParameter(700, 4),
           'P2': common.IntParameter(678, 3)}), True),
         (f"""
 <xtce:Condition xmlns:xtce="{XTCE_1_2_XMLNS}">
@@ -159,7 +158,7 @@ def test_comparison_validity_check(args, kwargs, expected_error, expected_error_
     <xtce:Value>4</xtce:Value>
 </xtce:Condition>
 """,
-         CCSDSPacket(**{'P1': common.IntParameter(700, 4)}), True),
+         Packet(**{'P1': common.IntParameter(700, 4)}), True),
         (f"""
 <xtce:Condition xmlns:xtce="{XTCE_1_2_XMLNS}">
     <xtce:ParameterInstanceRef parameterRef="P1"/>
@@ -167,7 +166,7 @@ def test_comparison_validity_check(args, kwargs, expected_error, expected_error_
     <xtce:ParameterInstanceRef parameterRef="P2"/>
 </xtce:Condition>
 """,
-         CCSDSPacket(**{'P1': common.IntParameter(700, 4),
+         Packet(**{'P1': common.IntParameter(700, 4),
           'P2': common.IntParameter(678, 3)}), False),
         (f"""
 <xtce:Condition xmlns:xtce="{XTCE_1_2_XMLNS}">
@@ -176,7 +175,7 @@ def test_comparison_validity_check(args, kwargs, expected_error, expected_error_
     <xtce:ParameterInstanceRef parameterRef="P2" useCalibratedValue="false"/>
 </xtce:Condition>
 """,
-         CCSDSPacket(**{'P1': common.StrParameter('abcd'),
+         Packet(**{'P1': common.StrParameter('abcd'),
           'P2': common.StrParameter('abcd')}), True),
         (f"""
 <xtce:Condition xmlns:xtce="{XTCE_1_2_XMLNS}">
@@ -185,7 +184,7 @@ def test_comparison_validity_check(args, kwargs, expected_error, expected_error_
     <xtce:ParameterInstanceRef parameterRef="P2"/>
 </xtce:Condition>
 """,
-         CCSDSPacket(**{'P1': common.FloatParameter(3.14, 1),
+         Packet(**{'P1': common.FloatParameter(3.14, 1),
           'P2': common.FloatParameter(3.14, 180)}), True),
     ]
 )
@@ -243,7 +242,7 @@ def test_condition_validity_check(args, kwargs, expected_error, expected_error_m
     </xtce:ORedConditions>
 </xtce:BooleanExpression>
 """,
-         CCSDSPacket(**{'P': common.IntParameter(0, 4),
+         Packet(**{'P': common.IntParameter(0, 4),
                         'P2': common.IntParameter(700, 4),
                         'P3': common.IntParameter(701, 4),
                         'P4': common.IntParameter(98, 4)}), True),
@@ -275,7 +274,7 @@ def test_condition_validity_check(args, kwargs, expected_error, expected_error_m
     </xtce:ANDedConditions>
 </xtce:BooleanExpression>
 """,
-         CCSDSPacket(**{'P': common.IntParameter(100, 4),
+         Packet(**{'P': common.IntParameter(100, 4),
                         'P0': common.IntParameter(678, 4),
                         'P1': common.IntParameter(500, 4),
                         'P2': common.IntParameter(700, 4),
@@ -306,13 +305,13 @@ def test_boolean_expression(elmaker, xtce_parser, xml_string, test_parsed_data, 
     <xtce:Comparison useCalibratedValue="false" parameterRef="P1" value="1"/>
 </xtce:DiscreteLookup>
 """,
-         CCSDSPacket(**{'P1': common.IntParameter(678, 1)}), 10),
+         Packet(**{'P1': common.IntParameter(678, 1)}), 10),
         (f"""
 <xtce:DiscreteLookup value="10" xmlns:xtce="{XTCE_1_2_XMLNS}">
     <xtce:Comparison useCalibratedValue="false" parameterRef="P1" value="1"/>
 </xtce:DiscreteLookup>
 """,
-         CCSDSPacket(**{'P1': common.IntParameter(678, 0)}), None),
+         Packet(**{'P1': common.IntParameter(678, 0)}), None),
         (f"""
 <xtce:DiscreteLookup value="11" xmlns:xtce="{XTCE_1_2_XMLNS}">
     <xtce:ComparisonList>
@@ -321,7 +320,7 @@ def test_boolean_expression(elmaker, xtce_parser, xml_string, test_parsed_data, 
     </xtce:ComparisonList>
 </xtce:DiscreteLookup>
 """,
-         CCSDSPacket(**{
+         Packet(**{
              'MSN__PARAM1': common.IntParameter(680, 3),
              'MSN__PARAM2': common.IntParameter(3000, 3),
          }), 11),

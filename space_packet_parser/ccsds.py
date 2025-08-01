@@ -356,6 +356,7 @@ def ccsds_generator(
             # the segmented packets into a single "packet" for XTCE parsing
             packets = _segmented_packets.pop(ccsds_packet.apid)
             sequence_counts = [p.sequence_count for p in packets]
+            print("GML", sequence_counts)
             if not all((sequence_counts[i + 1] - sequence_counts[i]) % 16384 == 1
                         for i in range(len(sequence_counts) - 1)):
                 warnings.warn(f"Continuation packets for apid {ccsds_packet.apid} "
