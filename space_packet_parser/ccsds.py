@@ -7,8 +7,6 @@ class can be used to inspect the CCSDS header fields of the packet, but it does 
 parsed content from the data field. This generator is useful for debugging and passing off
 to other parsing functions.
 """
-import datetime as dt
-import io
 import logging
 import socket
 import time
@@ -17,7 +15,7 @@ from collections.abc import Iterator
 from enum import IntEnum
 from typing import BinaryIO, Optional, Union
 
-from space_packet_parser.common import SpacePacket
+from space_packet_parser.common import SpacePacket, _print_progress, _setup_binary_reader
 
 logger = logging.getLogger(__name__)
 
@@ -249,42 +247,14 @@ def ccsds_generator(
     """
     n_bytes_parsed = 0  # Keep track of how many bytes we have parsed
     n_packets_parsed = 0  # Keep track of how many packets we have parsed
-    read_buffer = b""  # Empty bytes object to start
-    current_pos = 0  # Keep track of where we are in the buffer
     header_length_bytes = CCSDSPacketBytes.HEADER_LENGTH_BYTES
     # Used to keep track of any continuation packets that we encounter
     # gathering them all up before combining them into a single packet, lookup is by APID.
     # _segmented_packets[APID] = [CCSDSPacketBytes, ...]
     _segmented_packets = {}
-
-    # ========
-    # Set up the reader based on the type of binary_data
-    # ========
-    if isinstance(binary_data, io.BufferedIOBase):
-        if buffer_read_size_bytes is None:
-            # Default to a full read of the file
-            buffer_read_size_bytes = -1
-        total_length_bytes = binary_data.seek(0, io.SEEK_END)  # This is probably preferable to len
-        binary_data.seek(0, 0)
-        logger.info(f"Creating packet generator from a filelike object, {binary_data}. "
-                    f"Total length is {total_length_bytes} bytes")
-        read_bytes_from_source = binary_data.read
-    elif isinstance(binary_data, socket.socket):  # It's a socket and we don't know how much data we will get
-        logger.info("Creating packet generator to read from a socket. Total length to parse is unknown.")
-        total_length_bytes = None  # We don't know how long it is
-        if buffer_read_size_bytes is None:
-            # Default to 4096 bytes from a socket
-            buffer_read_size_bytes = 4096
-        read_bytes_from_source = binary_data.recv
-    elif isinstance(binary_data, bytes):
-        read_buffer = binary_data
-        total_length_bytes = len(read_buffer)
-        read_bytes_from_source = None  # No data to read, we've filled the read_buffer already
-        logger.info(f"Creating packet generator from a bytes object. Total length is {total_length_bytes} bytes")
-    elif isinstance(binary_data, io.TextIOWrapper):
-        raise OSError("Packet data file opened in TextIO mode. You must open packet data in binary mode.")
-    else:
-        raise OSError(f"Unrecognized data source: {binary_data}")
+    read_buffer, total_length_bytes, read_bytes_from_source, buffer_read_size_bytes = _setup_binary_reader(
+        binary_data, buffer_read_size_bytes)
+    current_pos = 0  # Keep track of where we are in the buffer
 
     # ========
     # Packet loop. Each iteration of this loop yields a CCSDSPacketBytes object
@@ -373,53 +343,3 @@ def ccsds_generator(
         _print_progress(current_bytes=n_bytes_parsed, total_bytes=total_length_bytes,
                         start_time_ns=start_time, current_packets=n_packets_parsed,
                         end="\n", log=True)
-
-
-def _print_progress(
-            *,
-            current_bytes: int,
-            total_bytes: Optional[int],
-            start_time_ns: int,
-            current_packets: int,
-            end: str = '\r',
-            log: bool = False
-        ):
-    """Prints a progress bar, including statistics on parsing rate.
-
-    Parameters
-    ----------
-    current_bytes : int
-        Number of bytes parsed so far.
-    total_bytes : Optional[int]
-        Number of total bytes to parse, if known. None otherwise.
-    current_packets : int
-        Number of packets parsed so far.
-    start_time_ns : int
-        Start time on system clock, in nanoseconds.
-    end : str
-        Print function end string. Default is `\\r` to create a dynamically updating loading bar.
-    log : bool
-        If True, log the progress bar at INFO level.
-    """
-    progress_char = "="
-    bar_length = 20
-
-    if total_bytes is not None:  # If we actually have an endpoint (i.e. not using a socket)
-        percentage = int((current_bytes / total_bytes) * 100)  # Percent Completed Calculation
-        progress = int((bar_length * current_bytes) / total_bytes)  # Progress Done Calculation
-    else:
-        percentage = "???"
-        progress = 0
-
-    # Fast calls initially on Windows can result in a zero elapsed time
-    elapsed_ns = max(time.time_ns() - start_time_ns, 1)
-    delta = dt.timedelta(microseconds=elapsed_ns / 1E3)
-    kbps = int(current_bytes * 8E6 / elapsed_ns)  # 8 bits per byte, 1E9 s per ns, 1E3 bits per kb
-    pps = int(current_packets * 1E9 / elapsed_ns)
-    info_str = f"[Elapsed: {delta}, " \
-               f"Parsed {current_bytes} bytes ({current_packets} packets) " \
-               f"at {kbps}kb/s ({pps}pkts/s)]"
-    loadbar = f"Progress: [{progress * progress_char:{bar_length}}]{percentage}% {info_str}"
-    print(loadbar, end=end)
-    if log:
-        logger.info(loadbar)

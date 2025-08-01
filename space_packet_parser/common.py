@@ -1,12 +1,19 @@
 """Common mixins"""
+import datetime as dt
 import inspect
+import io
+import logging
+import socket
+import time
 import warnings
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Protocol, Union
+from collections.abc import Iterator
+from typing import BinaryIO, Optional, Protocol, Union
 
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
 
+logger = logging.getLogger(__name__)
 
 class NamespaceAwareElement(ElementTree.ElementBase):
     """Custom element that automatically applies namespace mappings."""
@@ -350,6 +357,149 @@ class SpacePacket(dict):
         self._parsing_pos += nbits
         return int_data
 
+
+def fixed_length_generator(
+    binary_data: Union[BinaryIO, socket.socket, bytes],
+    *,
+    packet_length_bytes: int,
+    buffer_read_size_bytes: Optional[int] = None,
+    show_progress: bool = False,
+) -> Iterator[bytes]:
+    """A generator that yields fixed-length chunks from binary_data.
+
+    Parameters
+    ----------
+    binary_data : Union[BinaryIO, socket.socket, bytes]
+        Binary data source.
+    packet_length_bytes : int
+        Number of bytes per packet to yield.
+    buffer_read_size_bytes : int, optional
+        Number of bytes to read from the source per read.
+    show_progress : bool
+        If True, prints a status bar.
+
+    Yields
+    ------
+    bytes
+        Fixed-length packet bytes.
+    """
+    n_bytes_parsed = 0  # Keep track of how many bytes we have parsed
+    n_packets_parsed = 0  # Keep track of how many packets we have parsed
+    read_buffer, total_length_bytes, read_bytes_from_source, buffer_read_size_bytes = _setup_binary_reader(
+        binary_data, buffer_read_size_bytes)
+    current_pos = 0  # Keep track of where we are in the buffer
+    start_time = time.time_ns()
+    while True:
+        if total_length_bytes and n_bytes_parsed == total_length_bytes:
+            break
+        if show_progress:
+            _print_progress(current_bytes=n_bytes_parsed, total_bytes=total_length_bytes,
+                            start_time_ns=start_time, current_packets=n_packets_parsed)
+        if current_pos > 20_000_000:
+            # Only trim the buffer after 20 MB read to prevent modifying
+            # the bitstream and trimming after every packet
+            read_buffer = read_buffer[current_pos:]
+            current_pos = 0
+        while len(read_buffer) - current_pos < packet_length_bytes:
+            result = read_bytes_from_source(buffer_read_size_bytes)
+            if not result:
+                break
+            read_buffer += result
+        packet_bytes = read_buffer[current_pos:current_pos + packet_length_bytes]
+        current_pos += packet_length_bytes
+        n_packets_parsed += 1
+        n_bytes_parsed += packet_length_bytes
+        yield packet_bytes
+    if show_progress:
+        _print_progress(current_bytes=n_bytes_parsed, total_bytes=total_length_bytes,
+                        start_time_ns=start_time, current_packets=n_packets_parsed,
+                        end="\n", log=True)
+
+
+def _setup_binary_reader(binary_data, buffer_read_size_bytes=None):
+    """Helper to set up reading from binary_data (file, socket, bytes). Returns:
+    read_buffer, total_length_bytes, read_bytes_from_source, buffer_read_size_bytes
+    """
+    read_buffer = b""
+    # ========
+    # Set up the reader based on the type of binary_data
+    # ========
+    if isinstance(binary_data, io.BufferedIOBase):
+        if buffer_read_size_bytes is None:
+            # Default to a full read of the file
+            buffer_read_size_bytes = -1
+        total_length_bytes = binary_data.seek(0, io.SEEK_END)  # This is probably preferable to len
+        binary_data.seek(0, 0)
+        logger.info(f"Creating packet generator from a filelike object, {binary_data}. "
+                    f"Total length is {total_length_bytes} bytes")
+        read_bytes_from_source = binary_data.read
+    elif isinstance(binary_data, socket.socket):  # It's a socket and we don't know how much data we will get
+        logger.info("Creating packet generator to read from a socket. Total length to parse is unknown.")
+        total_length_bytes = None  # We don't know how long it is
+        if buffer_read_size_bytes is None:
+            # Default to 4096 bytes from a socket
+            buffer_read_size_bytes = 4096
+        read_bytes_from_source = binary_data.recv
+    elif isinstance(binary_data, bytes):
+        read_buffer = binary_data
+        total_length_bytes = len(read_buffer)
+        read_bytes_from_source = None  # No data to read, we've filled the read_buffer already
+        logger.info(f"Creating packet generator from a bytes object. Total length is {total_length_bytes} bytes")
+    elif isinstance(binary_data, io.TextIOWrapper):
+        raise OSError("Packet data file opened in TextIO mode. You must open packet data in binary mode.")
+    else:
+        raise OSError(f"Unrecognized data source: {binary_data}")
+    return read_buffer, total_length_bytes, read_bytes_from_source, buffer_read_size_bytes
+
+
+def _print_progress(
+            *,
+            current_bytes: int,
+            total_bytes: Optional[int],
+            start_time_ns: int,
+            current_packets: int,
+            end: str = '\r',
+            log: bool = False
+        ):
+    """Prints a progress bar, including statistics on parsing rate.
+
+    Parameters
+    ----------
+    current_bytes : int
+        Number of bytes parsed so far.
+    total_bytes : Optional[int]
+        Number of total bytes to parse, if known. None otherwise.
+    current_packets : int
+        Number of packets parsed so far.
+    start_time_ns : int
+        Start time on system clock, in nanoseconds.
+    end : str
+        Print function end string. Default is `\\r` to create a dynamically updating loading bar.
+    log : bool
+        If True, log the progress bar at INFO level.
+    """
+    progress_char = "="
+    bar_length = 20
+
+    if total_bytes is not None:  # If we actually have an endpoint (i.e. not using a socket)
+        percentage = int((current_bytes / total_bytes) * 100)  # Percent Completed Calculation
+        progress = int((bar_length * current_bytes) / total_bytes)  # Progress Done Calculation
+    else:
+        percentage = "???"
+        progress = 0
+
+    # Fast calls initially on Windows can result in a zero elapsed time
+    elapsed_ns = max(time.time_ns() - start_time_ns, 1)
+    delta = dt.timedelta(microseconds=elapsed_ns / 1E3)
+    kbps = int(current_bytes * 8E6 / elapsed_ns)  # 8 bits per byte, 1E9 s per ns, 1E3 bits per kb
+    pps = int(current_packets * 1E9 / elapsed_ns)
+    info_str = f"[Elapsed: {delta}, " \
+               f"Parsed {current_bytes} bytes ({current_packets} packets) " \
+               f"at {kbps}kb/s ({pps}pkts/s)]"
+    loadbar = f"Progress: [{progress * progress_char:{bar_length}}]{percentage}% {info_str}"
+    print(loadbar, end=end)
+    if log:
+        logger.info(loadbar)
 
 
 def _extract_bits(data: bytes, start_bit: int, nbits: int):

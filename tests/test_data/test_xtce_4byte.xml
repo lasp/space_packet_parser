@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xtce:SpaceSystem name="TestSystem" xmlns="http://www.omg.org/space/xtce" xmlns:xtce="http://www.omg.org/spec/XTCE/20180204">
+  <xtce:TelemetryMetaData>
+    <xtce:ParameterTypeSet>
+      <xtce:IntegerParameterType name="UINT32" signed="false">
+        <xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned"/>
+      </xtce:IntegerParameterType>
+    </xtce:ParameterTypeSet>
+    <xtce:ParameterSet>
+      <xtce:Parameter name="PKT_VALUE" parameterTypeRef="UINT32"/>
+    </xtce:ParameterSet>
+    <xtce:ContainerSet>
+      <xtce:SequenceContainer name="PKT_CONTAINER" sizeInBits="32">
+        <xtce:EntryList>
+          <xtce:ParameterRefEntry parameterRef="PKT_VALUE"/>
+        </xtce:EntryList>
+      </xtce:SequenceContainer>
+    </xtce:ContainerSet>
+  </xtce:TelemetryMetaData>
+</xtce:SpaceSystem>
