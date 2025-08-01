@@ -521,7 +521,7 @@ def test_parse_methods(test_data_dir):
                                                     sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED)
 
     # Full packet object with read methods attached
-    empty_packet = spp.Packet(binary_data=empty_packet_data)
+    empty_packet = spp.SpacePacket(binary_data=empty_packet_data)
     packet = xdef.parse_packet(empty_packet)
     # With a CCSDSPacketBytes object
     assert packet == xdef.parse_bytes(empty_packet_data)
@@ -529,6 +529,6 @@ def test_parse_methods(test_data_dir):
     assert packet == xdef.parse_bytes(bytes(empty_packet_data))
 
     # Deprecated method, can be removed in a future version
-    empty_packet = spp.Packet(binary_data=empty_packet_data)
+    empty_packet = spp.SpacePacket(binary_data=empty_packet_data)
     with pytest.warns(DeprecationWarning, match="parse_ccsds_packet is deprecated"):
         assert packet == xdef.parse_ccsds_packet(empty_packet)

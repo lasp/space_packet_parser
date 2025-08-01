@@ -192,7 +192,7 @@ class XmlObject(metaclass=ABCMeta):
 
 class Parseable(Protocol):
     """Defines an object that can be parsed from packet data."""
-    def parse(self, packet: "Packet") -> None:
+    def parse(self, packet: "SpacePacket") -> None:
         """Parse this entry from the packet data and add the necessary items to the packet."""
 
 
@@ -248,12 +248,13 @@ class StrParameter(_Parameter, str):
 ParameterDataTypes = Union[BinaryParameter, BoolParameter, FloatParameter, IntParameter, StrParameter]
 
 
-class Packet(dict):
+class SpacePacket(dict):
     """Packet representing parsed data items.
 
     Container that stores the binary packet data (bytes) as an instance attribute and the parsed
-    data items in a dictionary interface. A ``Packet`` generally begins as an empty dictionary that gets
-    filled as the packet is parsed. To access the raw bytes of the packet, use the ``Packet.binary_data`` attribute.
+    data items in a dictionary interface. A ``SpacePacket`` generally begins as an empty dictionary that gets
+    filled as the packet is parsed. To access the raw bytes of the packet, use the ``SpacePacket.binary_data``
+    attribute.
 
     Parameters
     ----------

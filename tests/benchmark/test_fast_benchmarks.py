@@ -17,7 +17,7 @@ def test_benchmark__read_as_int__aligned(benchmark):
     nbits = 16
     expected_value = int.from_bytes(test_byte, "big")  # 85
     n_test_byte_repeats = ((rounds + warmup_rounds) * n_iterations * nbits // 8) + 1
-    raw_packet = spp.Packet(binary_data=test_byte * n_test_byte_repeats)
+    raw_packet = spp.SpacePacket(binary_data=test_byte * n_test_byte_repeats)
 
     value = benchmark.pedantic(raw_packet._read_from_binary_as_int, args=(nbits, ),
                                rounds=rounds,
@@ -42,7 +42,7 @@ def test_benchmark__read_as_int__non_aligned(benchmark):
     test_data = test_byte * n_test_byte_repeats
     expected_value = 87381 # 01010101 01010101 01
 
-    raw_packet = spp.Packet(binary_data=test_data)
+    raw_packet = spp.SpacePacket(binary_data=test_data)
 
     value = benchmark.pedantic(raw_packet._read_from_binary_as_int, args=(nbits, ),
                                rounds=rounds,
@@ -65,7 +65,7 @@ def test_benchmark__read_as_bytes__aligned(benchmark):
     nbits = 16
     expected_value = b'\x55\x55'  # 01010101 01010101
     n_test_byte_repeats = ((rounds + warmup_rounds) * n_iterations * nbits // 8) + 1
-    raw_packet = spp.Packet(binary_data=test_byte * n_test_byte_repeats)
+    raw_packet = spp.SpacePacket(binary_data=test_byte * n_test_byte_repeats)
 
     value = benchmark.pedantic(raw_packet._read_from_binary_as_bytes, args=(nbits, ),
                                rounds=rounds,
@@ -88,7 +88,7 @@ def test_benchmark__read_as_bytes__non_aligned_full_bytes(benchmark):
     nbits = 16
     expected_value = b'\xaa\xaa'  # 10101010 10101010
     n_test_byte_repeats = ((rounds + warmup_rounds) * n_iterations * nbits // 8) + 1
-    raw_packet = spp.Packet(binary_data=test_byte * n_test_byte_repeats)
+    raw_packet = spp.SpacePacket(binary_data=test_byte * n_test_byte_repeats)
     raw_packet._parsing_pos += 1  # Move cursor to non-aligned position
 
     value = benchmark.pedantic(raw_packet._read_from_binary_as_bytes, args=(nbits, ),
@@ -113,7 +113,7 @@ def test_benchmark__read_as_bytes__partial_bytes(benchmark):
     nbits = 6
     expected_value = b'\x15'  # 00 01 01 01 (MSB padded with 2 bits)
     n_test_byte_repeats = ((rounds + warmup_rounds) * n_iterations * nbits // 8) + 1
-    raw_packet = spp.Packet(binary_data=test_byte * n_test_byte_repeats)
+    raw_packet = spp.SpacePacket(binary_data=test_byte * n_test_byte_repeats)
 
     value = benchmark.pedantic(raw_packet._read_from_binary_as_bytes, args=(nbits, ),
                                rounds=rounds,

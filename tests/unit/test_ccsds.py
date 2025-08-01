@@ -3,7 +3,7 @@ import socket
 
 import pytest
 
-from space_packet_parser import Packet, ccsds, common
+from space_packet_parser import SpacePacket, ccsds, common
 from space_packet_parser.xtce import definitions
 
 
@@ -84,7 +84,7 @@ def test_ccsds_packet_data_lookups():
     # Deprecated CCSDSPacket class, an instance of the new Packet class
     # can be removed in a future version
     with pytest.warns(DeprecationWarning, match="The CCSDSPacket class is deprecated"):
-        assert isinstance(ccsds.CCSDSPacket(), Packet)
+        assert isinstance(ccsds.CCSDSPacket(), SpacePacket)
 
 
 def test_continuation_packets(test_data_dir):

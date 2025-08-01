@@ -48,7 +48,7 @@ class SequenceContainer(common.Parseable, common.XmlObject):
         self.restriction_criteria = self.restriction_criteria or []
         self.inheritors = self.inheritors or []
 
-    def parse(self, packet: spp.Packet) -> None:
+    def parse(self, packet: spp.SpacePacket) -> None:
         """Parse the entry list of parameters/containers in the order they are expected in the packet.
 
         This could be recursive if the entry list contains SequenceContainers.

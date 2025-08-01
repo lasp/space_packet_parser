@@ -18,7 +18,7 @@ def test_jpss_xtce_packet_parsing(jpss_test_data_dir):
 
         n_packets = 0
         for jpss_packet in jpss_packet_generator:
-            assert isinstance(jpss_packet, spp.Packet)
+            assert isinstance(jpss_packet, spp.SpacePacket)
             assert jpss_packet['PKT_APID'] == 11
             assert jpss_packet['VERSION'] == 0
             n_packets += 1

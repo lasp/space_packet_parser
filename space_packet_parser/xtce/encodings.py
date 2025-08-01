@@ -100,7 +100,7 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
             return adjuster
         return None
 
-    def _calculate_size(self, packet: spp.Packet) -> int:
+    def _calculate_size(self, packet: spp.SpacePacket) -> int:
         """Calculate the size of the data item in bits.
 
         Parameters
@@ -116,7 +116,7 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         """
         return NotImplemented
 
-    def parse_value(self, packet: spp.Packet) -> common.ParameterDataTypes:
+    def parse_value(self, packet: spp.SpacePacket) -> common.ParameterDataTypes:
         """Parse a value from packet data, possibly using previously parsed data items to inform parsing.
 
         Parameters
@@ -238,7 +238,7 @@ class StringDataEncoding(DataEncoding):
         self.discrete_lookup_length = discrete_lookup_length
         self.length_linear_adjuster = length_linear_adjuster
 
-    def _calculate_size(self, packet: spp.Packet) -> int:
+    def _calculate_size(self, packet: spp.SpacePacket) -> int:
         """Calculate the size of the raw string buffer field
 
         Parameters
@@ -275,7 +275,7 @@ class StringDataEncoding(DataEncoding):
             raise ValueError("No raw length specifier found when decoding a string.")
         return int(buflen_bits)
 
-    def _get_raw_buffer(self, packet: spp.Packet) -> bytes:
+    def _get_raw_buffer(self, packet: spp.SpacePacket) -> bytes:
         """Get the raw string buffer as bytes. This will include any leading size or termination characters.
 
         Notes
@@ -306,7 +306,7 @@ class StringDataEncoding(DataEncoding):
         ).to_bytes(buflen_bytes, "big")
         return raw_string_buffer
 
-    def parse_value(self, packet: spp.Packet) -> common.StrParameter:
+    def parse_value(self, packet: spp.SpacePacket) -> common.StrParameter:
         """Parse a string value from packet data, possibly using previously parsed data items to inform parsing.
 
         Parameters
@@ -325,7 +325,7 @@ class StringDataEncoding(DataEncoding):
         """
         raw_string_buffer = self._get_raw_buffer(packet)
         # The read methods are on the Packet object, so create one here to get the read methods
-        readable_buffer = spp.Packet(binary_data=raw_string_buffer)
+        readable_buffer = spp.SpacePacket(binary_data=raw_string_buffer)
         if self.leading_length_size:
             strlen_bits = readable_buffer._read_from_binary_as_int(self.leading_length_size)
             if strlen_bits % 8 != 0:
@@ -545,11 +545,11 @@ class NumericDataEncoding(DataEncoding, metaclass=ABCMeta):
         self.default_calibrator = default_calibrator
         self.context_calibrators = context_calibrators
 
-    def _calculate_size(self, packet: spp.Packet) -> int:
+    def _calculate_size(self, packet: spp.SpacePacket) -> int:
         return self.size_in_bits
 
     @abstractmethod
-    def _get_raw_value(self, packet: spp.Packet) -> Union[int, float]:
+    def _get_raw_value(self, packet: spp.SpacePacket) -> Union[int, float]:
         """Read the raw value from the packet data
 
         Parameters
@@ -575,7 +575,7 @@ class NumericDataEncoding(DataEncoding, metaclass=ABCMeta):
         return val
 
     def parse_value(self,
-                    packet: spp.Packet,
+                    packet: spp.SpacePacket,
                     ) -> Union[common.FloatParameter, common.IntParameter]:
         """Parse a value from packet data, possibly using previously parsed data items to inform parsing.
 
@@ -686,7 +686,7 @@ class IntegerDataEncoding(NumericDataEncoding):
             context_calibrators=context_calibrators
         )
 
-    def _get_raw_value(self, packet: spp.Packet) -> int:
+    def _get_raw_value(self, packet: spp.SpacePacket) -> int:
         # Extract the bits from the data in big-endian order from the packet
         val = packet._read_from_binary_as_int(self.size_in_bits)
         if self.byte_order == 'leastSignificantByteFirst':
@@ -930,7 +930,7 @@ class BinaryDataEncoding(DataEncoding):
         self.size_discrete_lookup_list = size_discrete_lookup_list
         self.linear_adjuster = linear_adjuster
 
-    def _calculate_size(self, packet: spp.Packet) -> int:
+    def _calculate_size(self, packet: spp.SpacePacket) -> int:
         """Determine the number of bits in the binary field.
 
         Returns
@@ -961,7 +961,7 @@ class BinaryDataEncoding(DataEncoding):
             len_bits = self.linear_adjuster(len_bits)
         return int(len_bits)
 
-    def parse_value(self, packet: spp.Packet) -> common.BinaryParameter:
+    def parse_value(self, packet: spp.SpacePacket) -> common.BinaryParameter:
         """Parse a value from packet data, possibly using previously parsed data items to inform parsing.
 
         Parameters

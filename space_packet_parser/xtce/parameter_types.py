@@ -155,7 +155,7 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         raise ValueError(f"No Data Encoding element found for Parameter Type "
                          f"{parameter_type_element.tag}: {parameter_type_element.attrib}")
 
-    def parse_value(self, packet: spp.Packet) -> common.ParameterDataTypes:
+    def parse_value(self, packet: spp.SpacePacket) -> common.ParameterDataTypes:
         """Using the parameter type definition and associated data encoding, parse a value from a bit stream starting
         at the current cursor position.
 
@@ -347,7 +347,7 @@ class EnumeratedParameterType(ParameterType):
                          "Supported encodings for enums are FloatDataEncoding, IntegerDataEncoding, "
                          "and StringDataEncoding.")
 
-    def parse_value(self, packet: spp.Packet) -> common.StrParameter:
+    def parse_value(self, packet: spp.SpacePacket) -> common.StrParameter:
         """Using the parameter type definition and associated data encoding, parse a value from a bit stream starting
         at the current cursor position.
 
@@ -408,7 +408,7 @@ class BooleanParameterType(ParameterType):
                           f"encoded booleans is not specified in XTCE. e.g. is the string \"0\" truthy?")
         super().__init__(name, encoding, unit)
 
-    def parse_value(self, packet: spp.Packet):
+    def parse_value(self, packet: spp.SpacePacket):
         """Using the parameter type definition and associated data encoding, parse a value from a bit stream starting
         at the current cursor position.
 

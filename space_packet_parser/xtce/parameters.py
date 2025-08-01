@@ -30,7 +30,7 @@ class Parameter(common.Parseable, common.XmlObject):
     short_description: Optional[str] = None
     long_description: Optional[str] = None
 
-    def parse(self, packet: spp.Packet) -> None:
+    def parse(self, packet: spp.SpacePacket) -> None:
         """Parse this parameter from the packet data.
 
         Parse the parameter and add it to the packet dictionary.

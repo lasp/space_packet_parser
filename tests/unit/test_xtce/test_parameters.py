@@ -215,7 +215,7 @@ def test_unsupported_parameter_type_error(test_data_dir):
 def test_string_parameter_parsing(parameter_type, binary_data, current_pos, expected_raw, expected_derived):
     """Test parsing a string parameter"""
     # pre parsed data to reference for lookups
-    packet = spp.Packet(binary_data=binary_data, **{'P1': common.FloatParameter(7.55, 7),
+    packet = spp.SpacePacket(binary_data=binary_data, **{'P1': common.FloatParameter(7.55, 7),
                                                        'P2': common.IntParameter(100, 99),
                                                        'STR_LEN': common.IntParameter(8)})
     # Artificially set the current position of the packet data read so far
@@ -336,7 +336,7 @@ def test_string_parameter_parsing(parameter_type, binary_data, current_pos, expe
 def test_integer_parameter_parsing(parameter_type, binary_data, current_pos, expected):
     """Testing parsing an integer parameters"""
     # pre parsed data to reference for lookups
-    packet = spp.Packet(binary_data=binary_data, PKT_APID=common.IntParameter(1101))
+    packet = spp.SpacePacket(binary_data=binary_data, PKT_APID=common.IntParameter(1101))
     packet._parsing_pos = current_pos
     value = parameter_type.parse_value(packet)
     assert value == expected
@@ -444,7 +444,7 @@ def test_integer_parameter_parsing(parameter_type, binary_data, current_pos, exp
 def test_float_parameter_parsing(parameter_type, binary_data, expected):
     """Test parsing float parameters"""
     # pre parsed data to reference for lookups
-    packet = spp.Packet(binary_data=binary_data, **{'PKT_APID': common.IntParameter(1101)})
+    packet = spp.SpacePacket(binary_data=binary_data, **{'PKT_APID': common.IntParameter(1101)})
     value = parameter_type.parse_value(packet)
     # NOTE: These results are compared with a relative tolerance due to the imprecise storage of floats
     assert value == pytest.approx(expected, rel=1E-7)
@@ -514,7 +514,7 @@ def test_float_parameter_parsing(parameter_type, binary_data, expected):
 )
 def test_enumerated_parameter_parsing(parameter_type, binary_data, expected_raw, expected):
     """Test parsing enumerated parameters"""
-    packet = spp.Packet(binary_data=binary_data)
+    packet = spp.SpacePacket(binary_data=binary_data)
     value = parameter_type.parse_value(packet)
     assert value == expected
     assert value.raw_value == expected_raw
@@ -552,7 +552,7 @@ def test_enumerated_parameter_parsing(parameter_type, binary_data, expected_raw,
 def test_binary_parameter_parsing(parameter_type, binary_data, expected):
     """Test parsing binary parameters"""
     # pre parsed data to reference for lookups
-    packet = spp.Packet(binary_data=binary_data, **{
+    packet = spp.SpacePacket(binary_data=binary_data, **{
         'P1': common.FloatParameter(7.4, 1),
         'BIN_LEN': common.IntParameter(2)})
     value = parameter_type.parse_value(packet)
@@ -602,7 +602,7 @@ def test_binary_parameter_parsing(parameter_type, binary_data, expected):
 )
 def test_boolean_parameter_parsing(parameter_type, binary_data, current_pos, expected_raw, expected_derived):
     """Test parsing boolean parameters"""
-    packet = spp.Packet(binary_data=binary_data)
+    packet = spp.SpacePacket(binary_data=binary_data)
     packet._parsing_pos = current_pos
     value = parameter_type.parse_value(packet)
     assert value.raw_value == expected_raw
@@ -651,7 +651,7 @@ def test_boolean_parameter_parsing(parameter_type, binary_data, current_pos, exp
     ]
 )
 def test_absolute_time_parameter_parsing(parameter_type, binary_data, current_pos, expected_raw, expected_derived):
-    packet = spp.Packet(binary_data=binary_data)
+    packet = spp.SpacePacket(binary_data=binary_data)
     packet._parsing_pos = current_pos
     value = parameter_type.parse_value(packet)
     assert value.raw_value == pytest.approx(expected_raw, rel=1E-6)

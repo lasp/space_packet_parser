@@ -49,7 +49,7 @@ def test_attr_comparable():
                           (0b110000111100001100000000, 0, 24, 0b110000111100001100000000)])
 def test_raw_packet_reads(raw_value, start, nbits, expected):
     raw_bytes = raw_value.to_bytes((raw_value.bit_length() + 7) // 8, "big")
-    packet = common.Packet(binary_data=raw_bytes)
+    packet = common.SpacePacket(binary_data=raw_bytes)
     packet._parsing_pos = start
     assert packet._read_from_binary_as_int(nbits) == expected
     assert packet._parsing_pos == start + nbits
@@ -62,7 +62,7 @@ def test_raw_packet_reads(raw_value, start, nbits, expected):
 
 
 def test_read_beyond_end_of_packet():
-    packet = common.Packet(binary_data=b"123")
+    packet = common.SpacePacket(binary_data=b"123")
     with pytest.raises(ValueError, match="Tried to read beyond the end of the packet"):
         packet._read_from_binary_as_bytes(25)
     with pytest.raises(ValueError, match="Tried to read beyond the end of the packet"):
@@ -70,7 +70,7 @@ def test_read_beyond_end_of_packet():
 
 
 def test_packet_data_lookups():
-    packet = common.Packet(binary_data=b"123")
+    packet = common.SpacePacket(binary_data=b"123")
     assert packet.binary_data == b"123"
     # There are no items yet, so it should be an empty dictionary
     assert packet == {}
@@ -90,13 +90,13 @@ def test_packet_data_lookups():
     with pytest.warns(DeprecationWarning, match="The raw_data property is deprecated"):
         assert packet.raw_data == b"123"
     with pytest.warns(DeprecationWarning, match="The 'raw_data' keyword argument is deprecated"):
-        assert common.Packet(binary_data=b"123") == common.Packet(raw_data=b"123")
+        assert common.SpacePacket(binary_data=b"123") == common.SpacePacket(raw_data=b"123")
 
 
 def test_deprecated_packet_module():
     with pytest.warns(DeprecationWarning, match="The space_packet_parser.packets module is deprecated"):
         from space_packet_parser import packets
-    assert packets.Packet == common.Packet
+    assert packets.SpacePacket == common.SpacePacket
 
 
 

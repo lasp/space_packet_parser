@@ -54,7 +54,7 @@ def test_suda_xtce_packet_parsing(suda_test_data_dir):
                                                                  skip_header_bytes=4,
                                                                  show_progress=True)
         for suda_packet in suda_packet_generator:
-            assert isinstance(suda_packet, spp.Packet)
+            assert isinstance(suda_packet, spp.SpacePacket)
             assert suda_packet['PKT_APID'] == 1425, "APID is not as expected."
             assert suda_packet['VERSION'] == 0, "CCSDS header VERSION incorrect."
 

@@ -375,7 +375,7 @@ class XtcePacketDefinition(common.AttrComparable):
     def parse_bytes(self,
                     binary_data: bytes,
                     *,
-                    root_container_name: Optional[str] = None) -> spp.Packet:
+                    root_container_name: Optional[str] = None) -> spp.SpacePacket:
         """Parse binary packet data according to the self.packet_definition object
 
         Parameters
@@ -392,18 +392,18 @@ class XtcePacketDefinition(common.AttrComparable):
         Packet
             A Packet object containing header and data attributes.
         """
-        packet = spp.Packet(binary_data=binary_data)
+        packet = spp.SpacePacket(binary_data=binary_data)
         return self.parse_packet(packet, root_container_name=root_container_name)
 
     def parse_packet(self,
-                     packet: spp.Packet,
+                     packet: spp.SpacePacket,
                      *,
-                     root_container_name: Optional[str] = None) -> spp.Packet:
+                     root_container_name: Optional[str] = None) -> spp.SpacePacket:
         """Parse binary packet data according to the self.packet_definition object
 
         Parameters
         ----------
-        packet: space_packet_parser.Packet
+        packet: space_packet_parser.SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
         root_container_name : Optional[str]
@@ -446,14 +446,14 @@ class XtcePacketDefinition(common.AttrComparable):
         return packet
 
     def parse_ccsds_packet(self,
-                           packet: spp.Packet,
+                           packet: spp.SpacePacket,
                            *,
-                           root_container_name: Optional[str] = None) -> spp.Packet:
+                           root_container_name: Optional[str] = None) -> spp.SpacePacket:
         """Parse binary packet data according to the self.packet_definition object
 
         Parameters
         ----------
-        packet: space_packet_parser.Packet
+        packet: space_packet_parser.SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
         root_container_name : Optional[str]
@@ -482,7 +482,7 @@ class XtcePacketDefinition(common.AttrComparable):
             show_progress: bool = False,
             buffer_read_size_bytes: Optional[int] = None,
             skip_header_bytes: int = 0
-    ) -> Iterator[Union[spp.Packet, UnrecognizedPacketTypeError]]:
+    ) -> Iterator[Union[spp.SpacePacket, UnrecognizedPacketTypeError]]:
         """Create and return a Packet generator that reads from a ConstBitStream or a filelike object or a socket.
 
         Creating a generator object to return allows the user to create

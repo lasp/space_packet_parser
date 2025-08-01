@@ -3,12 +3,12 @@ from pathlib import Path
 from typing import Union
 
 from space_packet_parser.ccsds import ccsds_generator
-from space_packet_parser.common import Packet
+from space_packet_parser.common import SpacePacket
 from space_packet_parser.xtce.definitions import XtcePacketDefinition
 
 __all__ = [
     "ccsds_generator",
-    "Packet",
+    "SpacePacket",
     "XtcePacketDefinition",
     "load_xml",
 ]
