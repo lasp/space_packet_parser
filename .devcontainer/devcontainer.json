@@ -1,0 +1,61 @@
+{
+  "name": "Space Packet Parser",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "USERNAME": "sppdev"
+    }
+  },
+  "runArgs": [
+    "--cap-add=NET_ADMIN",
+    "--cap-add=NET_RAW"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.pylint",
+        "charliermarsh.ruff",
+        "ms-python.mypy-type-checker",
+        "tamasfe.even-better-toml",
+        "redhat.vscode-xml",
+        "ms-vscode.test-adapter-converter",
+        "ms-python.pytest",
+        "github.copilot",
+        "github.copilot-chat",
+        "anthropic.claude-code"
+      ],
+      "settings": {
+        "dev.containers.copyGitConfig": true,
+        "python.terminal.activateEnvironment": true,
+        "python.linting.enabled": true,
+        "python.linting.ruffEnabled": true,
+        "python.formatting.provider": "ruff",
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestArgs": [
+          "."
+        ],
+        "files.associations": {
+          "*.xtce": "xml"
+        },
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": "explicit"
+        },
+        "ruff.organizeImports": true,
+        "ruff.fixAll": true
+      }
+    }
+  },
+  "remoteUser": "sppdev",
+  "remoteEnv": {
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "CLAUDE_CONFIG_DIR": "/home/sppdev/.claude",
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
+    "COMMIT_GPGSIGN": "true",
+    "TAG_GPGSIGN": "true"
+  },
+  "postCreateCommand": "sudo /usr/local/bin/init-firewall.sh",
+  "postAttachCommand": "/usr/local/bin/setup-dev-environment.sh"
+}

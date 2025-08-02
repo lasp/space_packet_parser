@@ -1,0 +1,9 @@
+{
+  "autoUpdates": true,
+  "hasCompletedOnboarding": false,
+  "shiftEnterKeyBindingInstalled": true,
+  "fallbackAvailableWarningThreshold": 0.5,
+  "tipsHistory": {
+    "new-user-warmup": 1
+  }
+}
