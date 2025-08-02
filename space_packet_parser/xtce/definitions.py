@@ -389,8 +389,8 @@ class XtcePacketDefinition(common.AttrComparable):
 
         Returns
         -------
-        Packet
-            A Packet object containing header and data attributes.
+        SpacePacket
+            A SpacePacket object containing header and data attributes.
         """
         packet = spp.SpacePacket(binary_data=binary_data)
         return self.parse_packet(packet, root_container_name=root_container_name)
@@ -412,8 +412,8 @@ class XtcePacketDefinition(common.AttrComparable):
 
         Returns
         -------
-        Packet
-            A Packet object containing header and data attributes.
+        SpacePacket
+            A SpacePacket object containing header and data attributes.
         """
         root_container_name = root_container_name or self.root_container_name
         current_container: containers.SequenceContainer = self.containers[root_container_name]
@@ -462,8 +462,8 @@ class XtcePacketDefinition(common.AttrComparable):
 
         Returns
         -------
-        Packet
-            A Packet object containing header and data attributes.
+        SpacePacket
+            A SpacePacket object containing header and data attributes.
         """
         warnings.warn("parse_ccsds_packet is deprecated and will be removed in a future release. "
                       "Use the parse_packet method instead, XTCE has no notion of the ccsds standard.",
@@ -483,7 +483,7 @@ class XtcePacketDefinition(common.AttrComparable):
             buffer_read_size_bytes: Optional[int] = None,
             skip_header_bytes: int = 0
     ) -> Iterator[Union[spp.SpacePacket, UnrecognizedPacketTypeError]]:
-        """Create and return a Packet generator that reads from a ConstBitStream or a filelike object or a socket.
+        """Create and return a SpacePacket generator that reads from a ConstBitStream or a filelike object or a socket.
 
         Creating a generator object to return allows the user to create
         many generators from a single Parser and reduces memory usage.
@@ -491,7 +491,7 @@ class XtcePacketDefinition(common.AttrComparable):
         Parameters
         ----------
         binary_data : Union[BinaryIO, socket.socket]
-            Binary data source to parse into Packets.
+            Binary data source to parse into SpacePackets.
         parse_bad_pkts : bool
             Default True.
             If True, when the generator encounters a packet with an incorrect length it will still yield the packet
@@ -526,7 +526,7 @@ class XtcePacketDefinition(common.AttrComparable):
         Yields
         -------
         Union[Packet, UnrecognizedPacketTypeError]
-            Generator yields Packet objects containing the parsed packet data for each subsequent packet.
+            Generator yields SpacePacket objects containing the parsed packet data for each subsequent packet.
             If yield_unrecognized_packet_errors is True, it will yield an unraised exception object,
             which can be raised or used for debugging purposes.
         """

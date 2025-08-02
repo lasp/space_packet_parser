@@ -161,7 +161,7 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
 
         Parameters
         ----------
-        packet: Packet
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
 
@@ -353,7 +353,7 @@ class EnumeratedParameterType(ParameterType):
 
         Parameters
         ----------
-        packet: Packet
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
 
@@ -414,7 +414,7 @@ class BooleanParameterType(ParameterType):
 
         Parameters
         ----------
-        packet: Packet
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
 

@@ -105,7 +105,7 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
 
         Parameters
         ----------
-        packet: Packet
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
 
@@ -121,7 +121,7 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
 
         Parameters
         ----------
-        packet: Packet
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
         Returns
@@ -243,7 +243,7 @@ class StringDataEncoding(DataEncoding):
 
         Parameters
         ----------
-        packet : Packet
+        packet : SpacePacket
             Partially parsed packet for referencing previous data fields.
 
         Returns
@@ -284,7 +284,7 @@ class StringDataEncoding(DataEncoding):
 
         Parameters
         ----------
-        packet : Packet
+        packet : SpacePacket
             Packet parsed so far, for referencing previous values
 
         Returns
@@ -311,7 +311,7 @@ class StringDataEncoding(DataEncoding):
 
         Parameters
         ----------
-        packet: Packet
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
 
@@ -554,7 +554,7 @@ class NumericDataEncoding(DataEncoding, metaclass=ABCMeta):
 
         Parameters
         ----------
-        packet: Packet
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
 
@@ -581,7 +581,7 @@ class NumericDataEncoding(DataEncoding, metaclass=ABCMeta):
 
         Parameters
         ----------
-        packet: Packet
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
         Returns
@@ -966,7 +966,7 @@ class BinaryDataEncoding(DataEncoding):
 
         Parameters
         ----------
-        packet: Packet
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
 
