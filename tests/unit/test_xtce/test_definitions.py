@@ -508,3 +508,8 @@ def test_deprecated_definition_class(test_data_dir):
         xtce = DeprecatedXtcePacketDefinition(test_data_dir / "test_xtce.xml")
     assert xtce.containers == definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml").containers
 
+
+def test_definition_from_file_error():
+    """Nicer error message when calling the class directly"""
+    with pytest.raises(TypeError, match="container_set must be an iterable of SequenceContainer objects"):
+        definitions.XtcePacketDefinition("test_xtce.xml")
