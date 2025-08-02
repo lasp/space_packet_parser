@@ -32,7 +32,7 @@ The typical workflow for parsing packets is to
     protocol from CCSDS.
 
     ```python
-    for binary_packet in spp.ccsds_packet_generator("/path/to/packet_file.ccsds"):
+    for binary_packet in spp.ccsds_generator("/path/to/packet_file.ccsds"):
         # Print out each packet's header
         print(binary_packet)
     ```
@@ -58,11 +58,14 @@ Putting this all together in an example script:
 from pathlib import Path
 import space_packet_parser as spp
 
+packet_file = Path('my_packets.pkts')
 xtce_document = Path('my_xtce_document.xml')
+# 1) load the XTCE
 packet_definition = spp.load_xtce(xtce_document)
-with open("my_packets.pkts", "rb") as packet_file:
-    packet_generator = spp.ccsds_packet_generator(packet_file.open('rb'))
-    packets = [packet_definition.parse_bytes(ccsds_packet) for ccsds_packet in packet_generator]
+# 2) create a binary generator to yield packet binary data
+generator = spp.ccsds_generator(packet_file.open('rb'))
+# 3) parse individual packets with the definition
+packets = [packet_definition.parse_bytes(ccsds_packet) for ccsds_packet in generator]
 
 # You can introspect the packet definition to learn about what was parsed
 # Look up a type (includes unit and encoding info)
@@ -87,7 +90,7 @@ We aim to provide examples of usage patterns. Please see the `examples` director
 a specific example you want to see demonstrated, please open a GitHub Issue or Discussion for support.
 
 ## Packet Objects
-The object returned from the `packet_generator` is a `Packet` (unless you're yielding parsing
+The object returned from the `packet_generator` is a `SpacePacket` (unless you're yielding parsing
 exceptions for debugging). This object subclasses a python dictionary and behaves as a dictionary. To retrieve
 a parameter value from the yielded packet, you can iterate over its `items()` or you can access individual parameters
 by name.

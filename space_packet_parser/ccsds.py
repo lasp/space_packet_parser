@@ -181,7 +181,7 @@ def create_ccsds_packet(data=b"\x00",
 class CCSDSPacket(SpacePacket):
     """Packet representing parsed data items from CCSDS packet(s). DEPRECATED
 
-    This class is deprecated and will be removed in a future release. Use the Packet class instead.
+    This class is deprecated and will be removed in a future release. Use the SpacePacket class instead.
     In an XTCE representation, there is no guarantee that the CCSDS packet header will be defined
     as individual elements. If you want to access those elements, you can use the CCSDSPacketBytes
     class to extract the header fields with specific methods.
@@ -234,6 +234,8 @@ def ccsds_generator(
         Default False. If True, combines segmented packets into a single packet for parsing. This is useful for
         parsing packets that are split into multiple packets due to size constraints. The packet data is combined
         by concatenating the data from each packet together. The combined packet is then parsed as a single packet.
+        Only the first CCSDS header is kept when concatenating continued packets. CCSDS headers (and secondary headers)
+        from continuation packets are discarded.
     secondary_header_bytes : int
         Default 0. The length of the secondary header in bytes.
         This is used to skip the secondary header of segmented packets.
