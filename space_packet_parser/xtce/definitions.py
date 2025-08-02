@@ -85,6 +85,10 @@ class XtcePacketDefinition(common.AttrComparable):
         date: Optional[str]
             Optional header date string.
         """
+        if isinstance(container_set, (str, Path)):
+            raise TypeError("container_set must be an iterable of SequenceContainer objects. "
+                            "To instantiate an XtcePacketDefinition from an XTCE XML file, use "
+                            "XtcePacketDefinition.from_xtce() instead.")
         if xtce_ns_prefix is not None and xtce_ns_prefix not in ns:
             raise ValueError(f"XTCE namespace prefix {xtce_ns_prefix=} not in namespace mapping {ns=}. If the "
                              f"namespace prefix is not 'None', it must appear as a key in the namespace mapping dict.")
