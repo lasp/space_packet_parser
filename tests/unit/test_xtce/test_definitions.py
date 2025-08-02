@@ -4,6 +4,8 @@ import io
 import pytest
 from lxml import etree as ElementTree
 
+import space_packet_parser as spp
+import space_packet_parser.ccsds
 import space_packet_parser.xtce.parameter_types
 from space_packet_parser.xtce import comparisons, containers, definitions, encodings, parameters
 
@@ -501,10 +503,32 @@ def test_uniqueness_of_reused_sequence_container(jpss_test_data_dir):
 
 def test_deprecated_definition_class(test_data_dir):
     """Test that the deprecated XtcePacketDefinition class still works"""
-    with pytest.warns(UserWarning, match="The space_packet_parser.definitions module is deprecated"):
+    with pytest.warns(DeprecationWarning, match="The space_packet_parser.definitions module is deprecated"):
         from space_packet_parser.definitions import XtcePacketDefinition as DeprecatedXtcePacketDefinition
 
-    with pytest.warns(UserWarning, match="This class is deprecated"):
+    with pytest.warns(DeprecationWarning, match="This class is deprecated"):
         xtce = DeprecatedXtcePacketDefinition(test_data_dir / "test_xtce.xml")
     assert xtce.containers == definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml").containers
 
+
+def test_parse_methods(test_data_dir):
+    """Test parsing a packet from an XTCE document"""
+    xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
+
+    # Test parsing a packet
+    empty_packet_data = space_packet_parser.ccsds.create_ccsds_packet(data=bytes(80),
+                                                    apid=11,
+                                                    sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED)
+
+    # Full packet object with read methods attached
+    empty_packet = spp.SpacePacket(binary_data=empty_packet_data)
+    packet = xdef.parse_packet(empty_packet)
+    # With a CCSDSPacketBytes object
+    assert packet == xdef.parse_bytes(empty_packet_data)
+    # Raw bytes should work too, not required to be a CCSDSPacketBytes object
+    assert packet == xdef.parse_bytes(bytes(empty_packet_data))
+
+    # Deprecated method, can be removed in a future version
+    empty_packet = spp.SpacePacket(binary_data=empty_packet_data)
+    with pytest.warns(DeprecationWarning, match="parse_ccsds_packet is deprecated"):
+        assert packet == xdef.parse_ccsds_packet(empty_packet)

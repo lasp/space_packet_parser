@@ -8,7 +8,8 @@ from typing import Optional, Union
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
 
-from space_packet_parser import common, packets
+import space_packet_parser as spp
+from space_packet_parser import common
 from space_packet_parser.xtce import calibrators, comparisons
 
 logger = logging.getLogger(__name__)
@@ -99,12 +100,12 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
             return adjuster
         return None
 
-    def _calculate_size(self, packet: packets.CCSDSPacket) -> int:
+    def _calculate_size(self, packet: spp.SpacePacket) -> int:
         """Calculate the size of the data item in bits.
 
         Parameters
         ----------
-        packet: CCSDSPacket
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
 
@@ -115,12 +116,12 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         """
         return NotImplemented
 
-    def parse_value(self, packet: packets.CCSDSPacket) -> common.ParameterDataTypes:
+    def parse_value(self, packet: spp.SpacePacket) -> common.ParameterDataTypes:
         """Parse a value from packet data, possibly using previously parsed data items to inform parsing.
 
         Parameters
         ----------
-        packet: CCSDSPacket
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
         Returns
@@ -237,12 +238,12 @@ class StringDataEncoding(DataEncoding):
         self.discrete_lookup_length = discrete_lookup_length
         self.length_linear_adjuster = length_linear_adjuster
 
-    def _calculate_size(self, packet: packets.CCSDSPacket) -> int:
+    def _calculate_size(self, packet: spp.SpacePacket) -> int:
         """Calculate the size of the raw string buffer field
 
         Parameters
         ----------
-        packet : packets.CCSDSPacket
+        packet : SpacePacket
             Partially parsed packet for referencing previous data fields.
 
         Returns
@@ -274,7 +275,7 @@ class StringDataEncoding(DataEncoding):
             raise ValueError("No raw length specifier found when decoding a string.")
         return int(buflen_bits)
 
-    def _get_raw_buffer(self, packet: packets.CCSDSPacket) -> bytes:
+    def _get_raw_buffer(self, packet: spp.SpacePacket) -> bytes:
         """Get the raw string buffer as bytes. This will include any leading size or termination characters.
 
         Notes
@@ -283,7 +284,7 @@ class StringDataEncoding(DataEncoding):
 
         Parameters
         ----------
-        packet : packets.CCSDSPacket
+        packet : SpacePacket
             Packet parsed so far, for referencing previous values
 
         Returns
@@ -301,16 +302,16 @@ class StringDataEncoding(DataEncoding):
         # read_as_bytes pads on the left because it internally treats bytes as integers,
         # but for strings, we want any padding on the right, so shift the bytestring left by pad_bits
         raw_string_buffer = (
-                packet.raw_data.read_as_int(buflen_bits) << pad_bits
+                packet._read_from_binary_as_int(buflen_bits) << pad_bits
         ).to_bytes(buflen_bytes, "big")
         return raw_string_buffer
 
-    def parse_value(self, packet: packets.CCSDSPacket) -> common.StrParameter:
+    def parse_value(self, packet: spp.SpacePacket) -> common.StrParameter:
         """Parse a string value from packet data, possibly using previously parsed data items to inform parsing.
 
         Parameters
         ----------
-        packet: CCSDSPacket
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
 
@@ -322,25 +323,27 @@ class StringDataEncoding(DataEncoding):
             This includes any leading size or termination character and may be a non-integer
             number of bytes, padded on the RHS.
         """
-        raw_string_buffer = packets.RawPacketData(self._get_raw_buffer(packet))
+        raw_string_buffer = self._get_raw_buffer(packet)
+        # The read methods are on the Packet object, so create one here to get the read methods
+        readable_buffer = spp.SpacePacket(binary_data=raw_string_buffer)
         if self.leading_length_size:
-            strlen_bits = raw_string_buffer.read_as_int(self.leading_length_size)
+            strlen_bits = readable_buffer._read_from_binary_as_int(self.leading_length_size)
             if strlen_bits % 8 != 0:
                 raise ValueError(f"String length (in bits) is {strlen_bits}, which is not a multiple of 8. "
                                  "This is an error since strings must be an integer numbers of bytes.")
-            parsed_string = raw_string_buffer.read_as_bytes(strlen_bits).decode(self.encoding)
+            parsed_string = readable_buffer._read_from_binary_as_bytes(strlen_bits).decode(self.encoding)
         elif self.termination_character is not None:
             try:
                 tchar_byte_index = raw_string_buffer.index(self.termination_character)
             except ValueError as exc:
                 raise ValueError(f"Reached the end of the raw string buffer {raw_string_buffer} without finding the "
                                  f"termination character {self.termination_character}") from exc
-            parsed_string = raw_string_buffer.read_as_bytes(tchar_byte_index * 8).decode(self.encoding)
+            parsed_string = readable_buffer._read_from_binary_as_bytes(tchar_byte_index * 8).decode(self.encoding)
         else:
             # Indicates there is no further parsing. The raw string value is the whole string value.
             parsed_string = raw_string_buffer.decode(self.encoding)
 
-        return common.StrParameter(parsed_string, bytes(raw_string_buffer))
+        return common.StrParameter(parsed_string, raw_string_buffer)
 
     @classmethod
     def from_xml(
@@ -542,16 +545,16 @@ class NumericDataEncoding(DataEncoding, metaclass=ABCMeta):
         self.default_calibrator = default_calibrator
         self.context_calibrators = context_calibrators
 
-    def _calculate_size(self, packet: packets.CCSDSPacket) -> int:
+    def _calculate_size(self, packet: spp.SpacePacket) -> int:
         return self.size_in_bits
 
     @abstractmethod
-    def _get_raw_value(self, packet: packets.CCSDSPacket) -> Union[int, float]:
+    def _get_raw_value(self, packet: spp.SpacePacket) -> Union[int, float]:
         """Read the raw value from the packet data
 
         Parameters
         ----------
-        packet: CCSDSPacket
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
 
@@ -572,13 +575,13 @@ class NumericDataEncoding(DataEncoding, metaclass=ABCMeta):
         return val
 
     def parse_value(self,
-                    packet: packets.CCSDSPacket,
+                    packet: spp.SpacePacket,
                     ) -> Union[common.FloatParameter, common.IntParameter]:
         """Parse a value from packet data, possibly using previously parsed data items to inform parsing.
 
         Parameters
         ----------
-        packet: CCSDSPacket
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
         Returns
@@ -683,9 +686,9 @@ class IntegerDataEncoding(NumericDataEncoding):
             context_calibrators=context_calibrators
         )
 
-    def _get_raw_value(self, packet: packets.CCSDSPacket) -> int:
+    def _get_raw_value(self, packet: spp.SpacePacket) -> int:
         # Extract the bits from the data in big-endian order from the packet
-        val = packet.raw_data.read_as_int(self.size_in_bits)
+        val = packet._read_from_binary_as_int(self.size_in_bits)
         if self.byte_order == 'leastSignificantByteFirst':
             # Convert little-endian (LSB first) int to bigendian. Just reverses the order of the bytes.
             val = int.from_bytes(
@@ -845,7 +848,7 @@ class FloatDataEncoding(NumericDataEncoding):
 
     def _get_raw_value(self, packet):
         """Read the data in as bytes and return a float representation."""
-        data = packet.raw_data.read_as_bytes(self.size_in_bits)
+        data = packet._read_from_binary_as_bytes(self.size_in_bits)
         # The parsing function is fully set during initialization to save time during parsing
         return self.parse_func(data)
 
@@ -927,7 +930,7 @@ class BinaryDataEncoding(DataEncoding):
         self.size_discrete_lookup_list = size_discrete_lookup_list
         self.linear_adjuster = linear_adjuster
 
-    def _calculate_size(self, packet: packets.CCSDSPacket) -> int:
+    def _calculate_size(self, packet: spp.SpacePacket) -> int:
         """Determine the number of bits in the binary field.
 
         Returns
@@ -958,12 +961,12 @@ class BinaryDataEncoding(DataEncoding):
             len_bits = self.linear_adjuster(len_bits)
         return int(len_bits)
 
-    def parse_value(self, packet: packets.CCSDSPacket) -> common.BinaryParameter:
+    def parse_value(self, packet: spp.SpacePacket) -> common.BinaryParameter:
         """Parse a value from packet data, possibly using previously parsed data items to inform parsing.
 
         Parameters
         ----------
-        packet: CCSDSPacket
+        packet: SpacePacket
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
 
@@ -973,7 +976,7 @@ class BinaryDataEncoding(DataEncoding):
             Parsed binary data item.
         """
         nbits = self._calculate_size(packet)
-        parsed_value = packet.raw_data.read_as_bytes(nbits)
+        parsed_value = packet._read_from_binary_as_bytes(nbits)
         return common.BinaryParameter(parsed_value)
 
     @classmethod

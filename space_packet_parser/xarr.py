@@ -170,7 +170,7 @@ def create_dataset(
             packet_generator = list(xtce_packet_definition.packet_generator(f, **packet_generator_kwargs))
 
         for packet in packet_generator:
-            apid = packet.raw_data.apid
+            apid = packet.binary_data.apid
             if apid not in data_dict:
                 # This is the first packet for this APID
                 data_dict[apid] = collections.defaultdict(list)
