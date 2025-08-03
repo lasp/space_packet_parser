@@ -10,7 +10,7 @@ __all__ = [
     "ccsds_generator",
     "SpacePacket",
     "XtcePacketDefinition",
-    "load_xml",
+    "load_xtce",
 ]
 
 def load_xtce(filename: Union[str, Path]) -> XtcePacketDefinition:

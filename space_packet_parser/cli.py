@@ -22,6 +22,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.tree import Tree
 
+from space_packet_parser import ccsds
 from space_packet_parser.ccsds import ccsds_generator
 from space_packet_parser.xtce.definitions import DEFAULT_ROOT_CONTAINER, XtcePacketDefinition
 
@@ -178,16 +179,10 @@ def parse(
     """Parse a packet file using the provided XTCE definition."""
     logging.debug(f"Parsing packet file: {packet_file}")
     logging.debug(f"Using packet definition file: {definition_file}")
-
+    packet_definition = XtcePacketDefinition.from_xtce(definition_file)
     with open(packet_file, "rb") as f:
-        packets = list(
-            XtcePacketDefinition.from_xtce(
-                definition_file
-            ).packet_generator(
-                f,
-                skip_header_bytes=skip_header_bytes
-            )
-        )
+        ccsds_generator = ccsds.ccsds_generator(f, skip_header_bytes=skip_header_bytes)
+        packets = [packet_definition.parse_bytes(binary_data) for binary_data in ccsds_generator]
 
     if packet is not None:
         if packet > len(packets):

@@ -5,6 +5,7 @@ The data used here is SUDA data but the fields are parsed using IDEX naming conv
 """
 # Local
 import space_packet_parser as spp
+from space_packet_parser import ccsds
 from space_packet_parser.xtce import definitions
 
 
@@ -50,19 +51,21 @@ def test_suda_xtce_packet_parsing(suda_test_data_dir):
     suda_packet_file = suda_test_data_dir / 'sciData_2022_130_17_41_53.spl'
 
     with suda_packet_file.open('rb') as suda_binary_data:
-        suda_packet_generator = suda_definition.packet_generator(suda_binary_data,
-                                                                 skip_header_bytes=4,
-                                                                 show_progress=True)
-        for suda_packet in suda_packet_generator:
+        suda_ccsds_generator = ccsds.ccsds_generator(suda_binary_data,
+                                                     skip_header_bytes=4,
+                                                     show_progress=True)
+        for packet_bytes in suda_ccsds_generator:
+            suda_packet = suda_definition.parse_bytes(packet_bytes)
             assert isinstance(suda_packet, spp.SpacePacket)
             assert suda_packet['PKT_APID'] == 1425, "APID is not as expected."
             assert suda_packet['VERSION'] == 0, "CCSDS header VERSION incorrect."
 
-        suda_packet_generator = suda_definition.packet_generator(suda_binary_data,
-                                                                 skip_header_bytes=4)
+        suda_ccsds_generator = ccsds.ccsds_generator(suda_binary_data,
+                                                     skip_header_bytes=4)
 
         try:
-            p = next(suda_packet_generator)
+            packet_bytes = next(suda_ccsds_generator)
+            p = suda_definition.parse_bytes(packet_bytes)
             while True:
                 if 'IDX__SCIFETCHTYPE' in p:
                     scitype = p['IDX__SCIFETCHTYPE'].raw_value
@@ -70,13 +73,15 @@ def test_suda_xtce_packet_parsing(suda_test_data_dir):
                     if scitype == 1:  # beginning of an event
                         data = {}
                         # Each time we encounter a new scitype, we create a new array.
-                        p = next(suda_packet_generator)
+                        packet_bytes = next(suda_ccsds_generator)
+                        p = suda_definition.parse_bytes(packet_bytes)
                         scitype = p['IDX__SCIFETCHTYPE'].raw_value
                         print(scitype, end=", ")
                         data[scitype] = p['IDX__SCIFETCHRAW'].raw_value
                         while True:
                             # If we run into the end of the file, this will raise StopIteration
-                            p_next = next(suda_packet_generator)
+                            packet_bytes_next = next(suda_ccsds_generator)
+                            p_next = suda_definition.parse_bytes(packet_bytes_next)
                             next_scitype = p_next['IDX__SCIFETCHTYPE'].raw_value
                             print(next_scitype, end=", ")
                             if next_scitype == scitype:

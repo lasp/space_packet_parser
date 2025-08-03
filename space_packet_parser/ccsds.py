@@ -112,6 +112,21 @@ class CCSDSPacketBytes(bytes):
                 self.sequence_count,
                 self.data_length)
 
+    @property
+    def header(self) -> bytes:
+        """Convenience property returns the CCSDS header bytes"""
+        return self[:6]
+
+    @property
+    def user_data(self) -> bytes:
+        """Convenience property returns only the user data bytes (no header)
+
+        Notes:
+        ------
+        This includes the secondary header, if present
+        """
+        return self[6:]
+
 
 def create_ccsds_packet(data=b"\x00",
                         *,
