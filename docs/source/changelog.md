@@ -14,21 +14,21 @@ Release notes for the `space_packet_parser` library
 - Add support for creating a packet definition from Python objects and serializing it as XML.
 - BUGFIX: Fix kbps calculation in packet generator for showing progress.
 - Add support for string and float encoded enumerated lookup parameters.
-- Add properties to extract the CCSDS Header items from the ``RawPacketData`` object directly.
-  e.g. ``RawPacketData.apid``
+- Add properties to extract the CCSDS Header items from the ``CCSDSPacketBytes`` object directly.
+  e.g. ``CCSDSPacketBytes.apid``
 - Add a ``create_ccsds_packet`` function that can create a CCSDS Packet
   with the given header items and data. This is useful for creating
   mock packets in testing and experimentation for creating debugging
   streams as needed.
-- Add a ``ccsds_packet_generator()`` function that iterates through raw
+- Add a ``ccsds_generator()`` function that iterates through raw
   bytes and yields individual CCSDS packets.
-- Add continuation packet support to the XTCE parsing and packet generation.
+- Add continuation packet support to the ccsds packet generation.
   This adds logic to concatenate packet data fields together across successive
   packets (if there was too much data to fit in a single CCSDS packet or it
   was logically better to split by other teams).
   - Add warnings if packets are out of sequence within a given apid.
   - Add ability to remove secondary header bytes from subsequent packets.
-    ``definition.packet_generator(data, combine_segmented_packets=True, secondary_header_bytes=4)``
+    ``ccsds_generator(data, combine_segmented_packets=True, secondary_header_bytes=4)``
 - Add a command line interface (spp) to enable quick and easy access to
   some common tasks and utilities.
 - Add function to directly create an `xarray.DataSet` from a packet file and XTCE definition.

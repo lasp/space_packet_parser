@@ -1,5 +1,5 @@
 """Test RestrictionCriteria being used creatively with JPSS data"""
-from space_packet_parser import packets
+import space_packet_parser as spp
 from space_packet_parser.xtce import definitions
 
 
@@ -14,7 +14,7 @@ def test_jpss_xtce_packet_parsing(jpss_test_data_dir):
         jpss_packet_generator = jpss_definition.packet_generator(binary_data)
         for _ in range(3):  # Iterate through 3 packets and check that the parsed APID remains the same
             jpss_packet = next(jpss_packet_generator)
-            assert isinstance(jpss_packet, packets.CCSDSPacket)
-            assert jpss_packet.header['PKT_APID'].raw_value == 11
-            assert jpss_packet.header['VERSION'].raw_value == 0
+            assert isinstance(jpss_packet, spp.SpacePacket)
+            assert jpss_packet['PKT_APID'] == 11
+            assert jpss_packet['VERSION'] == 0
         jpss_packet_generator.close()

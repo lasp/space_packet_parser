@@ -90,9 +90,11 @@ Progress: [====================]100% [Elapsed: 0:00:00.264275, Parsed 511200 byt
 ## Parsing Individual Values Benchmarking
 
 In addition to the benchmarks discussed above, we also benchmarked the low level operations that make up most
-of the parsing work. The parser relies on two fundamental methods: `read_as_int(nbits)` and `read_as_bytes(nbits)`,
-each of which is capable of reading an arbitrary number of bits from a byte string. That is, the binary data being
-parsed need not be byte aligned or even an integer number of bytes.
+of the parsing work. The parser relies on two fundamental methods: `_read_from_binary_as_int(nbits)` and
+`_read_from_binary_as_bytes(nbits)`, each of which is capable of reading an arbitrary number of bits from a bytes object.
+That is, the binary data being parsed need not be byte aligned or even an integer number of bytes. These are not intended
+to be used by external users, but are included in the benchmarks because they are fundamental to how fast we can
+parse items from binary data.
 
 ```
 -------------------------------------------------------------------------------------------------------- benchmark: 5 tests --------------------------------------------------------------------------------------------------------
