@@ -443,6 +443,13 @@ class XtcePacketDefinition(common.AttrComparable):
             raise UnrecognizedPacketTypeError(
                 f"Multiple valid inheritors, {valid_inheritors} are possible for {current_container}.",
                 partial_data=packet)
+        if packet._parsing_pos != len(packet.binary_data) * 8:
+            message = (f"Number of bits parsed ({packet._parsing_pos}b) did not match " +
+                       f"the length of data available ({len(packet.binary_data) * 8}b).")
+            if isinstance(packet.binary_data, ccsds.CCSDSPacketBytes):
+                # Add in the CCSDS Header printout
+                message += f" {packet.binary_data}."
+            warnings.warn(message)
         return packet
 
     def parse_ccsds_packet(self,
@@ -552,13 +559,8 @@ class XtcePacketDefinition(common.AttrComparable):
                 # Continue to next packet
                 continue
 
-            if packet._parsing_pos != len(packet.binary_data) * 8:
-                warnings.warn(f"Number of bits parsed ({packet._parsing_pos}b) did not match "
-                              f"the length of data available ({len(packet.binary_data) * 8}b) for packet with APID "
-                              f"{raw_packet_data.apid}.")
-
-                if not parse_bad_pkts:
-                    logger.warning(f"Skipping (not yielding) bad packet with apid {raw_packet_data.apid}.")
-                    continue
+            if not parse_bad_pkts and packet._parsing_pos != len(packet.binary_data) * 8:
+                logger.warning(f"Skipping (not yielding) bad packet with apid {raw_packet_data.apid}.")
+                continue
 
             yield packet

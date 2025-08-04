@@ -516,7 +516,7 @@ def test_parse_methods(test_data_dir):
     xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
 
     # Test parsing a packet
-    empty_packet_data = space_packet_parser.ccsds.create_ccsds_packet(data=bytes(80),
+    empty_packet_data = space_packet_parser.ccsds.create_ccsds_packet(data=bytes(65),
                                                     apid=11,
                                                     sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED)
 
@@ -527,6 +527,9 @@ def test_parse_methods(test_data_dir):
     assert packet == xdef.parse_bytes(empty_packet_data)
     # Raw bytes should work too, not required to be a CCSDSPacketBytes object
     assert packet == xdef.parse_bytes(bytes(empty_packet_data))
+    # Emit a warning if we have too many bytes for this definition
+    with pytest.warns(UserWarning, match="Number of bits parsed"):
+        assert packet == xdef.parse_bytes(empty_packet_data + b'\x00\x00')
 
     # Deprecated method, can be removed in a future version
     empty_packet = spp.SpacePacket(binary_data=empty_packet_data)
