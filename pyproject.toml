@@ -61,7 +61,7 @@ spp = "space_packet_parser.cli:spp"
 [project.optional-dependencies]
 xarray = [
     "xarray>2024.0.0",
-    "numpy>=2.0.0"
+    "numpy>=1.26.0"
 ]
 examples = [
     "matplotlib>=3.4"
