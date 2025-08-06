@@ -2,11 +2,10 @@
 
 Each test in this suite tests a specific metric over time
 """
-from collections.abc import Iterable
 
 import pytest
 
-import space_packet_parser as spp
+from space_packet_parser import ccsds
 from space_packet_parser.xtce import definitions
 
 
@@ -38,12 +37,12 @@ def test_benchmark_simple_packet_parsing(benchmark, jpss_test_data_dir):
         def _setup():
             """Function that sets up for each benchmark round"""
             packet_fh.seek(0)
-            packet_generator = packet_definition.packet_generator(packet_fh)
-            return (), {"generator": packet_generator}  # args, kwargs for benchmarked function
+            ccsds_generator = ccsds.ccsds_generator(packet_fh)
+            return (), {"generator": ccsds_generator}  # args, kwargs for benchmarked function
 
-        def _make_packet_list(generator: Iterable[spp.SpacePacket]):
+        def _make_packet_list(generator):
             """Function wrapper for list that takes the generator as a kwarg"""
-            return list(generator)
+            return [packet_definition.parse_bytes(binary_data) for binary_data in generator]
 
         # The setup function is run before each "round" so "iterations" is automatically set to 1 and cannot be changed
         packet_list: list = benchmark.pedantic(_make_packet_list, setup=_setup, rounds=20, warmup_rounds=1)
@@ -69,12 +68,12 @@ def test_benchmark_complex_packet_parsing(benchmark, idex_test_data_dir):
         def _setup():
             """Function that sets up for each benchmark round"""
             packet_fh.seek(0)
-            packet_generator = packet_definition.packet_generator(packet_fh, show_progress=True)
-            return (), {"generator": packet_generator}  # args, kwargs for benchmarked function
+            ccsds_generator = ccsds.ccsds_generator(packet_fh, show_progress=True)
+            return (), {"generator": ccsds_generator}  # args, kwargs for benchmarked function
 
-        def _make_packet_list(generator: Iterable[spp.SpacePacket]):
+        def _make_packet_list(generator):
             """Function wrapper for list that takes the generator as a kwarg"""
-            return list(generator)
+            return [packet_definition.parse_bytes(binary_data) for binary_data in generator]
 
         # The setup function is run before each "round" so "iterations" is automatically set to 1 and cannot be changed
         packet_list: list = benchmark.pedantic(_make_packet_list, setup=_setup, rounds=20, warmup_rounds=1)

@@ -3,7 +3,7 @@
 # Set up the development environment
 
 # Install poetry dependencies
-poetry install
+poetry lock && poetry sync
 
 # Install pre-commit and pre-commit hooks
 pre-commit install

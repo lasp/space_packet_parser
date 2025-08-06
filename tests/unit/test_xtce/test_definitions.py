@@ -526,18 +526,56 @@ def test_parse_methods(test_data_dir):
                                                     apid=11,
                                                     sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED)
 
-    # Full packet object with read methods attached
-    empty_packet = spp.SpacePacket(binary_data=empty_packet_data)
-    packet = xdef.parse_packet(empty_packet)
-    # With a CCSDSPacketBytes object
-    assert packet == xdef.parse_bytes(empty_packet_data)
+    # Parse in the simplest way and compare result to other parse methods
+    packet = xdef.parse_bytes(empty_packet_data)
     # Raw bytes should work too, not required to be a CCSDSPacketBytes object
     assert packet == xdef.parse_bytes(bytes(empty_packet_data))
     # Emit a warning if we have too many bytes for this definition
     with pytest.warns(UserWarning, match="Number of bits parsed"):
         assert packet == xdef.parse_bytes(empty_packet_data + b'\x00\x00')
 
-    # Deprecated method, can be removed in a future version
+    # Deprecated parse_ccsds_packet method, can be removed in a future version
     empty_packet = spp.SpacePacket(binary_data=empty_packet_data)
     with pytest.warns(DeprecationWarning, match="parse_ccsds_packet is deprecated"):
-        assert packet == xdef.parse_ccsds_packet(empty_packet)
+        with pytest.warns(DeprecationWarning, match="parse_packet is deprecated"):
+            assert packet == xdef.parse_ccsds_packet(empty_packet)
+
+    # Deprecated parse_packet method, can be removed in a future version
+    empty_packet = spp.SpacePacket(binary_data=empty_packet_data)
+    with pytest.warns(DeprecationWarning, match="parse_packet is deprecated"):
+        assert packet == xdef.parse_packet(empty_packet)
+
+
+def test_parse_packet_extra_bytes(test_data_dir):
+    """Test parsing a packet that has too many raw bytes
+
+    This should warn the user that there is unparsed data
+    """
+    xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
+
+    # Test parsing a packet that is longer than the definition
+    too_long_packet_data = space_packet_parser.ccsds.create_ccsds_packet(data=bytes(70),
+                                                    apid=11,
+                                                    sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED)
+
+    with pytest.warns(UserWarning,
+                      match=r"Number of bits parsed \(568b\) did not match the length of data available \(608b\)"):
+        xdef.parse_bytes(too_long_packet_data)
+
+
+def test_parse_packet_too_few_bytes(test_data_dir):
+    """Test parsing a packet that has too few raw bytes
+
+    This should raise an exception
+    """
+    xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
+
+    # Test parsing a packet that is longer than the definition
+    too_short_packet_data = space_packet_parser.ccsds.create_ccsds_packet(data=bytes(60),
+                                                    apid=11,
+                                                    sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED)
+
+    with pytest.raises(ValueError,
+                       match=r"Tried to read beyond the end of the packet data. "
+                             r"Tried to read 32 bits from position 504 in a packet of length 528 bits."):
+        xdef.parse_bytes(too_short_packet_data)

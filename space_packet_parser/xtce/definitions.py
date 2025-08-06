@@ -1,11 +1,11 @@
 """Module for parsing XTCE xml files to specify packet format"""
+
 import logging
-import socket
 import warnings
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import BinaryIO, Optional, TextIO, Union
+from typing import Optional, TextIO, Union
 
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
@@ -26,15 +26,15 @@ logger = logging.getLogger(__name__)
 DEFAULT_ROOT_CONTAINER = "CCSDSPacket"
 
 TAG_NAME_TO_PARAMETER_TYPE_OBJECT = {
-        'StringParameterType': parameter_types.StringParameterType,
-        'IntegerParameterType': parameter_types.IntegerParameterType,
-        'FloatParameterType': parameter_types.FloatParameterType,
-        'EnumeratedParameterType': parameter_types.EnumeratedParameterType,
-        'BinaryParameterType': parameter_types.BinaryParameterType,
-        'BooleanParameterType': parameter_types.BooleanParameterType,
-        'AbsoluteTimeParameterType': parameter_types.AbsoluteTimeParameterType,
-        'RelativeTimeParameterType': parameter_types.RelativeTimeParameterType,
-    }
+    "StringParameterType": parameter_types.StringParameterType,
+    "IntegerParameterType": parameter_types.IntegerParameterType,
+    "FloatParameterType": parameter_types.FloatParameterType,
+    "EnumeratedParameterType": parameter_types.EnumeratedParameterType,
+    "BinaryParameterType": parameter_types.BinaryParameterType,
+    "BooleanParameterType": parameter_types.BooleanParameterType,
+    "AbsoluteTimeParameterType": parameter_types.AbsoluteTimeParameterType,
+    "RelativeTimeParameterType": parameter_types.RelativeTimeParameterType,
+}
 
 
 class XtcePacketDefinition(common.AttrComparable):
@@ -46,16 +46,16 @@ class XtcePacketDefinition(common.AttrComparable):
     #                   xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd"
     #  This will require an additional namespace dict entry for xsi (in this example)
     def __init__(
-            self,
-            container_set: Optional[Iterable[containers.SequenceContainer]] = None,
-            *,
-            ns: dict = DEFAULT_XTCE_NSMAP,
-            xtce_ns_prefix: Optional[str] = DEFAULT_XTCE_NS_PREFIX,
-            root_container_name: Optional[str] = DEFAULT_ROOT_CONTAINER,
-            space_system_name: Optional[str] = None,
-            validation_status: str = "Unknown",
-            xtce_version: str = "1.0",
-            date: str = None
+        self,
+        container_set: Optional[Iterable[containers.SequenceContainer]] = None,
+        *,
+        ns: dict = DEFAULT_XTCE_NSMAP,
+        xtce_ns_prefix: Optional[str] = DEFAULT_XTCE_NS_PREFIX,
+        root_container_name: Optional[str] = DEFAULT_ROOT_CONTAINER,
+        space_system_name: Optional[str] = None,
+        validation_status: str = "Unknown",
+        xtce_version: str = "1.0",
+        date: Optional[str] = None,
     ):
         f"""
 
@@ -90,12 +90,14 @@ class XtcePacketDefinition(common.AttrComparable):
                             "To instantiate an XtcePacketDefinition from an XTCE XML file, use "
                             "XtcePacketDefinition.from_xtce() instead.")
         if xtce_ns_prefix is not None and xtce_ns_prefix not in ns:
-            raise ValueError(f"XTCE namespace prefix {xtce_ns_prefix=} not in namespace mapping {ns=}. If the "
-                             f"namespace prefix is not 'None', it must appear as a key in the namespace mapping dict.")
+            raise ValueError(
+                f"XTCE namespace prefix {xtce_ns_prefix=} not in namespace mapping {ns=}. If the "
+                f"namespace prefix is not 'None', it must appear as a key in the namespace mapping dict."
+            )
 
-        self.parameter_types = {}
-        self.parameters = {}
-        self.containers = {}
+        self.parameter_types: dict[str, parameter_types.ParameterType] = {}
+        self.parameters: dict[str, parameters.Parameter] = {}
+        self.containers: dict[str, containers.SequenceContainer] = {}
 
         def _update_caches(sc: containers.SequenceContainer) -> None:
             """Iterate through a SequenceContainer, updating internal caches with all Parameter, ParameterType,
@@ -141,7 +143,7 @@ class XtcePacketDefinition(common.AttrComparable):
         filepath : Union[str, Path]
             Location to write this packet definition
         """
-        self.to_xml_tree().write(filepath.absolute(), pretty_print=True, xml_declaration=True, encoding="utf-8")
+        self.to_xml_tree().write(Path(filepath).absolute(), pretty_print=True, xml_declaration=True, encoding="utf-8")
 
     def to_xml_tree(self) -> ElementTree.ElementTree:
         """Initializes and returns an ElementTree object based on parameter type, parameter, and container information
@@ -163,7 +165,7 @@ class XtcePacketDefinition(common.AttrComparable):
         header_attrib = {
             "date": self.date or datetime.now().isoformat(),
             "version": self.xtce_version,
-            "validationStatus": self.validation_status
+            "validationStatus": self.validation_status,
         }
 
         # TODO: Ensure XSI namespace and XSD reference are written to the root element
@@ -179,9 +181,9 @@ class XtcePacketDefinition(common.AttrComparable):
                     ),
                     elmaker.ContainerSet(
                         *(sc.to_xml(elmaker=elmaker) for sc in self.containers.values()),
-                    )
+                    ),
                 ),
-                **space_system_attrib
+                **space_system_attrib,
             )
         )
 
@@ -189,12 +191,12 @@ class XtcePacketDefinition(common.AttrComparable):
 
     @classmethod
     def from_xtce(
-            cls,
-            xtce_document: Union[str, Path, TextIO],
-            *,
-            xtce_ns_prefix: Optional[str] = DEFAULT_XTCE_NS_PREFIX,
-            root_container_name: Optional[str] = DEFAULT_ROOT_CONTAINER
-    ) -> 'XtcePacketDefinition':
+        cls,
+        xtce_document: Union[str, Path, TextIO],
+        *,
+        xtce_ns_prefix: Optional[str] = DEFAULT_XTCE_NS_PREFIX,
+        root_container_name: Optional[str] = DEFAULT_ROOT_CONTAINER,
+    ) -> "XtcePacketDefinition":
         f"""Instantiate an object representation of a CCSDS packet definition,
         according to a format specified in an XTCE XML document.
 
@@ -252,15 +254,14 @@ class XtcePacketDefinition(common.AttrComparable):
             xtce_ns_prefix=xtce_ns_prefix,
             root_container_name=root_container_name,
             date=date,
-            space_system_name=space_system.attrib.get("name", None)
+            space_system_name=space_system.attrib.get("name", None),
         )
 
         return xtce_definition
 
     @staticmethod
     def _parse_container_set(
-            tree: ElementTree.Element,
-            parameter_lookup: dict[str, parameters.Parameter]
+        tree: ElementTree.Element, parameter_lookup: dict[str, parameters.Parameter]
     ) -> dict[str, containers.SequenceContainer]:
         """Parse the <xtce:ContainerSet> element into a dictionary of SequenceContainer objects
 
@@ -275,14 +276,15 @@ class XtcePacketDefinition(common.AttrComparable):
         -------
         : dict[str, containers.SequenceContainer]
         """
-        container_lookup = {}  # This lookup dict is mutated as a side effect by SequenceContainer parsing methods
+        # This lookup dict is mutated as a side effect by SequenceContainer parsing methods
+        container_lookup: dict[str, containers.SequenceContainer] = {}
         container_set_element = tree.getroot().find("TelemetryMetaData/ContainerSet")
-        for sequence_container_element in container_set_element.iterfind('*'):
+        for sequence_container_element in container_set_element.iterfind("*"):
             sequence_container = containers.SequenceContainer.from_xml(
                 sequence_container_element,
                 tree=tree,
                 parameter_lookup=parameter_lookup,
-                container_lookup=container_lookup
+                container_lookup=container_lookup,
             )
 
             if sequence_container.name not in container_lookup:
@@ -290,9 +292,11 @@ class XtcePacketDefinition(common.AttrComparable):
             elif container_lookup[sequence_container.name] == sequence_container:
                 continue
             else:
-                raise ValueError(f"Found duplicate sequence container name "
-                                 f"{sequence_container.name} for two non-equal "
-                                 f"sequence containers. Sequence container names are expected to be unique.")
+                raise ValueError(
+                    f"Found duplicate sequence container name "
+                    f"{sequence_container.name} for two non-equal "
+                    f"sequence containers. Sequence container names are expected to be unique."
+                )
 
         # Back-populate the list of inheritors for each container
         for name, sc in container_lookup.items():
@@ -302,9 +306,7 @@ class XtcePacketDefinition(common.AttrComparable):
         return container_lookup
 
     @staticmethod
-    def _parse_parameter_type_set(
-            tree: ElementTree.ElementTree
-    ) -> dict[str, parameter_types.ParameterType]:
+    def _parse_parameter_type_set(tree: ElementTree.ElementTree) -> dict[str, parameter_types.ParameterType]:
         """Parse the <xtce:ParameterTypeSet> into a dictionary of ParameterType objects
 
         Parameters
@@ -318,36 +320,41 @@ class XtcePacketDefinition(common.AttrComparable):
         """
         parameter_type_dict = {}
         parameter_type_set_element = tree.getroot().find("TelemetryMetaData/ParameterTypeSet")
-        for parameter_type_element in parameter_type_set_element.iterfind('*'):
+        for parameter_type_element in parameter_type_set_element.iterfind("*"):
             try:
                 parameter_type_class = TAG_NAME_TO_PARAMETER_TYPE_OBJECT[
                     ElementTree.QName(parameter_type_element).localname
                 ]
             except KeyError as e:
                 if (
-                        "ArrayParameterType" in parameter_type_element.tag or
-                        "AggregateParameterType" in parameter_type_element.tag
+                    "ArrayParameterType" in parameter_type_element.tag
+                    or "AggregateParameterType" in parameter_type_element.tag
                 ):
-                    raise NotImplementedError(f"Unsupported parameter type {parameter_type_element.tag}. "
-                                              "Supporting this parameter type is in the roadmap but has "
-                                              "not yet been implemented.") from e
-                raise InvalidParameterTypeError(f"Invalid parameter type {parameter_type_element.tag}. "
-                                                "If you believe this is a valid XTCE parameter type, "
-                                                "please open a feature request as a Github issue with a "
-                                                "reference to the XTCE element description for the "
-                                                "parameter type element.") from e
+                    raise NotImplementedError(
+                        f"Unsupported parameter type {parameter_type_element.tag}. "
+                        "Supporting this parameter type is in the roadmap but has "
+                        "not yet been implemented."
+                    ) from e
+                raise InvalidParameterTypeError(
+                    f"Invalid parameter type {parameter_type_element.tag}. "
+                    "If you believe this is a valid XTCE parameter type, "
+                    "please open a feature request as a Github issue with a "
+                    "reference to the XTCE element description for the "
+                    "parameter type element."
+                ) from e
             parameter_type_object = parameter_type_class.from_xml(parameter_type_element)
             if parameter_type_object.name in parameter_type_dict:
-                raise ValueError(f"Found duplicate parameter type {parameter_type_object.name}. "
-                                 f"Parameter types names are expected to be unique")
+                raise ValueError(
+                    f"Found duplicate parameter type {parameter_type_object.name}. "
+                    f"Parameter types names are expected to be unique"
+                )
             parameter_type_dict[parameter_type_object.name] = parameter_type_object  # Add to cache
 
         return parameter_type_dict
 
     @staticmethod
     def _parse_parameter_set(
-            tree: ElementTree.ElementTree,
-            parameter_type_lookup: dict[str, parameter_types.ParameterType]
+        tree: ElementTree.ElementTree, parameter_type_lookup: dict[str, parameter_types.ParameterType]
     ) -> dict[str, parameters.Parameter]:
         """Parse an <xtce:ParameterSet> object into a dictionary of Parameter objects
 
@@ -364,22 +371,21 @@ class XtcePacketDefinition(common.AttrComparable):
         """
         parameter_lookup = {}
         parameter_set_element = tree.getroot().find("TelemetryMetaData/ParameterSet")
-        for parameter_element in parameter_set_element.iterfind('*'):
-            parameter_object = parameters.Parameter.from_xml(parameter_element,
-                                                             parameter_type_lookup=parameter_type_lookup)
+        for parameter_element in parameter_set_element.iterfind("*"):
+            parameter_object = parameters.Parameter.from_xml(
+                parameter_element, parameter_type_lookup=parameter_type_lookup
+            )
 
             if parameter_object.name in parameter_lookup:
-                raise ValueError(f"Found duplicate parameter name {parameter_object.name}. "
-                                 "Parameters are expected to be unique")
+                raise ValueError(
+                    f"Found duplicate parameter name {parameter_object.name}. Parameters are expected to be unique"
+                )
 
             parameter_lookup[parameter_object.name] = parameter_object  # Add to cache
 
         return parameter_lookup
 
-    def parse_bytes(self,
-                    binary_data: bytes,
-                    *,
-                    root_container_name: Optional[str] = None) -> spp.SpacePacket:
+    def parse_bytes(self, binary_data: bytes, *, root_container_name: Optional[str] = None) -> spp.SpacePacket:
         """Parse binary packet data according to the self.packet_definition object
 
         Parameters
@@ -397,28 +403,7 @@ class XtcePacketDefinition(common.AttrComparable):
             A SpacePacket object containing header and data attributes.
         """
         packet = spp.SpacePacket(binary_data=binary_data)
-        return self.parse_packet(packet, root_container_name=root_container_name)
 
-    def parse_packet(self,
-                     packet: spp.SpacePacket,
-                     *,
-                     root_container_name: Optional[str] = None) -> spp.SpacePacket:
-        """Parse binary packet data according to the self.packet_definition object
-
-        Parameters
-        ----------
-        packet: space_packet_parser.SpacePacket
-            Binary representation of the packet used to get the coming bits and any
-            previously parsed data items to infer field lengths.
-        root_container_name : Optional[str]
-            Default is taken from the XtcePacketDefinition object. Any root container may be specified, but it must
-            begin with the definition of a CCSDS header in order to parse correctly.
-
-        Returns
-        -------
-        SpacePacket
-            A SpacePacket object containing header and data attributes.
-        """
         root_container_name = root_container_name or self.root_container_name
         current_container: containers.SequenceContainer = self.containers[root_container_name]
         while True:
@@ -426,8 +411,7 @@ class XtcePacketDefinition(common.AttrComparable):
 
             valid_inheritors = []
             for inheritor_name in current_container.inheritors:
-                if all(rc.evaluate(packet)
-                       for rc in self.containers[inheritor_name].restriction_criteria):
+                if all(rc.evaluate(packet) for rc in self.containers[inheritor_name].restriction_criteria):
                     valid_inheritors.append(inheritor_name)
 
             if len(valid_inheritors) == 1:
@@ -441,7 +425,8 @@ class XtcePacketDefinition(common.AttrComparable):
                         f"Detected an abstract container with no valid inheritors by restriction criteria. "
                         f"This might mean this packet type is not accounted for in the provided packet definition. "
                         f"APID={packet['PKT_APID']}.",
-                        partial_data=packet)
+                        partial_data=packet,
+                    )
                 break
 
             raise UnrecognizedPacketTypeError(
@@ -456,10 +441,7 @@ class XtcePacketDefinition(common.AttrComparable):
             warnings.warn(message)
         return packet
 
-    def parse_ccsds_packet(self,
-                           packet: spp.SpacePacket,
-                           *,
-                           root_container_name: Optional[str] = None) -> spp.SpacePacket:
+    def parse_packet(self, packet: spp.SpacePacket, *, root_container_name: Optional[str] = None) -> spp.SpacePacket:
         """Parse binary packet data according to the self.packet_definition object
 
         Parameters
@@ -476,95 +458,37 @@ class XtcePacketDefinition(common.AttrComparable):
         SpacePacket
             A SpacePacket object containing header and data attributes.
         """
-        warnings.warn("parse_ccsds_packet is deprecated and will be removed in a future release. "
-                      "Use the parse_packet method instead, XTCE has no notion of the ccsds standard.",
-                      DeprecationWarning, stacklevel=2)
-        return self.parse_packet(packet, root_container_name=root_container_name)
+        warnings.warn(
+            "parse_packet is deprecated and will be removed in a future release. "
+            "Use the parse_bytes method instead, XTCE has no notion of the ccsds standard.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.parse_bytes(packet.binary_data, root_container_name=root_container_name)
 
-
-    def packet_generator(
-            self,
-            binary_data: Union[BinaryIO, socket.socket, bytes],
-            *,
-            parse_bad_pkts: bool = True,
-            root_container_name: Optional[str] = None,
-            ccsds_headers_only: bool = False,
-            yield_unrecognized_packet_errors: bool = False,
-            show_progress: bool = False,
-            buffer_read_size_bytes: Optional[int] = None,
-            skip_header_bytes: int = 0
-    ) -> Iterator[Union[spp.SpacePacket, UnrecognizedPacketTypeError]]:
-        """Create and return a SpacePacket generator that reads from a ConstBitStream or a filelike object or a socket.
-
-        Creating a generator object to return allows the user to create
-        many generators from a single Parser and reduces memory usage.
+    def parse_ccsds_packet(
+        self, packet: spp.SpacePacket, *, root_container_name: Optional[str] = None
+    ) -> spp.SpacePacket:
+        """Parse binary packet data according to the self.packet_definition object
 
         Parameters
         ----------
-        binary_data : Union[BinaryIO, socket.socket]
-            Binary data source to parse into SpacePackets.
-        parse_bad_pkts : bool
-            Default True.
-            If True, when the generator encounters a packet with an incorrect length it will still yield the packet
-            (the data will likely be invalid). If False, the generator will still write a debug log message but will
-            otherwise silently skip the bad packet.
-        root_container_name : str
-            The name of the root level (lowest level of container inheritance) SequenceContainer. This SequenceContainer
-            is assumed to be inherited by every possible packet structure in the XTCE document and is the starting
-            point for parsing. Default is taken from the parent XtcePacketDefinition object.
-        ccsds_headers_only : bool
-            Default False. If True, only parses the packet headers (does not use the provided packet definition).
-            ``space_packet_parser.ccsds.ccsds_packet_generator`` can be used directly to parse only the CCSDS headers
-            without needing a packet definition.
-        yield_unrecognized_packet_errors : bool
-            Default False.
-            If False, UnrecognizedPacketTypeErrors are caught silently and parsing continues to the next packet.
-            If True, the generator will yield an UnrecognizedPacketTypeError in the event of an unrecognized
-            packet. Note: These exceptions are not raised by default but are instead returned so that the generator
-            can continue. You can raise the exceptions if desired. Leave this as False unless you need to examine the
-            partial data from unrecognized packets.
-        show_progress : bool
-            Default False.
-            If True, prints a status bar. Note that for socket sources, the percentage will be zero until the generator
-            ends.
-        buffer_read_size_bytes : Optional[int]
-            Number of bytes to read from e.g. a BufferedReader or socket binary data source on each read attempt.
-            If None, defaults to 4096 bytes from a socket, -1 (full read) from a file.
-        skip_header_bytes : int
-            Default 0. The parser skips this many bytes at the beginning of every packet. This allows dynamic stripping
-            of additional header data that may be prepended to packets in "raw record" file formats.
+        packet: space_packet_parser.SpacePacket
+            Binary representation of the packet used to get the coming bits and any
+            previously parsed data items to infer field lengths.
+        root_container_name : Optional[str]
+            Default is taken from the XtcePacketDefinition object. Any root container may be specified, but it must
+            begin with the definition of a CCSDS header in order to parse correctly.
 
-        Yields
+        Returns
         -------
-        Union[Packet, UnrecognizedPacketTypeError]
-            Generator yields SpacePacket objects containing the parsed packet data for each subsequent packet.
-            If yield_unrecognized_packet_errors is True, it will yield an unraised exception object,
-            which can be raised or used for debugging purposes.
+        SpacePacket
+            A SpacePacket object containing header and data attributes.
         """
-        root_container_name = root_container_name or self.root_container_name
-
-        # Iterate over individual packets in the binary data
-        for raw_packet_data in ccsds.ccsds_generator(binary_data,
-                                                     buffer_read_size_bytes=buffer_read_size_bytes,
-                                                     show_progress=show_progress,
-                                                     skip_header_bytes=skip_header_bytes):
-            if ccsds_headers_only:
-                yield raw_packet_data
-                continue
-
-            # Now do the actual parsing of the packet data
-            try:
-                packet = self.parse_bytes(raw_packet_data, root_container_name=root_container_name)
-            except UnrecognizedPacketTypeError as e:
-                logger.debug(f"Unrecognized error on packet with APID {raw_packet_data.apid}")
-                if yield_unrecognized_packet_errors:
-                    # Yield the caught exception without raising it (raising ends generator)
-                    yield e
-                # Continue to next packet
-                continue
-
-            if not parse_bad_pkts and packet._parsing_pos != len(packet.binary_data) * 8:
-                logger.warning(f"Skipping (not yielding) bad packet with apid {raw_packet_data.apid}.")
-                continue
-
-            yield packet
+        warnings.warn(
+            "parse_ccsds_packet is deprecated and will be removed in a future release. "
+            "Use the parse_packet method instead, XTCE has no notion of the ccsds standard.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.parse_packet(packet, root_container_name=root_container_name)

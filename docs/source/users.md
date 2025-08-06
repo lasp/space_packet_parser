@@ -77,9 +77,11 @@ sc = packet_definition.containers['SecondaryHeaderContainer']
 # See the API docs for more information about the ParameterType, Parameter, and SequenceContainer classes
 
 with packet_file.open("rb") as binary_data:
-    packet_generator = packet_definition.packet_generator(binary_data)
+    from space_packet_parser import ccsds
+    ccsds_generator = ccsds.ccsds_generator(binary_data)
 
-    for packet in packet_generator:
+    for packet_bytes in ccsds_generator:
+        packet = packet_definition.parse_bytes(packet_bytes)
         # Do something with the packet data, which behaves like a dict
         print(packet['PKT_APID'])
         print(packet.header)  # subset of packet
@@ -89,14 +91,43 @@ with packet_file.open("rb") as binary_data:
 We aim to provide examples of usage patterns. Please see the `examples` directory in the GitHub repo. If there is
 a specific example you want to see demonstrated, please open a GitHub Issue or Discussion for support.
 
+## Error Handling and Debugging
+
+When parsing packets, you may encounter situations where packets cannot be parsed successfully. The low-level API provides direct control over how to handle these cases.
+
+### Handling UnrecognizedPacketTypeError
+
+If a packet doesn't match any of the defined packet structures in your XTCE definition, an `UnrecognizedPacketTypeError` will be raised. You can catch this error to examine the partially parsed packet data for debugging:
+
+```python
+from space_packet_parser import ccsds
+from space_packet_parser.exceptions import UnrecognizedPacketTypeError
+
+with packet_file.open("rb") as binary_data:
+    ccsds_generator = ccsds.ccsds_generator(binary_data)
+
+    for packet_bytes in ccsds_generator:
+        try:
+            packet = packet_definition.parse_bytes(packet_bytes)
+            # Process successful packet
+            print(f"Successfully parsed packet with APID: {packet.binary_data.apid}")
+        except UnrecognizedPacketTypeError as e:
+            # Handle unrecognized packet
+            print(f"Unrecognized packet type")
+            print(f"Partial data: {e.partial_data}")  # Contains any successfully parsed fields
+            # Continue processing other packets or handle the error as needed
+```
+
 ## Packet Objects
-The object returned from the `packet_generator` is a `SpacePacket` (unless you're yielding parsing
-exceptions for debugging). This object subclasses a python dictionary and behaves as a dictionary. To retrieve
-a parameter value from the yielded packet, you can iterate over its `items()` or you can access individual parameters
+The object returned from `parse_bytes()` is a `SpacePacket`. This object subclasses a python dictionary and behaves as a dictionary. To retrieve
+a parameter value from the parsed packet, you can iterate over its `items()` or you can access individual parameters
 by name.
 
 ```python
-packet = next(packet_definition.packet_generator(data))
+from space_packet_parser import ccsds
+ccsds_generator = ccsds.ccsds_generator(data)
+packet_bytes = next(ccsds_generator)
+packet = packet_definition.parse_bytes(packet_bytes)
 my_param = packet["MY_PARAM_NAME"]
 all_param_names = list(packet.keys())
 ```

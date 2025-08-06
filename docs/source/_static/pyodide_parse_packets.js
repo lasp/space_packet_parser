@@ -31,6 +31,7 @@ async function processPackets() {
     // Execute Python code to simulate opening a binary file
     await pyodide.runPythonAsync(`
         import io
+        from space_packet_parser import ccsds
         from space_packet_parser.definitions import XtcePacketDefinition
 
         # Create an in-memory binary file using io.BytesIO
@@ -39,11 +40,12 @@ async function processPackets() {
         packet_def = XtcePacketDefinition(xtce_file_obj)
 
         count = 0
-        packet_generator = packet_def.packet_generator(packet_file_obj)
-        packets = list(packet_generator)
+        ccsds_generator = ccsds.ccsds_generator(packet_file_obj)
+        packets = [packet_def.parse_bytes(binary_data) for binary_data in ccsds_generator]
         npackets = len(packets)
         print(f"Total packets: {npackets}")
     `);
+
 
    // Import the Python list back to JavaScript as an array of dictionaries
    const objectList = pyodide.globals.get('packets');

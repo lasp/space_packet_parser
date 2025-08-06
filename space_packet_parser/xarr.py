@@ -9,11 +9,16 @@ except ImportError as ie:
     ) from ie
 
 import collections
+import logging
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Optional, Union
 
+from space_packet_parser import ccsds
+from space_packet_parser.exceptions import UnrecognizedPacketTypeError
 from space_packet_parser.xtce import definitions, encodings, parameter_types
+
+logger = logging.getLogger(__name__)
 
 
 def _min_dtype_for_encoding(data_encoding: encodings.DataEncoding):
@@ -117,17 +122,20 @@ def create_dataset(
         packet_files: Union[str, Path, Iterable[Union[str, Path]]],
         xtce_packet_definition: Union[str, Path, definitions.XtcePacketDefinition],
         use_raw_values: bool = False,
-        **packet_generator_kwargs: any
-):
-    """Create an xarray dataset from an iterable of parsed packet objects
-
-    # TODO: Filter by APID to handle muxed streams?
+        packet_bytes_generator: Optional[callable] = None,
+        generator_kwargs: Optional[dict] = None,
+        parse_bytes_kwargs: Optional[dict] = None
+) -> dict[xr.Dataset]:
+    """Create a dictionary of xarray Datasets (per APID) from a set of packet files
 
     Notes
     -----
     This function only handles packet definitions with the same variable structure
-    across all packets with the same ApId. For example, this cannot be used for polymorphic
+    across all packets with the same APID. For example, this cannot be used for polymorphic
     packets whose structure changes based on previously parsed values.
+    If you are parsing muxed APID data and wish to filter it, you can either omit the unwanted
+    APID packet definitions from your XTCE (fastest) or you can parse everything and
+    filter after creation of the Dataset for each APID.
 
     Parameters
     ----------
@@ -138,15 +146,26 @@ def create_dataset(
     use_raw_values: bool
         Default False. If True, saves parameter raw values to the resulting DataSet.
         e.g. enumerated lookups will be saved as their encoded integer values.
-    packet_generator_kwargs : Optional[dict]
-        Keyword arguments passed to `XtcePacketDefinition.packet_generator()`
+    packet_bytes_generator : Optional[callable]
+        The generator function to use for yielding packet bytes. Defaults to
+        ccsds.ccsds_generator. Can be set to fixed_length_generator or any
+        other generator that yields bytes-like objects.
+    generator_kwargs : Optional[dict]
+        Keyword arguments passed to the packet bytes generator.
+    parse_bytes_kwargs : Optional[dict]
+        Keyword arguments passed to `XtcePacketDefinition.parse_bytes()`.
 
     Returns
     -------
-    : xarray.DataSet
+    : dict[xarray.DataSet]
         DataSet object parsed from the iterable of packets.
     """
-    packet_generator_kwargs = packet_generator_kwargs or {}
+    generator_kwargs = generator_kwargs or {}
+    parse_bytes_kwargs = parse_bytes_kwargs or {}
+
+    # Default to ccsds_generator if no generator is specified
+    if packet_bytes_generator is None:
+        packet_bytes_generator = ccsds.ccsds_generator
 
     if not isinstance(xtce_packet_definition, definitions.XtcePacketDefinition):
         xtce_packet_definition = definitions.XtcePacketDefinition.from_xtce(xtce_packet_definition)
@@ -167,37 +186,61 @@ def create_dataset(
 
     for packet_file in packet_files:
         with open(packet_file, "rb") as f:
-            packet_generator = list(xtce_packet_definition.packet_generator(f, **packet_generator_kwargs))
+            generator = packet_bytes_generator(f, **generator_kwargs)
+            packets = []
 
-        for packet in packet_generator:
-            apid = packet.binary_data.apid
-            if apid not in data_dict:
-                # This is the first packet for this APID
-                data_dict[apid] = collections.defaultdict(list)
-                datatype_mapping[apid] = {}
-                variable_mapping[apid] = packet.keys()
+            for binary_data in generator:
+                try:
+                    packet = xtce_packet_definition.parse_bytes(binary_data, **parse_bytes_kwargs)
 
-            if variable_mapping[apid] != packet.keys():
-                raise ValueError(
-                    f"Packet fields do not match for APID {apid}. This could be "
-                    f"due to a conditional (polymorphic) packet definition in the XTCE, while this "
-                    f"function currently only supports flat packet definitions."
-                    f"\nExpected: {variable_mapping[apid]},\ngot: {list(packet.keys())}"
-                )
+                    # Always skip packets with incomplete parsing (bad packets)
+                    if packet._parsing_pos != len(packet.binary_data) * 8:
+                        logger.debug(
+                            "Skipping packet with incomplete parsing: "
+                            f"parsed {packet._parsing_pos} bits, expected {len(packet.binary_data) * 8} bits"
+                            )
+                        continue
 
-            for key, value in packet.items():
-                if use_raw_values:
-                    # Use the derived value if it exists, otherwise use the raw value
-                    val = value.raw_value
-                else:
-                    val = value
+                    packets.append(packet)
 
-                data_dict[apid][key].append(val)
-                if key not in datatype_mapping[apid]:
-                    # Add this datatype to the mapping
-                    datatype_mapping[apid][key] = _get_minimum_numpy_datatype(
-                        key, xtce_packet_definition, use_raw_value=use_raw_values
+                except UnrecognizedPacketTypeError as e:
+                    # Skip packets that fail to match a concrete packet definition
+                    logger.debug(f"Unrecognized packet: {e}")
+                    continue
+
+                # Try to get APID from CCSDS packets, default to 0 for non-CCSDS packets
+                try:
+                    apid = packet.binary_data.apid
+                except AttributeError:
+                    apid = 0
+
+                if apid not in data_dict:
+                    # This is the first packet for this APID
+                    data_dict[apid] = collections.defaultdict(list)
+                    datatype_mapping[apid] = {}
+                    variable_mapping[apid] = packet.keys()
+
+                if variable_mapping[apid] != packet.keys():
+                    raise ValueError(
+                        f"Packet fields do not match for APID {apid}. This could be "
+                        f"due to a conditional (polymorphic) packet definition in the XTCE, while this "
+                        f"function currently only supports flat packet definitions."
+                        f"\nExpected: {variable_mapping[apid]},\ngot: {list(packet.keys())}"
                     )
+
+                for key, value in packet.items():
+                    if use_raw_values:
+                        # Use the derived value if it exists, otherwise use the raw value
+                        val = value.raw_value
+                    else:
+                        val = value
+
+                    data_dict[apid][key].append(val)
+                    if key not in datatype_mapping[apid]:
+                        # Add this datatype to the mapping
+                        datatype_mapping[apid][key] = _get_minimum_numpy_datatype(
+                            key, xtce_packet_definition, use_raw_value=use_raw_values
+                        )
 
     # Turn the dict into an xarray dataset
     dataset_by_apid = {}

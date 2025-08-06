@@ -44,7 +44,10 @@ def test_create_xarray_dataset_ctim(ctim_test_data_dir, caplog):
     """CTIM data contains many APIDs"""
     packet_file = ctim_test_data_dir / "ccsds_2021_155_14_39_51"
     definition_file = ctim_test_data_dir / "ctim_xtce_v1.xml"
-    ds = create_dataset(packet_file, definition_file, root_container_name="CCSDSTelemetryPacket", parse_bad_pkts=False)
+    ds = create_dataset(
+        packet_file, definition_file,
+        parse_bytes_kwargs={"root_container_name": "CCSDSTelemetryPacket"}
+        )
     print(ds)
 
 
@@ -54,4 +57,4 @@ def test_create_xarray_dataset_suda(suda_test_data_dir):
     definition_file = suda_test_data_dir / "suda_combined_science_definition.xml"
     # SUDA has a polymorphic packet structure
     with pytest.raises(ValueError, match="Packet fields do not match for APID 1425"):
-        create_dataset(packet_file, definition_file, skip_header_bytes=4)
+        create_dataset(packet_file, definition_file, generator_kwargs={"skip_header_bytes": 4})

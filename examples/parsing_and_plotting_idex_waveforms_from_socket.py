@@ -20,6 +20,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
+from space_packet_parser import ccsds
 from space_packet_parser.xtce import definitions
 
 
@@ -108,11 +109,12 @@ if __name__ == "__main__":
     p.start()
 
     # Create a packet generator that listens to a socket
-    idex_packet_generator = idex_definition.packet_generator(receiver)
+    idex_ccsds_generator = ccsds.ccsds_generator(receiver)
     # No data yet. We start recording data from an event when we encounter a packet with IDX__SCI0TYPE==1
     data: dict[int, bytes] = {}
     try:
-        p = next(idex_packet_generator)
+        binary_data = next(idex_ccsds_generator)
+        p = idex_definition.parse_bytes(binary_data)
         print(p)
         while True:
             if 'IDX__SCI0TYPE' in p:
@@ -123,13 +125,15 @@ if __name__ == "__main__":
                     event_header = p
                     # Each time we encounter a new scitype, that represents a new channel so we create a new array.
                     # A single channel of data may be spread between multiple packets, which must be concatenated.
-                    p = next(idex_packet_generator)
+                    binary_data = next(idex_ccsds_generator)
+                    p = idex_definition.parse_bytes(binary_data)
                     scitype = p['IDX__SCI0TYPE'].raw_value
                     print(scitype, end=", ")
                     data[scitype] = p['IDX__SCI0RAW'].raw_value
                     while True:
                         # If we run into the end of the file, this will raise StopIteration and break both while loops
-                        p_next = next(idex_packet_generator)
+                        binary_data_next = next(idex_ccsds_generator)
+                        p_next = idex_definition.parse_bytes(binary_data_next)
                         next_scitype = p_next['IDX__SCI0TYPE'].raw_value
                         print(next_scitype, end=", ")
                         if next_scitype == scitype:

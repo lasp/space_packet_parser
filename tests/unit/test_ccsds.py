@@ -92,7 +92,8 @@ def test_continuation_packets(test_data_dir):
     d = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
     # We can put that all in one unsegmented packet, just to verify this is working as expected
     raw_bytes = ccsds.create_ccsds_packet(data=b"0"*65, apid=11, sequence_flags=ccsds.SequenceFlags.UNSEGMENTED)
-    orig_packets = list(d.packet_generator(raw_bytes))
+    ccsds_generator = ccsds.ccsds_generator(raw_bytes)
+    orig_packets = [d.parse_bytes(binary_data) for binary_data in ccsds_generator]
     assert len(orig_packets) == 1
     # Remove the sequence flags, counter, and packet length, as they are expected to vary across tests
     def remove_keys(d):

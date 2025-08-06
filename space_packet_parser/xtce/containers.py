@@ -1,6 +1,6 @@
 """Module with XTCE models related to SequenceContainers"""
 from dataclasses import dataclass, field
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from lxml import etree as ElementTree
 from lxml.builder import ElementMaker
@@ -63,7 +63,7 @@ class SequenceContainer(common.Parseable, common.XmlObject):
             *,
             tree: ElementTree.ElementTree,
             parameter_lookup: dict[str, parameters.Parameter],
-            container_lookup: Optional[dict[str, any]],
+            container_lookup: Optional[dict[str, Any]],
             parameter_type_lookup: Optional[dict[str, parameter_types.ParameterType]] = None
     ) -> 'SequenceContainer':
         """Parses the list of parameters in a SequenceContainer element, recursively parsing nested SequenceContainers
