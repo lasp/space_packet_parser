@@ -14,6 +14,7 @@ Release notes for the `space_packet_parser` library
 - *BREAKING*: Removed mid-level abstraction methods `packet_generator()` and `ccsds_packet_generator()`
   from `XtcePacketDefinition`. Use low-level `parse_bytes()` with bytes generators directly, or high-level
   `space_packet_parser.xarr.create_dataset()` for xarray integration.
+- Add validation support for XTCE documents.
 - Add support for creating a packet definition from Python objects and serializing it as XML.
 - BUGFIX: Fix kbps calculation in packet generator for showing progress.
 - Add support for string and float encoded enumerated lookup parameters.
