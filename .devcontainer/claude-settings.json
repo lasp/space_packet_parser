@@ -1,4 +1,5 @@
 {
+  "model": "sonnet",
   "autoUpdates": true,
   "hasCompletedOnboarding": false,
   "shiftEnterKeyBindingInstalled": true,

@@ -60,6 +60,9 @@ Thumbs.db
 .idea
 .project
 .run
+.vscode
+core
+# Sometimes devcontainers create a core dump file when restarting
 
 # Virtual environment #
 #######################

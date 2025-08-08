@@ -150,4 +150,7 @@ select = [
     "UP"  # pyupgrade syntax upgrader
 ]
 per-file-ignores = { "tests/*" = ["S"] }
-ignore = ["E501"] # Ignore line length errors, as we trust ruff format to handle this.
+ignore = [
+    "E501", # Ignore line length errors, as we trust ruff format to handle this.
+    "F541" # Allow f strings as docstrings
+]

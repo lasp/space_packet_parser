@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xtce:SpaceSystem xmlns:xtce="http://www.omg.org/space/xtce" name="IDEX">
-  <xtce:Header classification="BuildType=FLIGHT,CreatedBy=XTCEEditor" date="Created=2023/01/12 15:27:45" version="DocumentVersion=FSW Build ,DocumentVersion=20190109v1,LASPXTCESchemaVersion=1.2,XTCEEditorVersion=0.47"/>
+<xtce:SpaceSystem name="IDEX"
+                  xmlns:xtce="http://www.omg.org/spec/XTCE/20180204"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204
+                                      https://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd">
+  <xtce:Header classification="BuildType=FLIGHT,CreatedBy=XTCEEditor"
+               date="Created=2023/01/12 15:27:45"
+               version="DocumentVersion=FSW Build ,DocumentVersion=20190109v1,LASPXTCESchemaVersion=1.2,XTCEEditorVersion=0.47"
+               validationStatus="Test"/>
   <xtce:TelemetryMetaData>
     <xtce:ParameterTypeSet>
       <xtce:IntegerParameterType signed="false" name="VERSION_Type">
