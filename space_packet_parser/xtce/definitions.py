@@ -14,8 +14,8 @@ import space_packet_parser as spp
 from space_packet_parser import ccsds, common
 from space_packet_parser.exceptions import InvalidParameterTypeError, UnrecognizedPacketTypeError
 from space_packet_parser.xtce import (
-    DEFAULT_XTCE_NS_PREFIX,
-    DEFAULT_XTCE_NSMAP,
+    STANDARD_XTCE_NS_PREFIX,
+    STANDARD_XTCE_NSMAP,
     containers,
     parameter_types,
     parameters,
@@ -49,8 +49,8 @@ class XtcePacketDefinition(common.AttrComparable):
         self,
         container_set: Optional[Iterable[containers.SequenceContainer]] = None,
         *,
-        ns: dict = DEFAULT_XTCE_NSMAP,
-        xtce_ns_prefix: Optional[str] = DEFAULT_XTCE_NS_PREFIX,
+        ns: dict = STANDARD_XTCE_NSMAP,
+        xtce_ns_prefix: Optional[str] = STANDARD_XTCE_NS_PREFIX,
         root_container_name: Optional[str] = DEFAULT_ROOT_CONTAINER,
         space_system_name: Optional[str] = None,
         validation_status: str = "Unknown",
@@ -69,10 +69,10 @@ class XtcePacketDefinition(common.AttrComparable):
             e.g. every Parameter object named `MY_PARAM` must be the same class instance.
         ns : dict
             XML namespace mapping, expected as a dictionary with the keys being namespace labels and
-            values being namespace URIs. Default {DEFAULT_XTCE_NSMAP}. An empty dictionary indicates no namespace
+            values being namespace URIs. Default {STANDARD_XTCE_NSMAP}. An empty dictionary indicates no namespace
             awareness, in which case `xtce_ns_prefix` must be None.
         xtce_ns_prefix : str
-            XTCE namespace prefix. Default {DEFAULT_XTCE_NS_PREFIX}. This is the key for the XTCE namespace in the
+            XTCE namespace prefix. Default {STANDARD_XTCE_NS_PREFIX}. This is the key for the XTCE namespace in the
             namespace mapping dictionary, `ns` and is used to write XML output when necessary.
         root_container_name : Optional[str]
             Name of root sequence container (where to start parsing)
@@ -129,8 +129,13 @@ class XtcePacketDefinition(common.AttrComparable):
                 _update_caches(sequence_container)
 
         self.ns = ns  # Default ns dict used when creating XML elements
-        self.xtce_schema_uri = ns[xtce_ns_prefix] if ns else None  # XTCE schema URI
-        self.xtce_ns_prefix = xtce_ns_prefix
+        # If the ns dict exists but xtce_ns_prefix is not in it
+        # (including the None key representing a default namespace),
+        # we assume the document is using no namespace awareness.
+        self.xtce_ns_uri = ns[xtce_ns_prefix] if ns and xtce_ns_prefix in ns else None  # XTCE namespace URI
+        self.xtce_ns_prefix = (
+            xtce_ns_prefix  # This is basically an alias to the ns URI (not to be confused with the XSD schema URL)
+        )
         self.root_container_name = root_container_name
         self.space_system_name = space_system_name
         self.validation_status = validation_status
@@ -154,11 +159,17 @@ class XtcePacketDefinition(common.AttrComparable):
         -------
         : ElementTree.ElementTree
         """
+        if self.xtce_ns_uri not in self.ns.values():
+            warnings.warn(
+                "No XTCE namespace defined. This is invalid per XSD, but will be serialized. "
+                "Ensure mydef.xtce_ns_prefix is a key in mydef.ns for valid XTCE output.",
+                UserWarning,
+            )
         # ElementMaker element factory with predefined namespace and namespace mapping
         # The XTCE namespace actually defines the XTCE elements
         # The ns mapping just affects the serialization of XTCE elements
         # Both can be None, resulting in no namespace awareness
-        elmaker = ElementMaker(namespace=self.xtce_schema_uri, nsmap=self.ns)
+        elmaker = ElementMaker(namespace=self.xtce_ns_uri, nsmap=self.ns)
 
         space_system_attrib = {}
         if self.space_system_name:
@@ -196,7 +207,6 @@ class XtcePacketDefinition(common.AttrComparable):
         cls,
         xtce_document: Union[str, Path, TextIO],
         *,
-        xtce_ns_prefix: Optional[str] = DEFAULT_XTCE_NS_PREFIX,
         root_container_name: Optional[str] = DEFAULT_ROOT_CONTAINER,
     ) -> "XtcePacketDefinition":
         f"""Instantiate an object representation of a CCSDS packet definition,
@@ -217,27 +227,45 @@ class XtcePacketDefinition(common.AttrComparable):
         ----------
         xtce_document : TextIO
             Path to XTCE XML document containing packet definition.
-        xtce_ns_prefix : Optional[str]
-            The namespace prefix associated with the XTCE xmlns attribute. Default is {DEFAULT_XTCE_NS_PREFIX}.
-            None means XTCE is the default namespace for elements with no prefix. The namespace mapping itself is
-            parsed out of the XML automatically.
         root_container_name : Optional[str]
             Optional override to the root container name. Default is {DEFAULT_ROOT_CONTAINER}.
         """
         # Define a namespace and prefix aware Element subclass so that we don't have to pass the namespace
         # into every from_xml method
         xtce_element_class = common.NamespaceAwareElement
-        xtce_element_lookup = ElementTree.ElementDefaultClassLookup(element=common.NamespaceAwareElement)
+        xtce_element_lookup = ElementTree.ElementDefaultClassLookup(element=xtce_element_class)
         xtce_parser = ElementTree.XMLParser()
         xtce_parser.set_element_class_lookup(xtce_element_lookup)
 
         tree = ElementTree.parse(xtce_document, parser=xtce_parser)  # noqa: S320
 
-        xtce_element_class.set_ns_prefix(xtce_ns_prefix)
-        xtce_element_class.set_nsmap(tree.getroot().nsmap)
-
         space_system = tree.getroot()
-        ns = tree.getroot().nsmap
+        ns = space_system.nsmap
+
+        # Search nsmap dict for the XTCE namespace prefix, if present (may be absent)
+        possible_prefixes = [pre for pre, uri in ns.items() if "xtce" in uri.lower()]
+
+        if len(possible_prefixes) == 1:
+            # Exactly one namespace (possibly prefixed) that looks like XTCE
+            xtce_ns_prefix = possible_prefixes[0]
+        elif len(possible_prefixes) == 0:
+            # This indicates no namespace is present (no xmlns attribute for XTCE)
+            # Some XML documents do not use namespaces at all, which is invalid per the XTCE XSD and will fail XSD validation
+            # We make an effort to parse these documents anyway, but warn the user
+            xtce_ns_prefix = None
+            warnings.warn(
+                "No XTCE namespace found in the document. This is invalid per XSD, but will be parsed. "
+                "Add an `xmlns` attribute to the root XML element to enable namespace awareness.",
+                UserWarning,
+            )
+        else:
+            # If there are multiple namespaces that look like XTCE, we cannot determine which one to use
+            raise ValueError(f"Multiple XTCE namespace prefixes found in the document: {possible_prefixes}. ")
+
+        # These change class attributes on the NamespaceAwareElement class,
+        # which allow the XTCE parser to correctly handle namespaces when parsing (and serializing) elements later on
+        xtce_element_class.set_ns_prefix(xtce_ns_prefix)
+        xtce_element_class.set_nsmap(ns)
 
         header = space_system.find("Header")
 
