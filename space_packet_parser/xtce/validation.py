@@ -646,20 +646,26 @@ def validate_xtce_structure(definition: XtcePacketDefinition) -> ValidationResul
 
         # Check for orphaned abstract containers
         abstract_containers = set()
-        inherited_containers = set()
+        used_containers = set()
 
         for container_name, container in definition.containers.items():
             if container.abstract:
                 abstract_containers.add(container_name)
 
-            # Track which containers are inherited
+            # Track which containers are used (via inheritance)
             if container.base_container_name:
-                inherited_containers.add(container.base_container_name)
+                used_containers.add(container.base_container_name)
 
-        orphaned_abstract = abstract_containers - inherited_containers
+            # Track which containers are used (via composition/container references)
+            for entry in container.entry_list:
+                if hasattr(entry, "name") and not hasattr(entry, "parameter_type"):  # It's a SequenceContainer
+                    if entry.name in definition.containers:
+                        used_containers.add(entry.name)
+
+        orphaned_abstract = abstract_containers - used_containers
         for orphan in orphaned_abstract:
             result.add_warning(
-                f"Abstract container '{orphan}' is not inherited by any container",
+                f"Abstract container '{orphan}' is not used by any container (neither inherited nor referenced)",
                 "ORPHANED_ABSTRACT_CONTAINER",
                 context={"container": orphan},
             )
@@ -667,19 +673,6 @@ def validate_xtce_structure(definition: XtcePacketDefinition) -> ValidationResul
         # Validate required XTCE structure elements
         if not definition.parameter_types and not definition.parameters and not definition.containers:
             result.add_warning("Document contains no parameter types, parameters, or containers", "EMPTY_XTCE_DOCUMENT")
-
-        # Check for required CCSDS packet structure
-        has_ccsds_structure = False
-        for container_name in definition.containers:
-            if "ccsds" in container_name.lower() or "packet" in container_name.lower():
-                has_ccsds_structure = True
-                break
-
-        if not has_ccsds_structure:
-            result.add_info(
-                "No CCSDS packet structure detected - this may be intentional for non-CCSDS XTCE documents",
-                "NO_CCSDS_STRUCTURE",
-            )
 
     except AttributeError as e:
         result.add_error(f"Structural validation error - missing expected attribute: {e}", "ATTRIBUTE_ERROR")
