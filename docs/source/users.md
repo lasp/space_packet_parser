@@ -376,6 +376,111 @@ This equation can be implemented in XTCE by referencing the packet length field 
 </xtce:BinaryParameterType>
 ```
 
+## XTCE Document Validation
+
+Space Packet Parser provides comprehensive validation capabilities for XTCE documents to help ensure they are correct and will work properly for parsing packets. The validation system operates at three levels:
+
+- **Schema Validation**: Validates the XML document against the XTCE XSD schema
+- **Structural Validation**: Validates XTCE-specific structure and reference integrity
+- **Semantic Validation**: Validates Space Packet Parser specific business logic rules
+
+### Basic Validation Usage
+
+```python
+from space_packet_parser.xtce.validation import validate_document
+
+# Validate an XTCE file
+result = validate_document("my_xtce.xml", level="schema")
+if result.valid:
+    print("Document is valid!")
+else:
+    for error in result.errors:
+        print(f"Error: {error}")
+
+# Comprehensive validation
+result = validate_document("my_xtce.xml", level="all")
+print(f"Validation completed in {result.validation_time_ms:.1f}ms")
+
+# Check specific issue types
+if result.has_errors:
+    print(f"Found {len(result.errors)} errors")
+if result.has_warnings:
+    print(f"Found {len(result.warnings)} warnings")
+```
+
+#### Validating Parsed Definitions
+
+If you already have a parsed `XtcePacketDefinition`, you can validate it directly:
+
+```python
+import space_packet_parser as spp
+
+# Load and validate a definition
+definition = spp.load_xtce("my_xtce.xml")
+result = definition.validate_document(level="semantic")
+
+if not result.valid:
+    for error in result.errors:
+        print(f"Semantic error: {error.message}")
+```
+
+### Validation Levels
+
+**Schema Validation** (`level="schema"`)
+- Validates XML syntax and structure against XTCE XSD schema
+- Checks for missing required elements and attributes
+- Fastest validation level
+- Requires network access to download schema (unless using local schema)
+
+**Structural Validation** (`level="structure"`)
+- Validates XTCE-specific rules and reference integrity
+- Checks parameter type references, container inheritance, etc.
+- Detects circular inheritance in containers
+- Works offline without network access
+
+**Semantic Validation** (`level="semantic"`)
+- Validates Space Packet Parser specific business logic
+- Checks for recommended CCSDS packet structure
+- Validates parameter naming conventions
+- Checks for performance considerations
+
+**Comprehensive Validation** (`level="all"`)
+- Performs all three validation levels
+- Provides complete validation coverage
+- Recommended for production XTCE documents
+
+### Handling Validation Results
+
+```python
+from space_packet_parser.xtce.validation import validate_document
+
+result = validate_document("my_xtce.xml", level="all")
+
+# Check overall validity
+if result.valid:
+    print("✓ Document is valid")
+else:
+    print("✗ Document has validation issues")
+
+# Process different severity levels
+for error in result.errors:
+    print(f"ERROR: {error.message}")
+    if error.line_number:
+        print(f"  at line {error.line_number}")
+
+for warning in result.warnings:
+    print(f"WARNING: {warning.message}")
+
+for info in result.info_messages:
+    print(f"INFO: {info.message}")
+
+# Access metadata
+if result.schema_location:
+    print(f"Schema: {result.schema_location}")
+if result.validation_time_ms:
+    print(f"Validation time: {result.validation_time_ms:.1f}ms")
+```
+
 ## Troubleshooting Packet Parsing
 Parsing binary packets is error-prone and getting the XTCE definition correct can be a challenge at first.
 Most flight software teams can export XTCE from their command and telemetry database but these exports usually require

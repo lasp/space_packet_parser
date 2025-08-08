@@ -1,4 +1,5 @@
 """Parameter type objects"""
+
 import warnings
 from abc import ABCMeta
 from typing import Optional, Union
@@ -41,14 +42,14 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
 
     @classmethod
     def from_xml(
-            cls,
-            element: ElementTree.Element,
-            *,
-            tree: Optional[ElementTree.Element] = None,
-            parameter_lookup: Optional[dict] = None,
-            parameter_type_lookup: Optional[dict] = None,
-            container_lookup: Optional[dict[str, any]] = None
-    ) -> 'ParameterType':
+        cls,
+        element: ElementTree.Element,
+        *,
+        tree: Optional[ElementTree.Element] = None,
+        parameter_lookup: Optional[dict] = None,
+        parameter_type_lookup: Optional[dict] = None,
+        container_lookup: Optional[dict[str, any]] = None,
+    ) -> "ParameterType":
         """Create a *ParameterType* from an <xtce:ParameterType> XML element.
 
         Parameters
@@ -69,10 +70,11 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         : ParameterType
         """
         try:
-            name = element.attrib['name']
+            name = element.attrib["name"]
         except KeyError as e:
-            raise ValueError(f"Parameter Type name attribute is required for ParameterType element: "
-                             f"{element.tag}, {element.attrib}") from e
+            raise ValueError(
+                f"Parameter Type name attribute is required for ParameterType element: {element.tag}, {element.attrib}"
+            ) from e
         unit = cls.get_units(element)
         encoding = cls.get_data_encoding(element)
         return cls(name, encoding, unit)
@@ -93,11 +95,7 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         param_type_element = getattr(elmaker, self.__class__.__name__)(name=self.name)
 
         if self.unit:
-            param_type_element.append(
-                elmaker.UnitSet(
-                    elmaker.Unit(self.unit)
-                )
-            )
+            param_type_element.append(elmaker.UnitSet(elmaker.Unit(self.unit)))
 
         param_type_element.append(self.encoding.to_xml(elmaker=elmaker))
         return param_type_element
@@ -119,11 +117,13 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
             Unit string or None if no units are defined
         """
         # Assume we are not parsing a Time Parameter Type, which stores units differently
-        units = parameter_type_element.findall('UnitSet/Unit')
+        units = parameter_type_element.findall("UnitSet/Unit")
         # TODO: Implement multiple unit elements for compound unit definitions
         if len(units) > 1:
-            raise NotImplementedError(f"Found {len(units)} <xtce:Unit> elements in a single <xtce:UnitSet>."
-                                      f"This is supported in the standard but is not yet supported by this library.")
+            raise NotImplementedError(
+                f"Found {len(units)} <xtce:Unit> elements in a single <xtce:UnitSet>."
+                f"This is supported in the standard but is not yet supported by this library."
+            )
         if units:
             return " ".join([u.text for u in units])
         # Units are optional so return None if they aren't specified
@@ -144,16 +144,20 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         : Union[DataEncoding, None]
             DataEncoding object or None if no data encoding is defined (which is probably an issue)
         """
-        for data_encoding in [encodings.StringDataEncoding,
-                              encodings.IntegerDataEncoding,
-                              encodings.FloatDataEncoding,
-                              encodings.BinaryDataEncoding]:
+        for data_encoding in [
+            encodings.StringDataEncoding,
+            encodings.IntegerDataEncoding,
+            encodings.FloatDataEncoding,
+            encodings.BinaryDataEncoding,
+        ]:
             # Try to find each type of data encoding element. If we find one, we assume it's the only one.
             element = parameter_type_element.find(f".//{data_encoding.__name__}")
             if element is not None:
                 return data_encoding.from_xml(element)
-        raise ValueError(f"No Data Encoding element found for Parameter Type "
-                         f"{parameter_type_element.tag}: {parameter_type_element.attrib}")
+        raise ValueError(
+            f"No Data Encoding element found for Parameter Type "
+            f"{parameter_type_element.tag}: {parameter_type_element.attrib}"
+        )
 
     def parse_value(self, packet: spp.SpacePacket) -> common.ParameterDataTypes:
         """Using the parameter type definition and associated data encoding, parse a value from a bit stream starting
@@ -196,11 +200,13 @@ class StringParameterType(ParameterType):
 
 class IntegerParameterType(ParameterType):
     """<xtce:IntegerParameterType>"""
+
     pass
 
 
 class FloatParameterType(ParameterType):
     """<xtce:FloatParameterType>"""
+
     pass
 
 
@@ -229,14 +235,14 @@ class EnumeratedParameterType(ParameterType):
 
     @classmethod
     def from_xml(
-            cls,
-            element: ElementTree.Element,
-            *,
-            tree: Optional[ElementTree.Element] = None,
-            parameter_lookup: Optional[dict[str, any]] = None,
-            parameter_type_lookup: Optional[dict[str, any]] = None,
-            container_lookup: Optional[dict[str, any]] = None
-    ) -> 'EnumeratedParameterType':
+        cls,
+        element: ElementTree.Element,
+        *,
+        tree: Optional[ElementTree.Element] = None,
+        parameter_lookup: Optional[dict[str, any]] = None,
+        parameter_type_lookup: Optional[dict[str, any]] = None,
+        container_lookup: Optional[dict[str, any]] = None,
+    ) -> "EnumeratedParameterType":
         """Create an EnumeratedParameterType from an <xtce:EnumeratedParameterType> XML element.
         Overrides ParameterType.from_parameter_type_xml_element
 
@@ -257,7 +263,7 @@ class EnumeratedParameterType(ParameterType):
         -------
         : EnumeratedParameterType
         """
-        name = element.attrib['name']
+        name = element.attrib["name"]
         unit = cls.get_units(element)
         encoding = cls.get_data_encoding(element)
         enumeration = cls.get_enumeration_list_contents(element, encoding)
@@ -278,11 +284,7 @@ class EnumeratedParameterType(ParameterType):
         param_type_element = getattr(elmaker, self.__class__.__name__)(name=self.name)
 
         if self.unit:
-            param_type_element.append(
-                elmaker.UnitSet(
-                    elmaker.Unit(self.unit)
-                )
-            )
+            param_type_element.append(elmaker.UnitSet(elmaker.Unit(self.unit)))
 
         param_type_element.append(self.encoding.to_xml(elmaker=elmaker))
 
@@ -293,7 +295,7 @@ class EnumeratedParameterType(ParameterType):
                         label=label,
                         value=str(value.decode(self.encoding.encoding))
                         if isinstance(self.encoding, encodings.StringDataEncoding)
-                        else str(value)
+                        else str(value),
                     )
                     for value, label in self.enumeration.items()
                 )
@@ -301,7 +303,6 @@ class EnumeratedParameterType(ParameterType):
         )
 
         return param_type_element
-
 
     @staticmethod
     def get_enumeration_list_contents(element: ElementTree.Element, encoding: encodings.DataEncoding) -> dict:
@@ -321,31 +322,27 @@ class EnumeratedParameterType(ParameterType):
         -------
         : dict
         """
-        enumeration_list = element.find('EnumerationList')
+        enumeration_list = element.find("EnumerationList")
         if enumeration_list is None:
             raise ValueError("An EnumeratedParameterType must contain an EnumerationList.")
 
         if isinstance(encoding, encodings.IntegerDataEncoding):
-            return {
-                int(el.attrib['value']): el.attrib['label']
-                for el in enumeration_list.iterfind('*')
-            }
+            return {int(el.attrib["value"]): el.attrib["label"] for el in enumeration_list.iterfind("*")}
 
         if isinstance(encoding, encodings.FloatDataEncoding):
-            return {
-                float(el.attrib['value']): el.attrib['label']
-                for el in enumeration_list.iterfind('*')
-            }
+            return {float(el.attrib["value"]): el.attrib["label"] for el in enumeration_list.iterfind("*")}
 
         if isinstance(encoding, encodings.StringDataEncoding):
             return {
-                bytes(el.attrib['value'], encoding=encoding.encoding): el.attrib['label']
-                for el in enumeration_list.iterfind('*')
+                bytes(el.attrib["value"], encoding=encoding.encoding): el.attrib["label"]
+                for el in enumeration_list.iterfind("*")
             }
 
-        raise ValueError(f"Detected unsupported encoding type {encoding} for an EnumeratedParameterType."
-                         "Supported encodings for enums are FloatDataEncoding, IntegerDataEncoding, "
-                         "and StringDataEncoding.")
+        raise ValueError(
+            f"Detected unsupported encoding type {encoding} for an EnumeratedParameterType."
+            "Supported encodings for enums are FloatDataEncoding, IntegerDataEncoding, "
+            "and StringDataEncoding."
+        )
 
     def parse_value(self, packet: spp.SpacePacket) -> common.StrParameter:
         """Using the parameter type definition and associated data encoding, parse a value from a bit stream starting
@@ -371,8 +368,9 @@ class EnumeratedParameterType(ParameterType):
         try:
             label = self.enumeration[raw_enum_value]
         except KeyError as exc:
-            raise ValueError(f"Failed to find the value {raw_enum_value} in "
-                             f"enum lookup list {self.enumeration}.") from exc
+            raise ValueError(
+                f"Failed to find the value {raw_enum_value} in enum lookup list {self.enumeration}."
+            ) from exc
         return common.StrParameter(label, raw_enum_value)
 
 
@@ -403,9 +401,11 @@ class BooleanParameterType(ParameterType):
     def __init__(self, name: str, encoding: encodings.DataEncoding, unit: Optional[str] = None):
         """Constructor that just issues a warning if the encoding is String or Binary"""
         if isinstance(encoding, (encodings.BinaryDataEncoding, encodings.StringDataEncoding)):
-            warnings.warn(f"You are encoding a BooleanParameterType with a {type(encoding)} encoding."
-                          f"This is almost certainly a very bad idea because the behavior of string and binary "
-                          f"encoded booleans is not specified in XTCE. e.g. is the string \"0\" truthy?")
+            warnings.warn(
+                f"You are encoding a BooleanParameterType with a {type(encoding)} encoding."
+                f"This is almost certainly a very bad idea because the behavior of string and binary "
+                f'encoded booleans is not specified in XTCE. e.g. is the string "0" truthy?'
+            )
         super().__init__(name, encoding, unit)
 
     def parse_value(self, packet: spp.SpacePacket):
@@ -439,13 +439,13 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
     """Abstract class for time parameter types"""
 
     def __init__(
-            self,
-            name: str,
-            encoding: encodings.DataEncoding,
-            *,
-            unit: Optional[str] = None,
-            epoch: Optional[str] = None,
-            offset_from: Optional[str] = None
+        self,
+        name: str,
+        encoding: encodings.DataEncoding,
+        *,
+        unit: Optional[str] = None,
+        epoch: Optional[str] = None,
+        offset_from: Optional[str] = None,
     ):
         """Constructor
 
@@ -476,13 +476,13 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
 
     @classmethod
     def from_xml(
-            cls,
-            element: ElementTree.Element,
-            *,
-            tree: Optional[ElementTree.ElementTree] = None,
-            parameter_lookup: Optional[dict[str, any]] = None,
-            parameter_type_lookup: Optional[dict[str, any]] = None,
-            container_lookup: Optional[dict[str, any]] = None
+        cls,
+        element: ElementTree.Element,
+        *,
+        tree: Optional[ElementTree.ElementTree] = None,
+        parameter_lookup: Optional[dict[str, any]] = None,
+        parameter_type_lookup: Optional[dict[str, any]] = None,
+        container_lookup: Optional[dict[str, any]] = None,
     ) -> ElementTree.Element:
         """Create a *TimeParameterType* from an <xtce:TimeParameterType> XML element.
 
@@ -502,7 +502,7 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
         -------
         : TimeParameterType
         """
-        name = element.attrib['name']
+        name = element.attrib["name"]
         unit = cls.get_units(element)
         encoding = cls.get_data_encoding(element)
         encoding_unit_scaler = cls.get_time_unit_linear_scaler(element)
@@ -532,14 +532,14 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
 
         element = getattr(elmaker, self.__class__.__name__)(name=self.name)
 
-        encoding_attrib = {
-            "units": self.unit
-        }
+        encoding_attrib = {"units": self.unit}
 
         if self.encoding.default_calibrator:
             if not isinstance(self.encoding.default_calibrator, calibrators.PolynomialCalibrator):
-                raise ValueError("Expected to get a PolynomialCalibrator for TimeParameterType but "
-                                 f"got {self.encoding.default_calibrator}")
+                raise ValueError(
+                    "Expected to get a PolynomialCalibrator for TimeParameterType but "
+                    f"got {self.encoding.default_calibrator}"
+                )
             coefficients = self.encoding.default_calibrator.coefficients
             scale = [c.coefficient for c in coefficients if c.exponent == 1]
             offset = [c.coefficient for c in coefficients if c.exponent == 0]
@@ -550,29 +550,19 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
             if offset:
                 encoding_attrib["offset"] = str(offset[0])
 
-        element.append(
-            elmaker.Encoding(
-                self.encoding.to_xml(elmaker=elmaker),
-                **encoding_attrib
-            )
-        )
+        element.append(elmaker.Encoding(self.encoding.to_xml(elmaker=elmaker), **encoding_attrib))
 
         if self.offset_from or self.epoch:
             reference_time = elmaker.ReferenceTime()
             if self.offset_from:
-                reference_time.append(
-                    elmaker.OffsetFrom(parameterRef=self.offset_from)
-                )
+                reference_time.append(elmaker.OffsetFrom(parameterRef=self.offset_from))
 
             if self.epoch:
-                reference_time.append(
-                    elmaker.Epoch(str(self.epoch))
-                )
+                reference_time.append(elmaker.Epoch(str(self.epoch)))
 
             element.append(reference_time)
 
         return element
-
 
     @staticmethod
     def get_units(parameter_type_element: ElementTree.Element) -> Union[str, None]:
@@ -590,14 +580,15 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
         : Union[str, None]
             Unit string or None if no units are defined
         """
-        if (encoding_element := parameter_type_element.find('Encoding')) is not None:
-            return encoding_element.attrib.get('units')
+        if (encoding_element := parameter_type_element.find("Encoding")) is not None:
+            return encoding_element.attrib.get("units")
         # Units are optional so return None if they aren't specified
         return None
 
     @staticmethod
     def get_time_unit_linear_scaler(
-            parameter_type_element: ElementTree.Element) -> Union[calibrators.PolynomialCalibrator, None]:
+        parameter_type_element: ElementTree.Element,
+    ) -> Union[calibrators.PolynomialCalibrator, None]:
         """Finds the linear calibrator associated with the Encoding element for the parameter type element.
         See section 4.3.2.4.8.3 of CCSDS 660.1-G-2
 
@@ -611,7 +602,7 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
         : Union[PolynomialCalibrator, None]
             The PolynomialCalibrator, or None if we couldn't create a valid calibrator from the XML element
         """
-        encoding_element = parameter_type_element.find('Encoding')
+        encoding_element = parameter_type_element.find("Encoding")
         coefficients = []
 
         if "offset" in encoding_element.attrib:
@@ -649,7 +640,7 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
             The epoch string, which may be a datetime string or a named epoch such as TAI. None if the element was
             not found.
         """
-        epoch_element = parameter_type_element.find('ReferenceTime/Epoch')
+        epoch_element = parameter_type_element.find("ReferenceTime/Epoch")
         if epoch_element is not None:
             return epoch_element.text
         return None
@@ -670,17 +661,19 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
         : Union[str, None]
             The named of the referenced parameter. None if no OffsetFrom element was found.
         """
-        offset_from_element = parameter_type_element.find('ReferenceTime/OffsetFrom')
+        offset_from_element = parameter_type_element.find("ReferenceTime/OffsetFrom")
         if offset_from_element is not None:
-            return offset_from_element.attrib['parameterRef']
+            return offset_from_element.attrib["parameterRef"]
         return None
 
 
 class AbsoluteTimeParameterType(TimeParameterType):
     """<xtce:AbsoluteTimeParameterType>"""
+
     pass
 
 
 class RelativeTimeParameterType(TimeParameterType):
     """<xtce:RelativeTimeParameterType>"""
+
     pass

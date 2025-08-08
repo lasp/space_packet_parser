@@ -1,4 +1,5 @@
 """Script for CI that verifies metadata matches between pyproject.toml, meta.yaml, and CITATION.cff"""
+
 from pathlib import Path
 
 try:
@@ -105,7 +106,7 @@ def verify_maintainers(pyproject_toml, citation_cff, meta_yaml):
 def verify_dependencies(pyproject_toml, citation_cff, meta_yaml):
     """Verify that dependencies match"""
     pyproject_dependencies = set(pyproject_toml["project"]["dependencies"])
-    pyproject_dependencies.add(f'python{pyproject_toml["project"]["requires-python"]}')
+    pyproject_dependencies.add(f"python{pyproject_toml['project']['requires-python']}")
     # Conda doesn't have the concept of extras, so we list the xarray extras as explicit deps for conda package
     pyproject_dependencies = pyproject_dependencies.union(
         set(pyproject_toml["project"]["optional-dependencies"]["xarray"])

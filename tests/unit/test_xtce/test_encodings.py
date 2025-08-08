@@ -1,4 +1,5 @@
 """DataEncoding Tests"""
+
 import lxml.etree as ElementTree
 import pytest
 
@@ -6,9 +7,10 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
 
 
 @pytest.mark.parametrize(
-    ('xml_string', 'expectation'),
+    ("xml_string", "expectation"),
     [
-        (f"""
+        (
+            f"""
 <xtce:StringDataEncoding encoding="UTF-16BE" xmlns:xtce="{XTCE_1_2_XMLNS}">
     <xtce:SizeInBits>
         <xtce:Fixed>
@@ -18,8 +20,10 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
     </xtce:SizeInBits>
 </xtce:StringDataEncoding>
 """,
-         encodings.StringDataEncoding(fixed_raw_length=32, termination_character='0058', encoding='UTF-16BE')),
-        (f"""
+            encodings.StringDataEncoding(fixed_raw_length=32, termination_character="0058", encoding="UTF-16BE"),
+        ),
+        (
+            f"""
 <xtce:StringDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}">
     <xtce:SizeInBits>
         <xtce:Fixed>
@@ -29,8 +33,10 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
     </xtce:SizeInBits>
 </xtce:StringDataEncoding>
 """,
-         encodings.StringDataEncoding(fixed_raw_length=17, leading_length_size=3)),
-        (f"""
+            encodings.StringDataEncoding(fixed_raw_length=17, leading_length_size=3),
+        ),
+        (
+            f"""
 <xtce:StringDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}">
     <xtce:Variable maxSizeInBits="32">
         <xtce:DynamicValue>
@@ -41,10 +47,14 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
     </xtce:Variable>
 </xtce:StringDataEncoding>
 """,
-         encodings.StringDataEncoding(dynamic_length_reference='SizeFromThisParameter',
-                                      length_linear_adjuster=object(),
-                                      termination_character='58')),
-        (f"""
+            encodings.StringDataEncoding(
+                dynamic_length_reference="SizeFromThisParameter",
+                length_linear_adjuster=object(),
+                termination_character="58",
+            ),
+        ),
+        (
+            f"""
 <xtce:StringDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}">
     <xtce:Variable maxSizeInBits="32">
         <xtce:DynamicValue>
@@ -55,10 +65,12 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
     </xtce:Variable>
 </xtce:StringDataEncoding>
 """,
-         encodings.StringDataEncoding(dynamic_length_reference='SizeFromThisParameter',
-                                      length_linear_adjuster=object(),
-                                      leading_length_size=3)),
-        (f"""
+            encodings.StringDataEncoding(
+                dynamic_length_reference="SizeFromThisParameter", length_linear_adjuster=object(), leading_length_size=3
+            ),
+        ),
+        (
+            f"""
 <xtce:StringDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}">
     <xtce:Variable maxSizeInBits="32">
         <xtce:DiscreteLookupList>
@@ -73,14 +85,16 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
     </xtce:Variable>
 </xtce:StringDataEncoding>
 """,
-         encodings.StringDataEncoding(
-             discrete_lookup_length=[
-                 comparisons.DiscreteLookup([comparisons.Comparison('1', 'P1')], 10),
-                 comparisons.DiscreteLookup([comparisons.Comparison('2', 'P1')], 25)
-             ],
-             termination_character="58"
-         )),
-        (f"""
+            encodings.StringDataEncoding(
+                discrete_lookup_length=[
+                    comparisons.DiscreteLookup([comparisons.Comparison("1", "P1")], 10),
+                    comparisons.DiscreteLookup([comparisons.Comparison("2", "P1")], 25),
+                ],
+                termination_character="58",
+            ),
+        ),
+        (
+            f"""
 <xtce:StringDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}">
     <xtce:Variable maxSizeInBits="32">
         <xtce:DiscreteLookupList>
@@ -95,14 +109,16 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
     </xtce:Variable>
 </xtce:StringDataEncoding>
 """,
-         encodings.StringDataEncoding(
-             discrete_lookup_length=[
-                 comparisons.DiscreteLookup([comparisons.Comparison('1', 'P1')], 10),
-                 comparisons.DiscreteLookup([comparisons.Comparison('2', 'P1')], 25)
-             ],
-             leading_length_size=3
-         )),
-        (f"""
+            encodings.StringDataEncoding(
+                discrete_lookup_length=[
+                    comparisons.DiscreteLookup([comparisons.Comparison("1", "P1")], 10),
+                    comparisons.DiscreteLookup([comparisons.Comparison("2", "P1")], 25),
+                ],
+                leading_length_size=3,
+            ),
+        ),
+        (
+            f"""
 <xtce:StringDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}">
     <xtce:SizeInBits>
         <xtce:Fixed>
@@ -111,8 +127,9 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
     </xtce:SizeInBits>
 </xtce:StringDataEncoding>
 """,
-         AttributeError())
-    ]
+            AttributeError(),
+        ),
+    ],
 )
 def test_string_data_encoding(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing a StringDataEncoding from an XML string"""
@@ -133,21 +150,34 @@ def test_string_data_encoding(elmaker, xtce_parser, xml_string: str, expectation
 @pytest.mark.parametrize(
     ("args", "kwargs", "expected_error", "expected_error_msg"),
     [
-        ((), {"encoding": "bad"}, ValueError,
-         "Encoding must be one of"),
-        ((), {"encoding": "UTF-16"}, ValueError,
-         "Byte order must be specified for multi-byte character encodings."),
-        ((), {"byte_order": "invalid"}, ValueError,
-         "If specified, byte order must be one of"),
-        ((), {"termination_character": "FF", "leading_length_size": 8}, ValueError,
-         "Got both a termination character and a leading size"),
-        ((), {}, ValueError,
-         "Expected exactly one of dynamic length reference, discrete length lookup, or fixed length"),
-        ((), {"length_linear_adjuster": lambda x: x, "fixed_raw_length": 32}, ValueError,
-         "Got a length linear adjuster for a string whose length is not specified by a dynamic"),
-        ((), {"fixed_raw_length": 32, "termination_character": "0F0F"}, ValueError,
-         "Expected a hex string representation of a single character"),
-    ]
+        ((), {"encoding": "bad"}, ValueError, "Encoding must be one of"),
+        ((), {"encoding": "UTF-16"}, ValueError, "Byte order must be specified for multi-byte character encodings."),
+        ((), {"byte_order": "invalid"}, ValueError, "If specified, byte order must be one of"),
+        (
+            (),
+            {"termination_character": "FF", "leading_length_size": 8},
+            ValueError,
+            "Got both a termination character and a leading size",
+        ),
+        (
+            (),
+            {},
+            ValueError,
+            "Expected exactly one of dynamic length reference, discrete length lookup, or fixed length",
+        ),
+        (
+            (),
+            {"length_linear_adjuster": lambda x: x, "fixed_raw_length": 32},
+            ValueError,
+            "Got a length linear adjuster for a string whose length is not specified by a dynamic",
+        ),
+        (
+            (),
+            {"fixed_raw_length": 32, "termination_character": "0F0F"},
+            ValueError,
+            "Expected a hex string representation of a single character",
+        ),
+    ],
 )
 def test_string_data_encoding_validation(args, kwargs, expected_error, expected_error_msg):
     """Test initialization errors for StringDataEncoding"""
@@ -156,17 +186,22 @@ def test_string_data_encoding_validation(args, kwargs, expected_error, expected_
 
 
 @pytest.mark.parametrize(
-    ('xml_string', 'expectation'),
+    ("xml_string", "expectation"),
     [
-        (f"""
+        (
+            f"""
 <xtce:IntegerDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}" sizeInBits="4" encoding="unsigned"/>
 """,
-         encodings.IntegerDataEncoding(size_in_bits=4, encoding='unsigned')),
-        (f"""
+            encodings.IntegerDataEncoding(size_in_bits=4, encoding="unsigned"),
+        ),
+        (
+            f"""
 <xtce:IntegerDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}" sizeInBits="4"/>
 """,
-         encodings.IntegerDataEncoding(size_in_bits=4, encoding='unsigned')),
-        (f"""
+            encodings.IntegerDataEncoding(size_in_bits=4, encoding="unsigned"),
+        ),
+        (
+            f"""
 <xtce:IntegerDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}" sizeInBits="16" encoding="unsigned">
     <xtce:DefaultCalibrator>
         <xtce:PolynomialCalibrator>
@@ -176,12 +211,16 @@ def test_string_data_encoding_validation(args, kwargs, expected_error, expected_
     </xtce:DefaultCalibrator>
 </xtce:IntegerDataEncoding>
 """,
-         encodings.IntegerDataEncoding(
-             size_in_bits=16, encoding='unsigned',
-             default_calibrator=calibrators.PolynomialCalibrator([
-                 calibrators.PolynomialCoefficient(0.012155, 1), calibrators.PolynomialCoefficient(2.54, 0)
-             ]))),
-        (f"""
+            encodings.IntegerDataEncoding(
+                size_in_bits=16,
+                encoding="unsigned",
+                default_calibrator=calibrators.PolynomialCalibrator(
+                    [calibrators.PolynomialCoefficient(0.012155, 1), calibrators.PolynomialCoefficient(2.54, 0)]
+                ),
+            ),
+        ),
+        (
+            f"""
 <xtce:IntegerDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}" sizeInBits="12" encoding="unsigned">
     <xtce:ContextCalibratorList>
         <xtce:ContextCalibrator>
@@ -215,29 +254,47 @@ def test_string_data_encoding_validation(args, kwargs, expected_error, expected_
     </xtce:ContextCalibratorList>
 </xtce:IntegerDataEncoding>
 """,
-         encodings.IntegerDataEncoding(size_in_bits=12, encoding='unsigned',
-                                       default_calibrator=None,
-                                       context_calibrators=[
-                                           calibrators.ContextCalibrator(
-                                               match_criteria=[comparisons.Comparison(required_value='0', operator=">=",
-                                                                                      referenced_parameter='MSN__PARAM'),
-                                                               comparisons.Comparison(required_value='678',
-                                                                                      operator="<",
-                                                                                      referenced_parameter='MSN__PARAM')],
-                                               calibrator=calibrators.PolynomialCalibrator(
-                                                   coefficients=[calibrators.PolynomialCoefficient(142.998, 0),
-                                                                 calibrators.PolynomialCoefficient(-0.349712, 1)])),
-                                           calibrators.ContextCalibrator(
-                                               match_criteria=[
-                                                   comparisons.Comparison(required_value='678', operator=">=",
-                                                                          referenced_parameter='MSN__PARAM'),
-                                                   comparisons.Comparison(required_value='4096', operator="<=",
-                                                                          referenced_parameter='MSN__PARAM')],
-                                               calibrator=calibrators.PolynomialCalibrator(
-                                                   coefficients=[calibrators.PolynomialCoefficient(100.488, 0),
-                                                                 calibrators.PolynomialCoefficient(-0.110197, 1)]))
-                                       ])),
-    ]
+            encodings.IntegerDataEncoding(
+                size_in_bits=12,
+                encoding="unsigned",
+                default_calibrator=None,
+                context_calibrators=[
+                    calibrators.ContextCalibrator(
+                        match_criteria=[
+                            comparisons.Comparison(
+                                required_value="0", operator=">=", referenced_parameter="MSN__PARAM"
+                            ),
+                            comparisons.Comparison(
+                                required_value="678", operator="<", referenced_parameter="MSN__PARAM"
+                            ),
+                        ],
+                        calibrator=calibrators.PolynomialCalibrator(
+                            coefficients=[
+                                calibrators.PolynomialCoefficient(142.998, 0),
+                                calibrators.PolynomialCoefficient(-0.349712, 1),
+                            ]
+                        ),
+                    ),
+                    calibrators.ContextCalibrator(
+                        match_criteria=[
+                            comparisons.Comparison(
+                                required_value="678", operator=">=", referenced_parameter="MSN__PARAM"
+                            ),
+                            comparisons.Comparison(
+                                required_value="4096", operator="<=", referenced_parameter="MSN__PARAM"
+                            ),
+                        ],
+                        calibrator=calibrators.PolynomialCalibrator(
+                            coefficients=[
+                                calibrators.PolynomialCoefficient(100.488, 0),
+                                calibrators.PolynomialCoefficient(-0.110197, 1),
+                            ]
+                        ),
+                    ),
+                ],
+            ),
+        ),
+    ],
 )
 def test_integer_data_encoding(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an IntegerDataEncoding from an XML string"""
@@ -260,7 +317,7 @@ def test_integer_data_encoding(elmaker, xtce_parser, xml_string: str, expectatio
     [
         ((32, "invalid-encoding"), {}, ValueError, "Encoding must be one of"),
         ((32, "unsigned"), {"byte_order": "noSignificantBitsAtAll!"}, ValueError, "Byte order must be one of"),
-    ]
+    ],
 )
 def test_integer_data_encoding_validation(args, kwargs, expected_error, expected_error_msg):
     """Test initialization errors for IntegerDataEncoding"""
@@ -269,13 +326,16 @@ def test_integer_data_encoding_validation(args, kwargs, expected_error, expected
 
 
 @pytest.mark.parametrize(
-    ('xml_string', 'expectation'),
+    ("xml_string", "expectation"),
     [
-        (f"""
+        (
+            f"""
 <xtce:FloatDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}" sizeInBits="4" encoding="IEEE754"/>
 """,
-         ValueError()),
-        (f"""
+            ValueError(),
+        ),
+        (
+            f"""
 <xtce:FloatDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}" sizeInBits="16">
     <xtce:DefaultCalibrator>
         <xtce:PolynomialCalibrator>
@@ -285,12 +345,16 @@ def test_integer_data_encoding_validation(args, kwargs, expected_error, expected
     </xtce:DefaultCalibrator>
 </xtce:FloatDataEncoding>
 """,
-         encodings.FloatDataEncoding(
-             size_in_bits=16, encoding='IEEE754',
-             default_calibrator=calibrators.PolynomialCalibrator([
-                 calibrators.PolynomialCoefficient(0.012155, 1), calibrators.PolynomialCoefficient(2.54, 0)
-             ]))),
-        (f"""
+            encodings.FloatDataEncoding(
+                size_in_bits=16,
+                encoding="IEEE754",
+                default_calibrator=calibrators.PolynomialCalibrator(
+                    [calibrators.PolynomialCoefficient(0.012155, 1), calibrators.PolynomialCoefficient(2.54, 0)]
+                ),
+            ),
+        ),
+        (
+            f"""
 <xtce:FloatDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}" sizeInBits="16">
     <xtce:ContextCalibratorList>
         <xtce:ContextCalibrator>
@@ -330,31 +394,49 @@ def test_integer_data_encoding_validation(args, kwargs, expected_error, expected
     </xtce:DefaultCalibrator>
 </xtce:FloatDataEncoding>
 """,
-         encodings.FloatDataEncoding(
-             size_in_bits=16, encoding='IEEE754',
-             default_calibrator=calibrators.PolynomialCalibrator([
-                 calibrators.PolynomialCoefficient(0.012155, 1), calibrators.PolynomialCoefficient(2.54, 0)
-             ]),
-             context_calibrators=[
-                 calibrators.ContextCalibrator(
-                     match_criteria=[comparisons.Comparison(required_value='0', operator=">=",
-                                                            referenced_parameter='MSN__PARAM'),
-                                     comparisons.Comparison(required_value='678', operator="<",
-                                                            referenced_parameter='MSN__PARAM')],
-                     calibrator=calibrators.PolynomialCalibrator(
-                         coefficients=[calibrators.PolynomialCoefficient(142.998, 0),
-                                       calibrators.PolynomialCoefficient(-0.349712, 1)])),
-                 calibrators.ContextCalibrator(
-                     match_criteria=[comparisons.Comparison(required_value='678', operator=">=",
-                                                            referenced_parameter='MSN__PARAM'),
-                                     comparisons.Comparison(required_value='4096', operator="<=",
-                                                            referenced_parameter='MSN__PARAM')],
-                     calibrator=calibrators.PolynomialCalibrator(
-                         coefficients=[calibrators.PolynomialCoefficient(100.488, 0),
-                                       calibrators.PolynomialCoefficient(-0.110197, 1)]))
-             ]
-         )),
-    ]
+            encodings.FloatDataEncoding(
+                size_in_bits=16,
+                encoding="IEEE754",
+                default_calibrator=calibrators.PolynomialCalibrator(
+                    [calibrators.PolynomialCoefficient(0.012155, 1), calibrators.PolynomialCoefficient(2.54, 0)]
+                ),
+                context_calibrators=[
+                    calibrators.ContextCalibrator(
+                        match_criteria=[
+                            comparisons.Comparison(
+                                required_value="0", operator=">=", referenced_parameter="MSN__PARAM"
+                            ),
+                            comparisons.Comparison(
+                                required_value="678", operator="<", referenced_parameter="MSN__PARAM"
+                            ),
+                        ],
+                        calibrator=calibrators.PolynomialCalibrator(
+                            coefficients=[
+                                calibrators.PolynomialCoefficient(142.998, 0),
+                                calibrators.PolynomialCoefficient(-0.349712, 1),
+                            ]
+                        ),
+                    ),
+                    calibrators.ContextCalibrator(
+                        match_criteria=[
+                            comparisons.Comparison(
+                                required_value="678", operator=">=", referenced_parameter="MSN__PARAM"
+                            ),
+                            comparisons.Comparison(
+                                required_value="4096", operator="<=", referenced_parameter="MSN__PARAM"
+                            ),
+                        ],
+                        calibrator=calibrators.PolynomialCalibrator(
+                            coefficients=[
+                                calibrators.PolynomialCoefficient(100.488, 0),
+                                calibrators.PolynomialCoefficient(-0.110197, 1),
+                            ]
+                        ),
+                    ),
+                ],
+            ),
+        ),
+    ],
 )
 def test_float_data_encoding(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an FloatDataEncoding from an XML string"""
@@ -380,7 +462,7 @@ def test_float_data_encoding(elmaker, xtce_parser, xml_string: str, expectation)
         ((16,), {"encoding": "MILSTD_1750A"}, ValueError, "MIL-1750A encoded floats must be 32 bits"),
         ((8,), {"encoding": "IEEE754"}, ValueError, "Invalid size_in_bits value for IEEE754 FloatDataEncoding"),
         ((8,), {"encoding": "IEEE754_1985"}, ValueError, "Invalid size_in_bits value for IEEE754 FloatDataEncoding"),
-    ]
+    ],
 )
 def test_float_data_encoding_validation(args, kwargs, expected_error, expected_error_msg):
     """Test initialization errors for FloatDataEncoding"""
@@ -389,17 +471,20 @@ def test_float_data_encoding_validation(args, kwargs, expected_error, expected_e
 
 
 @pytest.mark.parametrize(
-    ('xml_string', 'expectation'),
+    ("xml_string", "expectation"),
     [
-        (f"""
+        (
+            f"""
 <xtce:BinaryDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}">
     <xtce:SizeInBits>
         <xtce:FixedValue>256</xtce:FixedValue>
     </xtce:SizeInBits>
 </xtce:BinaryDataEncoding>
 """,
-         encodings.BinaryDataEncoding(fixed_size_in_bits=256)),
-        (f"""
+            encodings.BinaryDataEncoding(fixed_size_in_bits=256),
+        ),
+        (
+            f"""
 <xtce:BinaryDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}">
     <xtce:SizeInBits>
         <xtce:DynamicValue>
@@ -409,10 +494,12 @@ def test_float_data_encoding_validation(args, kwargs, expected_error, expected_e
     </xtce:SizeInBits>
 </xtce:BinaryDataEncoding>
 """,
-         encodings.BinaryDataEncoding(
-             size_reference_parameter='SizeFromThisParameter',
-             linear_adjuster=lambda x: 25 + 8 * x)),
-        (f"""
+            encodings.BinaryDataEncoding(
+                size_reference_parameter="SizeFromThisParameter", linear_adjuster=lambda x: 25 + 8 * x
+            ),
+        ),
+        (
+            f"""
 <xtce:BinaryDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}">
     <xtce:SizeInBits>
         <xtce:DiscreteLookupList>
@@ -426,11 +513,14 @@ def test_float_data_encoding_validation(args, kwargs, expected_error, expected_e
     </xtce:SizeInBits>
 </xtce:BinaryDataEncoding>
 """,
-         encodings.BinaryDataEncoding(size_discrete_lookup_list=[
-             comparisons.DiscreteLookup([comparisons.Comparison('1', 'P1')], 10),
-             comparisons.DiscreteLookup([comparisons.Comparison('2', 'P1')], 25)
-         ])),
-    ]
+            encodings.BinaryDataEncoding(
+                size_discrete_lookup_list=[
+                    comparisons.DiscreteLookup([comparisons.Comparison("1", "P1")], 10),
+                    comparisons.DiscreteLookup([comparisons.Comparison("2", "P1")], 25),
+                ]
+            ),
+        ),
+    ],
 )
 def test_binary_data_encoding(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an BinaryDataEncoding from an XML string"""
@@ -452,7 +542,7 @@ def test_binary_data_encoding(elmaker, xtce_parser, xml_string: str, expectation
     ("args", "kwargs", "expected_error", "expected_error_msg"),
     [
         ((), {}, ValueError, "Binary data encoding initialized with no way to determine a size"),
-    ]
+    ],
 )
 def test_binary_data_encoding_validation(args, kwargs, expected_error, expected_error_msg):
     """Test initialization errors for BinaryDataEncoding"""

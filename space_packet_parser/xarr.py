@@ -1,4 +1,5 @@
 """Extras package that supports generating an `xarray.DataSet` directly"""
+
 # Extras import first since it might fail
 try:
     import numpy as np
@@ -67,9 +68,7 @@ def _min_dtype_for_encoding(data_encoding: encodings.DataEncoding):
 
 
 def _get_minimum_numpy_datatype(
-        name: str,
-        definition: definitions.XtcePacketDefinition,
-        use_raw_value: bool = False
+    name: str, definition: definitions.XtcePacketDefinition, use_raw_value: bool = False
 ) -> Optional[str]:
     """
     Get the minimum datatype for a given variable.
@@ -119,12 +118,12 @@ def _get_minimum_numpy_datatype(
 
 
 def create_dataset(
-        packet_files: Union[str, Path, Iterable[Union[str, Path]]],
-        xtce_packet_definition: Union[str, Path, definitions.XtcePacketDefinition],
-        use_raw_values: bool = False,
-        packet_bytes_generator: Optional[callable] = None,
-        generator_kwargs: Optional[dict] = None,
-        parse_bytes_kwargs: Optional[dict] = None
+    packet_files: Union[str, Path, Iterable[Union[str, Path]]],
+    xtce_packet_definition: Union[str, Path, definitions.XtcePacketDefinition],
+    use_raw_values: bool = False,
+    packet_bytes_generator: Optional[callable] = None,
+    generator_kwargs: Optional[dict] = None,
+    parse_bytes_kwargs: Optional[dict] = None,
 ) -> dict[xr.Dataset]:
     """Create a dictionary of xarray Datasets (per APID) from a set of packet files
 
@@ -198,7 +197,7 @@ def create_dataset(
                         logger.debug(
                             "Skipping packet with incomplete parsing: "
                             f"parsed {packet._parsing_pos} bits, expected {len(packet.binary_data) * 8} bits"
-                            )
+                        )
                         continue
 
                     packets.append(packet)

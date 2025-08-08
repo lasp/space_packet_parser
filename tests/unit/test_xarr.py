@@ -1,4 +1,5 @@
 """Tests for the xarr.py extras module"""
+
 import struct
 
 import pytest
@@ -20,16 +21,14 @@ def test_xtce():
                 parameters.Parameter(
                     "INT32_PARAM",
                     parameter_type=parameter_types.IntegerParameterType(
-                        "I32_TYPE",
-                        encoding=encodings.IntegerDataEncoding(size_in_bits=32, encoding="twosComplement")
-                    )
+                        "I32_TYPE", encoding=encodings.IntegerDataEncoding(size_in_bits=32, encoding="twosComplement")
+                    ),
                 ),
                 parameters.Parameter(
                     "F32_PARAM",
                     parameter_type=parameter_types.FloatParameterType(
-                        "F32_TYPE",
-                        encoding=encodings.FloatDataEncoding(size_in_bits=32, encoding="IEEE754")
-                    )
+                        "F32_TYPE", encoding=encodings.FloatDataEncoding(size_in_bits=32, encoding="IEEE754")
+                    ),
                 ),
                 parameters.Parameter(
                     "CAL_INT_PARAM",
@@ -39,43 +38,32 @@ def test_xtce():
                             size_in_bits=32,
                             encoding="twosComplement",
                             default_calibrator=calibrators.PolynomialCalibrator(
-                                coefficients=[
-                                    calibrators.PolynomialCoefficient(1, 1)
-                                ]
-                            )
-                        )
-                    )
+                                coefficients=[calibrators.PolynomialCoefficient(1, 1)]
+                            ),
+                        ),
+                    ),
                 ),
                 parameters.Parameter(
                     "BIN_PARAM",
                     parameter_type=parameter_types.BinaryParameterType(
-                        "BIN_TYPE",
-                        encoding=encodings.BinaryDataEncoding(
-                            fixed_size_in_bits=32
-                        )
-                    )
+                        "BIN_TYPE", encoding=encodings.BinaryDataEncoding(fixed_size_in_bits=32)
+                    ),
                 ),
                 parameters.Parameter(
                     "INT_ENUM_PARAM",
                     parameter_type=parameter_types.EnumeratedParameterType(
                         "INT_ENUM_TYPE",
                         encoding=encodings.IntegerDataEncoding(size_in_bits=8, encoding="unsigned"),
-                        enumeration={
-                            "ONE": 1,
-                            "TWO": 2
-                        }
-                    )
+                        enumeration={"ONE": 1, "TWO": 2},
+                    ),
                 ),
                 parameters.Parameter(
                     "STR_PARAM",
                     parameter_type=parameter_types.StringParameterType(
-                        "STR_TYPE",
-                        encoding=encodings.StringDataEncoding(
-                            fixed_raw_length=32
-                        )
-                    )
+                        "STR_TYPE", encoding=encodings.StringDataEncoding(fixed_raw_length=32)
+                    ),
                 ),
-            ]
+            ],
         )
     ]
     return definitions.XtcePacketDefinition(container_set=container_set)
@@ -96,7 +84,7 @@ def test_xtce():
         ("INT_ENUM_PARAM", False, "str"),
         ("STR_PARAM", True, "str"),
         ("STR_PARAM", False, "str"),
-    ]
+    ],
 )
 def test_minimum_numpy_dtype(test_xtce, pname, use_raw_value, expected_dtype):
     """Test finding the minimum numpy data type for a parameter"""
@@ -113,9 +101,8 @@ def test_create_dataset_with_custom_generator(tmp_path):
                 parameters.Parameter(
                     "UINT8_FIELD",
                     parameter_type=parameter_types.IntegerParameterType(
-                        "UINT8_TYPE",
-                        encoding=encodings.IntegerDataEncoding(size_in_bits=8, encoding="unsigned")
-                    )
+                        "UINT8_TYPE", encoding=encodings.IntegerDataEncoding(size_in_bits=8, encoding="unsigned")
+                    ),
                 ),
                 parameters.Parameter(
                     "STRING_FIELD",
@@ -123,17 +110,16 @@ def test_create_dataset_with_custom_generator(tmp_path):
                         "STRING_TYPE",
                         encoding=encodings.StringDataEncoding(
                             fixed_raw_length=24  # 3 bytes = 24 bits
-                        )
-                    )
+                        ),
+                    ),
                 ),
                 parameters.Parameter(
                     "INT32_FIELD",
                     parameter_type=parameter_types.IntegerParameterType(
-                        "INT32_TYPE",
-                        encoding=encodings.IntegerDataEncoding(size_in_bits=32, encoding="twosComplement")
-                    )
+                        "INT32_TYPE", encoding=encodings.IntegerDataEncoding(size_in_bits=32, encoding="twosComplement")
+                    ),
                 ),
-            ]
+            ],
         )
     ]
 
@@ -158,7 +144,7 @@ def test_create_dataset_with_custom_generator(tmp_path):
         packet_definition,
         packet_bytes_generator=fixed_length_generator,
         generator_kwargs={"packet_length_bytes": 8},
-        parse_bytes_kwargs={"root_container_name": "FIXED_LENGTH_CONTAINER"}
+        parse_bytes_kwargs={"root_container_name": "FIXED_LENGTH_CONTAINER"},
     )
 
     # Since these are not CCSDS packets, they won't have an APID

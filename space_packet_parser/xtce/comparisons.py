@@ -1,4 +1,5 @@
 """Matching logical objects"""
+
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from typing import Any, Optional, Union
@@ -22,18 +23,26 @@ class MatchCriteria(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
     #   Python's XML parser doesn't appear to support &eq; &ne; &le; or &ge;
     # We have implemented support for bash-style comparisons just in case.
     _valid_operators = {
-        "==": "__eq__", "eq": "__eq__",  # equal to
-        "!=": "__ne__", "neq": "__ne__",  # not equal to
-        "&lt;": "__lt__", "lt": "__lt__", "<": "__lt__",  # less than
-        "&gt;": "__gt__", "gt": "__gt__", ">": "__gt__",  # greater than
-        "&lt;=": "__le__", "leq": "__le__", "<=": "__le__",  # less than or equal to
-        "&gt;=": "__ge__", "geq": "__ge__", ">=": "__ge__",  # greater than or equal to
+        "==": "__eq__",
+        "eq": "__eq__",  # equal to
+        "!=": "__ne__",
+        "neq": "__ne__",  # not equal to
+        "&lt;": "__lt__",
+        "lt": "__lt__",
+        "<": "__lt__",  # less than
+        "&gt;": "__gt__",
+        "gt": "__gt__",
+        ">": "__gt__",  # greater than
+        "&lt;=": "__le__",
+        "leq": "__le__",
+        "<=": "__le__",  # less than or equal to
+        "&gt;=": "__ge__",
+        "geq": "__ge__",
+        ">=": "__ge__",  # greater than or equal to
     }
 
     @abstractmethod
-    def evaluate(self,
-                 packet: spp.SpacePacket,
-                 current_parsed_value: Optional[Union[int, float]] = None) -> bool:
+    def evaluate(self, packet: spp.SpacePacket, current_parsed_value: Optional[Union[int, float]] = None) -> bool:
         """Evaluate match criteria down to a boolean.
 
         Parameters
@@ -56,11 +65,7 @@ class Comparison(MatchCriteria):
     """<xtce:Comparison>"""
 
     def __init__(
-            self,
-            required_value: str,
-            referenced_parameter: str,
-            operator: str = "==",
-            use_calibrated_value: bool = True
+        self, required_value: str, referenced_parameter: str, operator: str = "==", use_calibrated_value: bool = True
     ):
         """Constructor
 
@@ -93,20 +98,20 @@ class Comparison(MatchCriteria):
         None
         """
         if self.operator not in self._valid_operators:
-            raise ValueError(f"Unrecognized operator syntax {self.operator}. "
-                             f"Must be one of "
-                             f"{set(self._valid_operators.keys())}")
+            raise ValueError(
+                f"Unrecognized operator syntax {self.operator}. Must be one of {set(self._valid_operators.keys())}"
+            )
 
     @classmethod
     def from_xml(
-            cls,
-            element: ElementTree.Element,
-            *,
-            tree: Optional[ElementTree.Element] = None,
-            parameter_lookup: Optional[dict[str, any]] = None,
-            parameter_type_lookup: Optional[dict[str, any]] = None,
-            container_lookup: Optional[dict[str, any]] = None
-    ) -> 'Comparison':
+        cls,
+        element: ElementTree.Element,
+        *,
+        tree: Optional[ElementTree.Element] = None,
+        parameter_lookup: Optional[dict[str, any]] = None,
+        parameter_type_lookup: Optional[dict[str, any]] = None,
+        container_lookup: Optional[dict[str, any]] = None,
+    ) -> "Comparison":
         """Create
 
         Parameters
@@ -127,15 +132,15 @@ class Comparison(MatchCriteria):
         : Comparison
         """
         use_calibrated_value = True  # Default
-        if 'useCalibratedValue' in element.attrib:
-            use_calibrated_value = element.attrib['useCalibratedValue'].lower() == 'true'
+        if "useCalibratedValue" in element.attrib:
+            use_calibrated_value = element.attrib["useCalibratedValue"].lower() == "true"
 
-        value = element.attrib['value']
+        value = element.attrib["value"]
 
-        parameter_name = element.attrib['parameterRef']
-        operator = '=='
-        if 'comparisonOperator' in element.attrib:
-            operator = element.attrib['comparisonOperator']
+        parameter_name = element.attrib["parameterRef"]
+        operator = "=="
+        if "comparisonOperator" in element.attrib:
+            operator = element.attrib["comparisonOperator"]
 
         return cls(value, parameter_name, operator=operator, use_calibrated_value=use_calibrated_value)
 
@@ -155,12 +160,10 @@ class Comparison(MatchCriteria):
             parameterRef=self.referenced_parameter,
             useCalibratedValue=str(self.use_calibrated_value).lower(),
             comparisonOperator=self.operator,
-            value=str(self.required_value)
+            value=str(self.required_value),
         )
 
-    def evaluate(self,
-                 packet: spp.SpacePacket,
-                 current_parsed_value: Optional[Union[int, float]] = None) -> bool:
+    def evaluate(self, packet: spp.SpacePacket, current_parsed_value: Optional[Union[int, float]] = None) -> bool:
         """Evaluate comparison down to a boolean. If the parameter to compare is not present in the parsed_data dict,
         we assume that we are comparing against the current raw value in current_parsed_value.
 
@@ -187,17 +190,21 @@ class Comparison(MatchCriteria):
             # Assume then that the comparison is a reference to its own uncalibrated value
             parsed_value = current_parsed_value
         else:
-            raise ValueError("Attempting to resolve a Comparison expression but the referenced parameter does not "
-                             "appear in the parsed data so far and no current raw value was passed "
-                             "to compare with.")
+            raise ValueError(
+                "Attempting to resolve a Comparison expression but the referenced parameter does not "
+                "appear in the parsed data so far and no current raw value was passed "
+                "to compare with."
+            )
 
         operator = self._valid_operators[self.operator]
         t_comparate = type(parsed_value)
         try:
             required_value = t_comparate(self.required_value)
         except ValueError as err:
-            raise ComparisonError(f"Unable to coerce {self.required_value} of type {type(self.required_value)} to "
-                                  f"type {t_comparate} for comparison evaluation.") from err
+            raise ComparisonError(
+                f"Unable to coerce {self.required_value} of type {type(self.required_value)} to "
+                f"type {t_comparate} for comparison evaluation."
+            ) from err
 
         # x.__le__(y) style call
         return getattr(parsed_value, operator)(required_value)
@@ -209,14 +216,16 @@ class Condition(MatchCriteria):
     but it's functionally close enough that we inherit the class here.
     """
 
-    def __init__(self,
-                 left_param: str,
-                 operator: str,
-                 *,
-                 right_param: Optional[str] = None,
-                 right_value: Optional[Any] = None,
-                 left_use_calibrated_value: bool = True,
-                 right_use_calibrated_value: bool = True):
+    def __init__(
+        self,
+        left_param: str,
+        operator: str,
+        *,
+        right_param: Optional[str] = None,
+        right_value: Optional[Any] = None,
+        left_use_calibrated_value: bool = True,
+        right_use_calibrated_value: bool = True,
+    ):
         """Constructor
 
         Parameters
@@ -253,9 +262,9 @@ class Condition(MatchCriteria):
         None
         """
         if self.operator not in self._valid_operators:
-            raise ValueError(f"Unrecognized operator syntax {self.operator}. "
-                             f"Must be one of "
-                             f"{set(self._valid_operators.keys())}")
+            raise ValueError(
+                f"Unrecognized operator syntax {self.operator}. Must be one of {set(self._valid_operators.keys())}"
+            )
         if self.right_param and self.right_value:
             raise ComparisonError(f"Received both a right_value and a right_param reference to Condition {self}.")
         if self.right_value and self.right_use_calibrated_value:
@@ -277,22 +286,22 @@ class Condition(MatchCriteria):
         use_calibrated_value: bool
             Whether to use the calibrated form of the referenced parameter
         """
-        parameter_name = element.attrib['parameterRef']
+        parameter_name = element.attrib["parameterRef"]
         use_calibrated_value = True  # Default
-        if 'useCalibratedValue' in element.attrib:
-            use_calibrated_value = element.attrib['useCalibratedValue'].lower() == 'true'
+        if "useCalibratedValue" in element.attrib:
+            use_calibrated_value = element.attrib["useCalibratedValue"].lower() == "true"
         return parameter_name, use_calibrated_value
 
     @classmethod
     def from_xml(
-            cls,
-            element: ElementTree.Element,
-            *,
-            tree: Optional[ElementTree.Element] = None,
-            parameter_lookup: Optional[dict[str, any]] = None,
-            parameter_type_lookup: Optional[dict[str, any]] = None,
-            container_lookup: Optional[dict[str, any]] = None
-    ) -> 'Condition':
+        cls,
+        element: ElementTree.Element,
+        *,
+        tree: Optional[ElementTree.Element] = None,
+        parameter_lookup: Optional[dict[str, any]] = None,
+        parameter_type_lookup: Optional[dict[str, any]] = None,
+        container_lookup: Optional[dict[str, any]] = None,
+    ) -> "Condition":
         """Classmethod to create a Condition object from an XML element.
 
         Parameters
@@ -312,23 +321,32 @@ class Condition(MatchCriteria):
         -------
         : cls
         """
-        operator = element.find('ComparisonOperator').text
-        params = element.findall('ParameterInstanceRef')
+        operator = element.find("ComparisonOperator").text
+        params = element.findall("ParameterInstanceRef")
         if len(params) == 1:
             # XTCE green book Figure 3-5 specifies if only one ParameterInstanceRef, it is the LHS of the operator
             left_param, use_calibrated_value = cls._parse_parameter_instance_ref(params[0])
-            right_value = element.find('Value').text
-            return cls(left_param, operator, right_value=right_value,
-                       left_use_calibrated_value=use_calibrated_value,
-                       right_use_calibrated_value=False)
+            right_value = element.find("Value").text
+            return cls(
+                left_param,
+                operator,
+                right_value=right_value,
+                left_use_calibrated_value=use_calibrated_value,
+                right_use_calibrated_value=False,
+            )
         if len(params) == 2:
             left_param, left_use_calibrated_value = cls._parse_parameter_instance_ref(params[0])
             right_param, right_use_calibrated_value = cls._parse_parameter_instance_ref(params[1])
-            return cls(left_param, operator, right_param=right_param,
-                       left_use_calibrated_value=left_use_calibrated_value,
-                       right_use_calibrated_value=right_use_calibrated_value)
-        raise ValueError(f'Failed to parse a Condition element {element}. '
-                         'See 3.4.3.4.2 of XTCE Green Book CCSDS 660.1-G-2')
+            return cls(
+                left_param,
+                operator,
+                right_param=right_param,
+                left_use_calibrated_value=left_use_calibrated_value,
+                right_use_calibrated_value=right_use_calibrated_value,
+            )
+        raise ValueError(
+            f"Failed to parse a Condition element {element}. See 3.4.3.4.2 of XTCE Green Book CCSDS 660.1-G-2"
+        )
 
     def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
         """Create a Condition XML element
@@ -347,7 +365,7 @@ class Condition(MatchCriteria):
                 parameterRef=self.left_param,
                 useCalibratedValue=str(self.left_use_calibrated_value).lower(),
             ),
-            elmaker.ComparisonOperator(self.operator)
+            elmaker.ComparisonOperator(self.operator),
         )
 
         if self.right_param:
@@ -358,15 +376,11 @@ class Condition(MatchCriteria):
                 )
             )
         else:
-            condition.append(
-                elmaker.Value(str(self.right_value))
-            )
+            condition.append(elmaker.Value(str(self.right_value)))
 
         return condition
 
-    def evaluate(self,
-                 packet: spp.SpacePacket,
-                 current_parsed_value: Optional[Union[int, float]] = None) -> bool:
+    def evaluate(self, packet: spp.SpacePacket, current_parsed_value: Optional[Union[int, float]] = None) -> bool:
         """Evaluate match criteria down to a boolean.
 
         Parameters
@@ -402,14 +416,16 @@ class Condition(MatchCriteria):
         return getattr(left_value, operator)(right_value)
 
 
-class Anded(namedtuple('Anded', ['conditions', 'ors'])):
+class Anded(namedtuple("Anded", ["conditions", "ors"])):
     """Tuple object for AND operations in BooleanExpression"""
+
     def __repr__(self):
         return " && ".join(str(c) for c in self.conditions)
 
 
-class Ored(namedtuple('Ored', ['conditions', 'ands'])):
+class Ored(namedtuple("Ored", ["conditions", "ands"])):
     """Tuple object for OR operations in BooleanExpression"""
+
     def __repr__(self):
         return " || ".join(str(c) for c in self.conditions)
 
@@ -425,14 +441,14 @@ class BooleanExpression(MatchCriteria):
 
     @classmethod
     def from_xml(
-            cls,
-            element: ElementTree.Element,
-            *,
-            tree: Optional[ElementTree.Element] = None,
-            parameter_lookup: Optional[dict[str, any]] = None,
-            parameter_type_lookup: Optional[dict[str, any]] = None,
-            container_lookup: Optional[dict[str, any]] = None
-    ) -> 'BooleanExpression':
+        cls,
+        element: ElementTree.Element,
+        *,
+        tree: Optional[ElementTree.Element] = None,
+        parameter_lookup: Optional[dict[str, any]] = None,
+        parameter_type_lookup: Optional[dict[str, any]] = None,
+        container_lookup: Optional[dict[str, any]] = None,
+    ) -> "BooleanExpression":
         """Abstract classmethod to create a match criteria object from an XML element.
 
         Parameters
@@ -465,9 +481,8 @@ class BooleanExpression(MatchCriteria):
             -------
             : Anded
             """
-            conditions = [Condition.from_xml(el)
-                          for el in anded_el.iterfind('Condition')]
-            anded_ors = [_parse_ored(anded_or) for anded_or in anded_el.iterfind('ORedConditions')]
+            conditions = [Condition.from_xml(el) for el in anded_el.iterfind("Condition")]
+            anded_ors = [_parse_ored(anded_or) for anded_or in anded_el.iterfind("ORedConditions")]
             return Anded(conditions, anded_ors)
 
         def _parse_ored(ored_el: ElementTree.Element) -> Ored:
@@ -482,23 +497,20 @@ class BooleanExpression(MatchCriteria):
             -------
             : Ored
             """
-            conditions = [Condition.from_xml(el)
-                          for el in ored_el.iterfind('Condition')]
-            ored_ands = [_parse_anded(ored_and) for ored_and in ored_el.iterfind('ANDedConditions')]
+            conditions = [Condition.from_xml(el) for el in ored_el.iterfind("Condition")]
+            ored_ands = [_parse_anded(ored_and) for ored_and in ored_el.iterfind("ANDedConditions")]
             return Ored(conditions, ored_ands)
 
-        if (condition_element := element.find('Condition')) is not None:
+        if (condition_element := element.find("Condition")) is not None:
             condition = Condition.from_xml(condition_element)
             return cls(expression=condition)
-        if (anded_conditions_element := element.find('ANDedConditions')) is not None:
+        if (anded_conditions_element := element.find("ANDedConditions")) is not None:
             return cls(expression=_parse_anded(anded_conditions_element))
-        if (ored_conditions_element := element.find('ORedConditions')) is not None:
+        if (ored_conditions_element := element.find("ORedConditions")) is not None:
             return cls(expression=_parse_ored(ored_conditions_element))
         raise ValueError(f"Failed to parse {element}")
 
-    def evaluate(self,
-                 packet: spp.SpacePacket,
-                 current_parsed_value: Optional[Union[int, float]] = None) -> bool:
+    def evaluate(self, packet: spp.SpacePacket, current_parsed_value: Optional[Union[int, float]] = None) -> bool:
         """Evaluate the criteria in the BooleanExpression down to a single boolean.
 
         Parameters
@@ -553,16 +565,17 @@ class BooleanExpression(MatchCriteria):
         -------
         : ElementTree.Element
         """
+
         def _serialize_anded(anded: Anded) -> ElementTree.Element:
             return elmaker.ANDedConditions(
                 *(cond.to_xml(elmaker=elmaker) for cond in anded.conditions),
-                *(_serialize_ored(ored) for ored in anded.ors)
+                *(_serialize_ored(ored) for ored in anded.ors),
             )
 
         def _serialize_ored(ored: Ored) -> ElementTree.Element:
             return elmaker.ORedConditions(
                 *(cond.to_xml(elmaker=elmaker) for cond in ored.conditions),
-                *(_serialize_anded(anded) for anded in ored.ands)
+                *(_serialize_anded(anded) for anded in ored.ands),
             )
 
         element = elmaker.BooleanExpression()
@@ -575,6 +588,7 @@ class BooleanExpression(MatchCriteria):
             element.append(_serialize_ored(self.expression))
 
         return element
+
 
 class DiscreteLookup(common.AttrComparable, common.XmlObject):
     """<xtce:DiscreteLookup>"""
@@ -594,14 +608,14 @@ class DiscreteLookup(common.AttrComparable, common.XmlObject):
 
     @classmethod
     def from_xml(
-            cls,
-            element: ElementTree.Element,
-            *,
-            tree: Optional[ElementTree.ElementTree] = None,
-            parameter_lookup: Optional[dict[str, any]] = None,
-            parameter_type_lookup: Optional[dict[str, any]] = None,
-            container_lookup: Optional[dict[str, any]] = None
-    ) -> 'DiscreteLookup':
+        cls,
+        element: ElementTree.Element,
+        *,
+        tree: Optional[ElementTree.ElementTree] = None,
+        parameter_lookup: Optional[dict[str, any]] = None,
+        parameter_type_lookup: Optional[dict[str, any]] = None,
+        container_lookup: Optional[dict[str, any]] = None,
+    ) -> "DiscreteLookup":
         """Create a DiscreteLookup object from an <xtce:DiscreteLookup> XML element
 
         Parameters
@@ -621,10 +635,10 @@ class DiscreteLookup(common.AttrComparable, common.XmlObject):
         -------
         : DiscreteLookup
         """
-        lookup_value = float(element.attrib['value'])
-        if (comparison_list_element := element.find('ComparisonList')) is not None:
+        lookup_value = float(element.attrib["value"])
+        if (comparison_list_element := element.find("ComparisonList")) is not None:
             match_criteria = [Comparison.from_xml(el) for el in comparison_list_element.iterfind("*")]
-        elif (comparison_element := element.find('Comparison')) is not None:
+        elif (comparison_element := element.find("Comparison")) is not None:
             match_criteria = [Comparison.from_xml(comparison_element)]
         else:
             raise NotImplementedError("Only Comparison and ComparisonList are implemented for DiscreteLookup.")
@@ -646,14 +660,11 @@ class DiscreteLookup(common.AttrComparable, common.XmlObject):
         match_criteria = (c.to_xml(elmaker=elmaker) for c in self.match_criteria)
 
         if len(self.match_criteria) > 1:
-            dl_contents = (elmaker.ComparisonList(*match_criteria), )
+            dl_contents = (elmaker.ComparisonList(*match_criteria),)
         else:
             dl_contents = match_criteria
 
-        return elmaker.DiscreteLookup(
-            *dl_contents,
-            value=str(self.lookup_value)
-        )
+        return elmaker.DiscreteLookup(*dl_contents, value=str(self.lookup_value))
 
     def evaluate(self, packet: spp.SpacePacket, current_parsed_value: Optional[Union[int, float]] = None) -> Any:
         """Evaluate the lookup to determine if it is valid.

@@ -1,4 +1,5 @@
 """Benchmark test for how fast we can parse a large XTCE definition file"""
+
 import pytest
 
 from space_packet_parser.xtce import definitions
