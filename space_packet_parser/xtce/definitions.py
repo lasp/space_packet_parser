@@ -20,7 +20,6 @@ from space_packet_parser.xtce import (
     parameter_types,
     parameters,
 )
-from space_packet_parser.xtce.validation import ValidationResult
 
 logger = logging.getLogger(__name__)
 
@@ -138,85 +137,6 @@ class XtcePacketDefinition(common.AttrComparable):
         self.xtce_version = xtce_version
         self.date = date
 
-    def validate_document(
-        self,
-        level: str = "schema",
-        schema_url: Optional[str] = None,
-        local_schema_path: Optional[str] = None,
-        timeout: int = 30,
-    ) -> ValidationResult:
-        """Validate this XTCE definition by serializing to XML and validating.
-
-        This method serializes the current XtcePacketDefinition to XML and
-        validates it using the validation.validate_document function. For
-        semantic validation, it directly validates the parsed definition.
-
-        Parameters
-        ----------
-        level : str
-            Validation level: "schema", "structure", "semantic", or "all"
-        schema_url : Optional[str]
-            Explicit schema URL to use. If None, will be discovered from XML.
-        local_schema_path : Optional[str]
-            Local path to XSD file to use instead of downloading
-        timeout : int
-            Timeout in seconds for schema downloads
-
-        Returns
-        -------
-        ValidationResult
-            Comprehensive validation results with errors, warnings, and metadata
-        """
-        from space_packet_parser.xtce.validation import (
-            ValidationLevel,
-            ValidationResult,
-            validate_document,
-            validate_space_packet_parser_semantics,
-            validate_xml_against_schema,
-            validate_xtce_structure,
-        )
-
-        if level.lower() == "semantic":
-            # For semantic validation, validate this definition directly
-            return validate_space_packet_parser_semantics(self)
-        elif level.lower() == "all":
-            # For "all" validation, do schema/structure on XML and semantic on definition
-            xml_tree = self.to_xml_tree()
-            results = []
-
-            # Schema validation
-            schema_result = validate_xml_against_schema(xml_tree, schema_url, local_schema_path, timeout)
-            results.append(schema_result)
-
-            # Structural validation
-            structure_result = validate_xtce_structure(xml_tree)
-            results.append(structure_result)
-
-            # Semantic validation on the definition object
-            semantic_result = validate_space_packet_parser_semantics(self)
-            results.append(semantic_result)
-
-            # Combine results
-            combined_result = ValidationResult(valid=True, validation_level=ValidationLevel.ALL)
-            combined_result.schema_location = schema_result.schema_location
-            combined_result.schema_version = schema_result.schema_version
-
-            total_time = 0
-            for result in results:
-                combined_result.errors.extend(result.errors)
-                combined_result.warnings.extend(result.warnings)
-                combined_result.info_messages.extend(result.info_messages)
-                if result.validation_time_ms:
-                    total_time += result.validation_time_ms
-
-            combined_result.validation_time_ms = total_time
-            combined_result.valid = not combined_result.has_errors
-
-            return combined_result
-        else:
-            # For schema and structure validation, serialize to XML and validate
-            xml_tree = self.to_xml_tree()
-            return validate_document(xml_tree, level, schema_url, local_schema_path, timeout)
 
     def write_xml(self, filepath: Union[str, Path]) -> None:
         """Write out the XTCE XML for this packet definition object to the specified path

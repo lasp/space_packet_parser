@@ -408,20 +408,20 @@ if result.has_warnings:
     print(f"Found {len(result.warnings)} warnings")
 ```
 
-#### Validating Parsed Definitions
+#### Validating XTCE Documents
 
-If you already have a parsed `XtcePacketDefinition`, you can validate it directly:
+You can validate XTCE documents using the validation module:
 
 ```python
 import space_packet_parser as spp
+from space_packet_parser.xtce.validation import validate_document
 
-# Load and validate a definition
-definition = spp.load_xtce("my_xtce.xml")
-result = definition.validate_document(level="semantic")
+# Validate an XTCE document
+result = validate_document("my_xtce.xml", level="structure")
 
 if not result.valid:
     for error in result.errors:
-        print(f"Semantic error: {error.message}")
+        print(f"Validation error: {error.message}")
 ```
 
 ### Validation Levels

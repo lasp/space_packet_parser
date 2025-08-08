@@ -215,7 +215,7 @@ def parse(
 @click.option(
     "--level",
     default="schema",
-    type=click.Choice(["schema", "structure", "semantic", "all"]),
+    type=click.Choice(["schema", "structure", "all"]),
     help="Validation level to perform. Default is 'schema'.",
 )
 @click.option("--schema-url", help="Explicit schema URL to use for validation")
@@ -242,7 +242,6 @@ def validate_xtce(
 
     - schema: Validate against XSD schema (fastest)
     - structure: Validate XTCE structure and references
-    - semantic: Validate Space Packet Parser business logic
     - all: Perform all validation levels
 
     Examples:
