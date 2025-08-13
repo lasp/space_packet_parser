@@ -1,4 +1,5 @@
 """Test creating an xarray dataset from CCSDS packets"""
+
 import pytest
 
 pytest.importorskip("xarray", reason="xarray not installed")
@@ -17,15 +18,33 @@ def test_create_xarray_dataset(jpss_test_data_dir):
     assert len(ds[11]) == 27
     assert len(ds[11]["VERSION"]) == 7200
     assert ds[11].dtypes == {
-        'VERSION': np.dtype('uint8'), 'TYPE': np.dtype('uint8'), 'SEC_HDR_FLG': np.dtype('uint8'),
-        'PKT_APID': np.dtype('uint16'), 'SEQ_FLGS': np.dtype('uint8'), 'SRC_SEQ_CTR': np.dtype('uint16'),
-        'PKT_LEN': np.dtype('uint16'), 'DOY': np.dtype('uint16'), 'MSEC': np.dtype('uint32'),
-        'USEC': np.dtype('uint16'), 'ADAESCID': np.dtype('uint8'), 'ADAET1DAY': np.dtype('uint16'),
-        'ADAET1MS': np.dtype('uint32'), 'ADAET1US': np.dtype('uint16'), 'ADGPSPOSX': np.dtype('float32'),
-        'ADGPSPOSY': np.dtype('float32'), 'ADGPSPOSZ': np.dtype('float32'), 'ADGPSVELX': np.dtype('float32'),
-        'ADGPSVELY': np.dtype('float32'), 'ADGPSVELZ': np.dtype('float32'), 'ADAET2DAY': np.dtype('uint16'),
-        'ADAET2MS': np.dtype('uint32'), 'ADAET2US': np.dtype('uint16'), 'ADCFAQ1': np.dtype('float32'),
-        'ADCFAQ2': np.dtype('float32'), 'ADCFAQ3': np.dtype('float32'), 'ADCFAQ4': np.dtype('float32')
+        "VERSION": np.dtype("uint8"),
+        "TYPE": np.dtype("uint8"),
+        "SEC_HDR_FLG": np.dtype("uint8"),
+        "PKT_APID": np.dtype("uint16"),
+        "SEQ_FLGS": np.dtype("uint8"),
+        "SRC_SEQ_CTR": np.dtype("uint16"),
+        "PKT_LEN": np.dtype("uint16"),
+        "DOY": np.dtype("uint16"),
+        "MSEC": np.dtype("uint32"),
+        "USEC": np.dtype("uint16"),
+        "ADAESCID": np.dtype("uint8"),
+        "ADAET1DAY": np.dtype("uint16"),
+        "ADAET1MS": np.dtype("uint32"),
+        "ADAET1US": np.dtype("uint16"),
+        "ADGPSPOSX": np.dtype("float32"),
+        "ADGPSPOSY": np.dtype("float32"),
+        "ADGPSPOSZ": np.dtype("float32"),
+        "ADGPSVELX": np.dtype("float32"),
+        "ADGPSVELY": np.dtype("float32"),
+        "ADGPSVELZ": np.dtype("float32"),
+        "ADAET2DAY": np.dtype("uint16"),
+        "ADAET2MS": np.dtype("uint32"),
+        "ADAET2US": np.dtype("uint16"),
+        "ADCFAQ1": np.dtype("float32"),
+        "ADCFAQ2": np.dtype("float32"),
+        "ADCFAQ3": np.dtype("float32"),
+        "ADCFAQ4": np.dtype("float32"),
     }
 
 
@@ -45,9 +64,8 @@ def test_create_xarray_dataset_ctim(ctim_test_data_dir, caplog):
     packet_file = ctim_test_data_dir / "ccsds_2021_155_14_39_51"
     definition_file = ctim_test_data_dir / "ctim_xtce_v1.xml"
     ds = create_dataset(
-        packet_file, definition_file,
-        parse_bytes_kwargs={"root_container_name": "CCSDSTelemetryPacket"}
-        )
+        packet_file, definition_file, parse_bytes_kwargs={"root_container_name": "CCSDSTelemetryPacket"}
+    )
     print(ds)
 
 

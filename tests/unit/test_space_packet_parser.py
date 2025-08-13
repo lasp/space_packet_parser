@@ -1,4 +1,5 @@
 """Tests for main space_packet_parser.__init__ module"""
+
 import space_packet_parser
 from space_packet_parser.xtce import definitions
 

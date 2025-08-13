@@ -1,4 +1,5 @@
 """Tests for space_packet_parser.xtcedef"""
+
 import io
 
 import pytest
@@ -12,11 +13,7 @@ from space_packet_parser.xtce import comparisons, containers, definitions, encod
 
 @pytest.mark.parametrize(
     ("xtcedoc", "xtce_ns_prefix"),
-    [
-        ("test_xtce.xml", "xtce"),
-        ("test_xtce_default_namespace.xml", None),
-        ("test_xtce_no_namespace.xml", None)
-    ]
+    [("test_xtce.xml", "xtce"), ("test_xtce_default_namespace.xml", None), ("test_xtce_no_namespace.xml", None)],
 )
 def test_parsing_xtce_document(test_data_dir, xtcedoc, xtce_ns_prefix):
     """Tests parsing an entire XTCE document and makes assertions about the contents"""
@@ -54,96 +51,66 @@ def test_parsing_xtce_document(test_data_dir, xtcedoc, xtce_ns_prefix):
                 name="DOY",
                 parameter_type=space_packet_parser.xtce.parameter_types.FloatParameterType(
                     name="DOY_Type",
-                    encoding=encodings.IntegerDataEncoding(
-                        size_in_bits=16, encoding="unsigned"
-                    ),
-                    unit="day"
+                    encoding=encodings.IntegerDataEncoding(size_in_bits=16, encoding="unsigned"),
+                    unit="day",
                 ),
                 short_description="Secondary Header Day of Year",
-                long_description="CCSDS Packet 2nd Header Day of Year in days."
+                long_description="CCSDS Packet 2nd Header Day of Year in days.",
             ),
             parameters.Parameter(
                 name="MSEC",
                 parameter_type=space_packet_parser.xtce.parameter_types.FloatParameterType(
                     name="MSEC_Type",
-                    encoding=encodings.IntegerDataEncoding(
-                        size_in_bits=32, encoding="unsigned"
-                    ),
-                    unit="ms"
+                    encoding=encodings.IntegerDataEncoding(size_in_bits=32, encoding="unsigned"),
+                    unit="ms",
                 ),
                 short_description="Secondary Header Coarse Time (millisecond)",
-                long_description="CCSDS Packet 2nd Header Coarse Time in milliseconds."
+                long_description="CCSDS Packet 2nd Header Coarse Time in milliseconds.",
             ),
             parameters.Parameter(
                 name="USEC",
                 parameter_type=space_packet_parser.xtce.parameter_types.FloatParameterType(
                     name="USEC_Type",
-                    encoding=encodings.IntegerDataEncoding(
-                        size_in_bits=16, encoding="unsigned"
-                    ),
-                    unit="us"
+                    encoding=encodings.IntegerDataEncoding(size_in_bits=16, encoding="unsigned"),
+                    unit="us",
                 ),
                 short_description="Secondary Header Fine Time (microsecond)",
-                long_description="CCSDS Packet 2nd Header Fine Time in microseconds."
-            )
+                long_description="CCSDS Packet 2nd Header Fine Time in microseconds.",
+            ),
         ],
         short_description=None,
         long_description="Container for telemetry secondary header items",
         base_container_name=None,
         restriction_criteria=None,
         abstract=True,
-        inheritors=None
+        inheritors=None,
     )
 
 
 def test_generating_xtce_from_objects():
     """Tests our ability to create an XTCE definition directly from Python objects"""
     uint1 = space_packet_parser.xtce.parameter_types.IntegerParameterType(
-        name="UINT1_Type",
-        encoding=encodings.IntegerDataEncoding(
-            size_in_bits=1,
-            encoding="unsigned"
-        )
+        name="UINT1_Type", encoding=encodings.IntegerDataEncoding(size_in_bits=1, encoding="unsigned")
     )
 
     uint2 = space_packet_parser.xtce.parameter_types.IntegerParameterType(
-        name="UINT2_Type",
-        encoding=encodings.IntegerDataEncoding(
-            size_in_bits=2,
-            encoding="unsigned"
-        )
+        name="UINT2_Type", encoding=encodings.IntegerDataEncoding(size_in_bits=2, encoding="unsigned")
     )
 
     uint3 = space_packet_parser.xtce.parameter_types.IntegerParameterType(
-        name="UINT3_Type",
-        encoding=encodings.IntegerDataEncoding(
-            size_in_bits=3,
-            encoding="unsigned"
-        )
+        name="UINT3_Type", encoding=encodings.IntegerDataEncoding(size_in_bits=3, encoding="unsigned")
     )
 
     uint11 = space_packet_parser.xtce.parameter_types.IntegerParameterType(
-        name="UINT11_Type",
-        encoding=encodings.IntegerDataEncoding(
-            size_in_bits=11,
-            encoding="unsigned"
-        )
+        name="UINT11_Type", encoding=encodings.IntegerDataEncoding(size_in_bits=11, encoding="unsigned")
     )
 
     uint14 = space_packet_parser.xtce.parameter_types.IntegerParameterType(
-        name="UINT14_Type",
-        encoding=encodings.IntegerDataEncoding(
-            size_in_bits=14,
-            encoding="unsigned"
-        )
+        name="UINT14_Type", encoding=encodings.IntegerDataEncoding(size_in_bits=14, encoding="unsigned")
     )
 
     uint16 = space_packet_parser.xtce.parameter_types.IntegerParameterType(
-        name="UINT16_Type",
-        encoding=encodings.IntegerDataEncoding(
-            size_in_bits=16,
-            encoding="unsigned"
-        )
+        name="UINT16_Type", encoding=encodings.IntegerDataEncoding(size_in_bits=16, encoding="unsigned")
     )
 
     multiply_nested_container = containers.SequenceContainer(
@@ -154,13 +121,10 @@ def test_generating_xtce_from_objects():
                 name="REPEATABLY_NESTED",
                 parameter_type=space_packet_parser.xtce.parameter_types.IntegerParameterType(
                     name="REPEATABLY_NESTED_Type",
-                    encoding=encodings.IntegerDataEncoding(
-                        size_in_bits=32,
-                        encoding="unsigned"
-                    )
-                )
+                    encoding=encodings.IntegerDataEncoding(size_in_bits=32, encoding="unsigned"),
+                ),
             )
-        ]
+        ],
     )
 
     apid_filtered_container = containers.SequenceContainer(
@@ -169,10 +133,7 @@ def test_generating_xtce_from_objects():
         base_container_name="RootContainer",
         restriction_criteria=[
             comparisons.Comparison(
-                required_value="3200",
-                referenced_parameter="APID",
-                operator="==",
-                use_calibrated_value=True
+                required_value="3200", referenced_parameter="APID", operator="==", use_calibrated_value=True
             )
         ],
         entry_list=[
@@ -181,23 +142,19 @@ def test_generating_xtce_from_objects():
                 name="SCI_DATA_LEN_BYTES",
                 parameter_type=space_packet_parser.xtce.parameter_types.IntegerParameterType(
                     name="SCI_DATA_LEN_BYTES_Type",
-                    encoding=encodings.IntegerDataEncoding(
-                        size_in_bits=8,
-                        encoding="unsigned"
-                    )
-                )
+                    encoding=encodings.IntegerDataEncoding(size_in_bits=8, encoding="unsigned"),
+                ),
             ),
             parameters.Parameter(
                 name="VAR_SCI_DATA",
                 parameter_type=space_packet_parser.xtce.parameter_types.BinaryParameterType(
                     name="VAR_SCI_DATA_Type",
                     encoding=encodings.BinaryDataEncoding(
-                        size_reference_parameter="SCI_DATA_LEN_BYTES",
-                        linear_adjuster=lambda x: 8*x
-                    )
-                )
-            )
-        ]
+                        size_reference_parameter="SCI_DATA_LEN_BYTES", linear_adjuster=lambda x: 8 * x
+                    ),
+                ),
+            ),
+        ],
     )
 
     root_container = containers.SequenceContainer(
@@ -205,43 +162,21 @@ def test_generating_xtce_from_objects():
         abstract=True,
         inheritors=[apid_filtered_container.name],
         entry_list=[
+            parameters.Parameter(name="VERSION", parameter_type=uint3, short_description="CCSDS header version"),
+            parameters.Parameter(name="TYPE", parameter_type=uint1, short_description="CCSDS header type"),
             parameters.Parameter(
-                name="VERSION",
-                parameter_type=uint3,
-                short_description="CCSDS header version"
+                name="SEC_HDR_FLG", parameter_type=uint1, short_description="CCSDS header secondary header flag"
+            ),
+            parameters.Parameter(name="APID", parameter_type=uint11, short_description="CCSDS header APID"),
+            parameters.Parameter(
+                name="SEQ_FLGS", parameter_type=uint2, short_description="CCSDS header sequence flags"
             ),
             parameters.Parameter(
-                name="TYPE",
-                parameter_type=uint1,
-                short_description="CCSDS header type"
+                name="SRC_SEQ_CTR", parameter_type=uint14, short_description="CCSDS header source sequence counter"
             ),
-            parameters.Parameter(
-                name="SEC_HDR_FLG",
-                parameter_type=uint1,
-                short_description="CCSDS header secondary header flag"
-            ),
-            parameters.Parameter(
-                name="APID",
-                parameter_type=uint11,
-                short_description="CCSDS header APID"
-            ),
-            parameters.Parameter(
-                name="SEQ_FLGS",
-                parameter_type=uint2,
-                short_description="CCSDS header sequence flags"
-            ),
-            parameters.Parameter(
-                name="SRC_SEQ_CTR",
-                parameter_type=uint14,
-                short_description="CCSDS header source sequence counter"
-            ),
-            parameters.Parameter(
-                name="PKT_LEN",
-                parameter_type=uint16,
-                short_description="CCSDS header packet length"
-            ),
-            multiply_nested_container
-        ]
+            parameters.Parameter(name="PKT_LEN", parameter_type=uint16, short_description="CCSDS header packet length"),
+            multiply_nested_container,
+        ],
     )
 
     # This list of sequence containers internally contains all parameters and parameter types
@@ -252,7 +187,7 @@ def test_generating_xtce_from_objects():
         container_set=sequence_containers,
         root_container_name=root_container.name,
         date="2025-01-01T01:01:01",
-        space_system_name="Test Space System Name"
+        space_system_name="Test Space System Name",
     )
 
     # Serialize it to an XML string
@@ -260,8 +195,7 @@ def test_generating_xtce_from_objects():
 
     # Reparse that string into a new definition object using from_document
     reparsed_definition = definitions.XtcePacketDefinition.from_xtce(
-        io.StringIO(xtce_string),
-        root_container_name=root_container.name
+        io.StringIO(xtce_string), root_container_name=root_container.name
     )
 
     assert reparsed_definition == definition
@@ -271,7 +205,8 @@ def test_generating_xtce_from_objects():
     ("xml", "ns_prefix", "uri", "ns", "new_ns_prefix", "new_uri", "new_ns"),
     [
         # Custom namespace to new custom namespace
-        ("""
+        (
+            """
 <custom:SpaceSystem xmlns:custom="http://www.fake-test.org/space/xtce" name="Space Packet Parser">
     <custom:Header date="2024-03-05T13:36:00MST" version="1.0" author="Gavin Medley"/>
     <custom:TelemetryMetaData>
@@ -281,14 +216,16 @@ def test_generating_xtce_from_objects():
     </custom:TelemetryMetaData>
 </custom:SpaceSystem>
 """,
-         "custom",
-         "http://www.fake-test.org/space/xtce",
-         {"custom": "http://www.fake-test.org/space/xtce"},
-         "xtcenew",
-         "http://www.fake-test.org/space/xtce",
-         {"xtcenew": "http://www.fake-test.org/space/xtce"}),
+            "custom",
+            "http://www.fake-test.org/space/xtce",
+            {"custom": "http://www.fake-test.org/space/xtce"},
+            "xtcenew",
+            "http://www.fake-test.org/space/xtce",
+            {"xtcenew": "http://www.fake-test.org/space/xtce"},
+        ),
         # No namespace to custom namespace
-        ("""
+        (
+            """
 <SpaceSystem xmlns="http://www.fake-test.org/space/xtce" name="Space Packet Parser">
     <Header date="2024-03-05T13:36:00MST" version="1.0" author="Gavin Medley"/>
     <TelemetryMetaData>
@@ -298,13 +235,15 @@ def test_generating_xtce_from_objects():
     </TelemetryMetaData>
 </SpaceSystem>
 """,
-         None,
-         "http://www.fake-test.org/space/xtce",
-         {None: "http://www.fake-test.org/space/xtce"},
-         "xtce",
-         "http://www.fake-test.org/space/xtce",
-         {"xtce": "http://www.fake-test.org/space/xtce"}),
-        ("""
+            None,
+            "http://www.fake-test.org/space/xtce",
+            {None: "http://www.fake-test.org/space/xtce"},
+            "xtce",
+            "http://www.fake-test.org/space/xtce",
+            {"xtce": "http://www.fake-test.org/space/xtce"},
+        ),
+        (
+            """
 <custom:SpaceSystem xmlns:custom="http://www.fake-test.org/space/xtce" name="Space Packet Parser">
     <custom:Header date="2024-03-05T13:36:00MST" version="1.0" author="Gavin Medley"/>
     <custom:TelemetryMetaData>
@@ -314,13 +253,15 @@ def test_generating_xtce_from_objects():
     </custom:TelemetryMetaData>
 </custom:SpaceSystem>
 """,
-         "custom",
-         "http://www.fake-test.org/space/xtce",
-         {"custom": "http://www.fake-test.org/space/xtce"},
-         None,
-         "http://www.fake-test.org/space/xtce",
-         {None: "http://www.fake-test.org/space/xtce"}),
-        ("""
+            "custom",
+            "http://www.fake-test.org/space/xtce",
+            {"custom": "http://www.fake-test.org/space/xtce"},
+            None,
+            "http://www.fake-test.org/space/xtce",
+            {None: "http://www.fake-test.org/space/xtce"},
+        ),
+        (
+            """
 <SpaceSystem name="Space Packet Parser">
     <Header date="2024-03-05T13:36:00MST" version="1.0" author="Gavin Medley"/>
     <TelemetryMetaData>
@@ -330,13 +271,15 @@ def test_generating_xtce_from_objects():
     </TelemetryMetaData>
 </SpaceSystem>
 """,
-         None,
-         None,
-         {},
-         "xtcenew",
-         "http://www.fake-test.org/space/xtce",
-         {"xtcenew": "http://www.fake-test.org/space/xtce"}),
-("""
+            None,
+            None,
+            {},
+            "xtcenew",
+            "http://www.fake-test.org/space/xtce",
+            {"xtcenew": "http://www.fake-test.org/space/xtce"},
+        ),
+        (
+            """
 <custom:SpaceSystem xmlns:custom="http://www.fake-test.org/space/xtce" name="Space Packet Parser">
     <custom:Header date="2024-03-05T13:36:00MST" version="1.0" author="Gavin Medley"/>
     <custom:TelemetryMetaData>
@@ -346,13 +289,14 @@ def test_generating_xtce_from_objects():
     </custom:TelemetryMetaData>
 </custom:SpaceSystem>
 """,
-         "custom",
-         "http://www.fake-test.org/space/xtce",
-         {"custom": "http://www.fake-test.org/space/xtce"},
-         None,
-         None,
-         {}),
-    ]
+            "custom",
+            "http://www.fake-test.org/space/xtce",
+            {"custom": "http://www.fake-test.org/space/xtce"},
+            None,
+            None,
+            {},
+        ),
+    ],
 )
 def test_custom_namespacing(xml, ns_prefix, uri, ns, new_ns_prefix, new_uri, new_ns):
     """Test parsing XTCE with various namespace configurations"""
@@ -487,7 +431,7 @@ def test_uniqueness_of_reused_sequence_container(jpss_test_data_dir):
 
     This is a rather particular test that tests for regressions on a specific fixed behavior
     """
-    jpss_xtce = jpss_test_data_dir / 'contrived_inheritance_structure.xml'
+    jpss_xtce = jpss_test_data_dir / "contrived_inheritance_structure.xml"
     jpss_definition = definitions.XtcePacketDefinition.from_xtce(xtce_document=jpss_xtce)
     assert isinstance(jpss_definition, definitions.XtcePacketDefinition)
 
@@ -522,9 +466,9 @@ def test_parse_methods(test_data_dir):
     xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
 
     # Test parsing a packet
-    empty_packet_data = space_packet_parser.ccsds.create_ccsds_packet(data=bytes(65),
-                                                    apid=11,
-                                                    sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED)
+    empty_packet_data = space_packet_parser.ccsds.create_ccsds_packet(
+        data=bytes(65), apid=11, sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED
+    )
 
     # Parse in the simplest way and compare result to other parse methods
     packet = xdef.parse_bytes(empty_packet_data)
@@ -532,7 +476,7 @@ def test_parse_methods(test_data_dir):
     assert packet == xdef.parse_bytes(bytes(empty_packet_data))
     # Emit a warning if we have too many bytes for this definition
     with pytest.warns(UserWarning, match="Number of bits parsed"):
-        assert packet == xdef.parse_bytes(empty_packet_data + b'\x00\x00')
+        assert packet == xdef.parse_bytes(empty_packet_data + b"\x00\x00")
 
     # Deprecated parse_ccsds_packet method, can be removed in a future version
     empty_packet = spp.SpacePacket(binary_data=empty_packet_data)
@@ -554,12 +498,13 @@ def test_parse_packet_extra_bytes(test_data_dir):
     xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
 
     # Test parsing a packet that is longer than the definition
-    too_long_packet_data = space_packet_parser.ccsds.create_ccsds_packet(data=bytes(70),
-                                                    apid=11,
-                                                    sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED)
+    too_long_packet_data = space_packet_parser.ccsds.create_ccsds_packet(
+        data=bytes(70), apid=11, sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED
+    )
 
-    with pytest.warns(UserWarning,
-                      match=r"Number of bits parsed \(568b\) did not match the length of data available \(608b\)"):
+    with pytest.warns(
+        UserWarning, match=r"Number of bits parsed \(568b\) did not match the length of data available \(608b\)"
+    ):
         xdef.parse_bytes(too_long_packet_data)
 
 
@@ -571,11 +516,13 @@ def test_parse_packet_too_few_bytes(test_data_dir):
     xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
 
     # Test parsing a packet that is longer than the definition
-    too_short_packet_data = space_packet_parser.ccsds.create_ccsds_packet(data=bytes(60),
-                                                    apid=11,
-                                                    sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED)
+    too_short_packet_data = space_packet_parser.ccsds.create_ccsds_packet(
+        data=bytes(60), apid=11, sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED
+    )
 
-    with pytest.raises(ValueError,
-                       match=r"Tried to read beyond the end of the packet data. "
-                             r"Tried to read 32 bits from position 504 in a packet of length 528 bits."):
+    with pytest.raises(
+        ValueError,
+        match=r"Tried to read beyond the end of the packet data. "
+        r"Tried to read 32 bits from position 504 in a packet of length 528 bits.",
+    ):
         xdef.parse_bytes(too_short_packet_data)

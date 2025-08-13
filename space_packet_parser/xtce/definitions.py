@@ -86,9 +86,11 @@ class XtcePacketDefinition(common.AttrComparable):
             Optional header date string.
         """
         if isinstance(container_set, (str, Path)):
-            raise TypeError("container_set must be an iterable of SequenceContainer objects. "
-                            "To instantiate an XtcePacketDefinition from an XTCE XML file, use "
-                            "XtcePacketDefinition.from_xtce() instead.")
+            raise TypeError(
+                "container_set must be an iterable of SequenceContainer objects. "
+                "To instantiate an XtcePacketDefinition from an XTCE XML file, use "
+                "XtcePacketDefinition.from_xtce() instead."
+            )
         if xtce_ns_prefix is not None and xtce_ns_prefix not in ns:
             raise ValueError(
                 f"XTCE namespace prefix {xtce_ns_prefix=} not in namespace mapping {ns=}. If the "
@@ -431,10 +433,13 @@ class XtcePacketDefinition(common.AttrComparable):
 
             raise UnrecognizedPacketTypeError(
                 f"Multiple valid inheritors, {valid_inheritors} are possible for {current_container}.",
-                partial_data=packet)
+                partial_data=packet,
+            )
         if packet._parsing_pos != len(packet.binary_data) * 8:
-            message = (f"Number of bits parsed ({packet._parsing_pos}b) did not match " +
-                       f"the length of data available ({len(packet.binary_data) * 8}b).")
+            message = (
+                f"Number of bits parsed ({packet._parsing_pos}b) did not match "
+                + f"the length of data available ({len(packet.binary_data) * 8}b)."
+            )
             if isinstance(packet.binary_data, ccsds.CCSDSPacketBytes):
                 # Add in the CCSDS Header printout
                 message += f" {packet.binary_data}."

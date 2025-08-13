@@ -1,4 +1,5 @@
 """Parameter Type tests"""
+
 import lxml.etree as ElementTree
 import pytest
 
@@ -6,9 +7,10 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, encodings, par
 
 
 @pytest.mark.parametrize(
-    ('xml_string', 'expectation'),
+    ("xml_string", "expectation"),
     [
-        (f"""
+        (
+            f"""
 <xtce:StringParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_STRING_Type">
     <xtce:UnitSet/>
     <xtce:StringDataEncoding>
@@ -20,10 +22,12 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, encodings, par
     </xtce:StringDataEncoding>
 </xtce:StringParameterType>
 """,
-         parameter_types.StringParameterType(
-             name='TEST_STRING_Type',
-             encoding=encodings.StringDataEncoding(fixed_raw_length=40))),
-        (f"""
+            parameter_types.StringParameterType(
+                name="TEST_STRING_Type", encoding=encodings.StringDataEncoding(fixed_raw_length=40)
+            ),
+        ),
+        (
+            f"""
 <xtce:StringParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_STRING_Type">
     <xtce:StringDataEncoding>
         <xtce:SizeInBits>
@@ -35,11 +39,13 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, encodings, par
     </xtce:StringDataEncoding>
 </xtce:StringParameterType>
 """,
-         parameter_types.StringParameterType(
-             name='TEST_STRING_Type',
-             encoding=encodings.StringDataEncoding(fixed_raw_length=40,
-                                                   leading_length_size=17))),
-        (f"""
+            parameter_types.StringParameterType(
+                name="TEST_STRING_Type",
+                encoding=encodings.StringDataEncoding(fixed_raw_length=40, leading_length_size=17),
+            ),
+        ),
+        (
+            f"""
 <xtce:StringParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_STRING_Type">
     <xtce:StringDataEncoding>
         <xtce:SizeInBits>
@@ -51,11 +57,12 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, encodings, par
     </xtce:StringDataEncoding>
 </xtce:StringParameterType>
 """,
-         parameter_types.StringParameterType(
-             name='TEST_STRING_Type',
-             encoding=encodings.StringDataEncoding(fixed_raw_length=40,
-                                                   termination_character='00'))),
-    ]
+            parameter_types.StringParameterType(
+                name="TEST_STRING_Type",
+                encoding=encodings.StringDataEncoding(fixed_raw_length=40, termination_character="00"),
+            ),
+        ),
+    ],
 )
 def test_string_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an StringParameterType from an XML string"""
@@ -70,14 +77,16 @@ def test_string_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
         # Recover XML and re-parse it to check it's recoverable
         result_string = ElementTree.tostring(result.to_xml(elmaker=elmaker), pretty_print=True).decode()
         full_circle = parameter_types.StringParameterType.from_xml(
-            ElementTree.fromstring(result_string, parser=xtce_parser))
+            ElementTree.fromstring(result_string, parser=xtce_parser)
+        )
         assert full_circle == expectation
 
 
 @pytest.mark.parametrize(
-    ('xml_string', 'expectation'),
+    ("xml_string", "expectation"),
     [
-        (f"""
+        (
+            f"""
 <xtce:IntegerParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_INT_Type">
     <xtce:UnitSet>
         <xtce:Unit>m/s</xtce:Unit>
@@ -85,10 +94,14 @@ def test_string_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
     <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
 </xtce:IntegerParameterType>
 """,
-         parameter_types.IntegerParameterType(
-             name='TEST_INT_Type', unit='m/s',
-             encoding=encodings.IntegerDataEncoding(size_in_bits=16, encoding='unsigned'))),
-        (f"""
+            parameter_types.IntegerParameterType(
+                name="TEST_INT_Type",
+                unit="m/s",
+                encoding=encodings.IntegerDataEncoding(size_in_bits=16, encoding="unsigned"),
+            ),
+        ),
+        (
+            f"""
 <xtce:IntegerParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_INT_Type">
     <xtce:UnitSet>
         <xtce:Unit>m/s</xtce:Unit>
@@ -104,16 +117,24 @@ def test_string_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
     </xtce:IntegerDataEncoding>
 </xtce:IntegerParameterType>
 """,
-         parameter_types.IntegerParameterType(name='TEST_INT_Type', unit='m/s',
-                                                                       encoding=encodings.IntegerDataEncoding(
-                                             size_in_bits=16, encoding='unsigned',
-                                             default_calibrator=calibrators.PolynomialCalibrator([
-                                                 calibrators.PolynomialCoefficient(2772.24, 0),
-                                                 calibrators.PolynomialCoefficient(-41.6338, 1),
-                                                 calibrators.PolynomialCoefficient(-0.185486, 2)
-                                             ])
-                                         ))),
-        (f"""
+            parameter_types.IntegerParameterType(
+                name="TEST_INT_Type",
+                unit="m/s",
+                encoding=encodings.IntegerDataEncoding(
+                    size_in_bits=16,
+                    encoding="unsigned",
+                    default_calibrator=calibrators.PolynomialCalibrator(
+                        [
+                            calibrators.PolynomialCoefficient(2772.24, 0),
+                            calibrators.PolynomialCoefficient(-41.6338, 1),
+                            calibrators.PolynomialCoefficient(-0.185486, 2),
+                        ]
+                    ),
+                ),
+            ),
+        ),
+        (
+            f"""
 <xtce:IntegerParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_INT_Type">
     <xtce:UnitSet>
         <xtce:Unit>m/s</xtce:Unit>
@@ -129,18 +150,25 @@ def test_string_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
     </xtce:IntegerDataEncoding>
 </xtce:IntegerParameterType>
 """,
-         parameter_types.IntegerParameterType(name='TEST_INT_Type', unit='m/s',
-                                                                       encoding=encodings.IntegerDataEncoding(
-                                             size_in_bits=16, encoding='unsigned',
-                                             default_calibrator=calibrators.SplineCalibrator(
-                                                 order=0, extrapolate=False,
-                                                 points=[
-                                                     calibrators.SplinePoint(raw=1, calibrated=10),
-                                                     calibrators.SplinePoint(raw=2, calibrated=100),
-                                                     calibrators.SplinePoint(raw=3, calibrated=500),
-                                                 ]
-                                             )))),
-    ]
+            parameter_types.IntegerParameterType(
+                name="TEST_INT_Type",
+                unit="m/s",
+                encoding=encodings.IntegerDataEncoding(
+                    size_in_bits=16,
+                    encoding="unsigned",
+                    default_calibrator=calibrators.SplineCalibrator(
+                        order=0,
+                        extrapolate=False,
+                        points=[
+                            calibrators.SplinePoint(raw=1, calibrated=10),
+                            calibrators.SplinePoint(raw=2, calibrated=100),
+                            calibrators.SplinePoint(raw=3, calibrated=500),
+                        ],
+                    ),
+                ),
+            ),
+        ),
+    ],
 )
 def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an IntegerParameterType from an XML string"""
@@ -155,14 +183,16 @@ def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectati
         # Recover XML and re-parse it to check it's recoverable
         result_string = ElementTree.tostring(result.to_xml(elmaker=elmaker), pretty_print=True).decode()
         full_circle = parameter_types.IntegerParameterType.from_xml(
-            ElementTree.fromstring(result_string, parser=xtce_parser))
+            ElementTree.fromstring(result_string, parser=xtce_parser)
+        )
         assert full_circle == expectation
 
 
 @pytest.mark.parametrize(
-    ('xml_string', 'expectation'),
+    ("xml_string", "expectation"),
     [
-        (f"""
+        (
+            f"""
 <xtce:FloatParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_INT_Type">
     <xtce:UnitSet>
         <xtce:Unit>m/s</xtce:Unit>
@@ -170,10 +200,14 @@ def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectati
     <xtce:FloatDataEncoding sizeInBits="16"/>
 </xtce:FloatParameterType>
 """,
-         parameter_types.FloatParameterType(
-             name='TEST_INT_Type', unit='m/s',
-             encoding=encodings.FloatDataEncoding(size_in_bits=16, encoding='IEEE754'))),
-        (f"""
+            parameter_types.FloatParameterType(
+                name="TEST_INT_Type",
+                unit="m/s",
+                encoding=encodings.FloatDataEncoding(size_in_bits=16, encoding="IEEE754"),
+            ),
+        ),
+        (
+            f"""
 <xtce:FloatParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_INT_Type">
     <xtce:UnitSet>
         <xtce:Unit>m/s</xtce:Unit>
@@ -181,10 +215,14 @@ def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectati
     <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
 </xtce:FloatParameterType>
 """,
-         parameter_types.FloatParameterType(
-             name='TEST_INT_Type', unit='m/s',
-             encoding=encodings.IntegerDataEncoding(size_in_bits=16, encoding='unsigned'))),
-        (f"""
+            parameter_types.FloatParameterType(
+                name="TEST_INT_Type",
+                unit="m/s",
+                encoding=encodings.IntegerDataEncoding(size_in_bits=16, encoding="unsigned"),
+            ),
+        ),
+        (
+            f"""
 <xtce:FloatParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_INT_Type">
     <xtce:UnitSet>
         <xtce:Unit>m/s</xtce:Unit>
@@ -200,16 +238,24 @@ def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectati
     </xtce:IntegerDataEncoding>
 </xtce:FloatParameterType>
 """,
-         parameter_types.FloatParameterType(name='TEST_INT_Type', unit='m/s',
-                                                                     encoding=encodings.IntegerDataEncoding(
-                                           size_in_bits=16, encoding='unsigned',
-                                           default_calibrator=calibrators.PolynomialCalibrator([
-                                               calibrators.PolynomialCoefficient(2772.24, 0),
-                                               calibrators.PolynomialCoefficient(-41.6338, 1),
-                                               calibrators.PolynomialCoefficient(-0.185486, 2)
-                                           ])
-                                       ))),
-        (f"""
+            parameter_types.FloatParameterType(
+                name="TEST_INT_Type",
+                unit="m/s",
+                encoding=encodings.IntegerDataEncoding(
+                    size_in_bits=16,
+                    encoding="unsigned",
+                    default_calibrator=calibrators.PolynomialCalibrator(
+                        [
+                            calibrators.PolynomialCoefficient(2772.24, 0),
+                            calibrators.PolynomialCoefficient(-41.6338, 1),
+                            calibrators.PolynomialCoefficient(-0.185486, 2),
+                        ]
+                    ),
+                ),
+            ),
+        ),
+        (
+            f"""
 <xtce:FloatParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_INT_Type">
     <xtce:UnitSet>
         <xtce:Unit>m/s</xtce:Unit>
@@ -225,18 +271,25 @@ def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectati
     </xtce:IntegerDataEncoding>
 </xtce:FloatParameterType>
 """,
-         parameter_types.FloatParameterType(name='TEST_INT_Type', unit='m/s',
-                                                                     encoding=encodings.IntegerDataEncoding(
-                                           size_in_bits=16, encoding='unsigned',
-                                           default_calibrator=calibrators.SplineCalibrator(
-                                               order=0, extrapolate=False,
-                                               points=[
-                                                   calibrators.SplinePoint(raw=1, calibrated=10.),
-                                                   calibrators.SplinePoint(raw=2, calibrated=100.),
-                                                   calibrators.SplinePoint(raw=3, calibrated=500.),
-                                               ]
-                                           )))),
-    ]
+            parameter_types.FloatParameterType(
+                name="TEST_INT_Type",
+                unit="m/s",
+                encoding=encodings.IntegerDataEncoding(
+                    size_in_bits=16,
+                    encoding="unsigned",
+                    default_calibrator=calibrators.SplineCalibrator(
+                        order=0,
+                        extrapolate=False,
+                        points=[
+                            calibrators.SplinePoint(raw=1, calibrated=10.0),
+                            calibrators.SplinePoint(raw=2, calibrated=100.0),
+                            calibrators.SplinePoint(raw=3, calibrated=500.0),
+                        ],
+                    ),
+                ),
+            ),
+        ),
+    ],
 )
 def test_float_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an FloatParameterType from an XML string"""
@@ -251,14 +304,16 @@ def test_float_parameter_type(elmaker, xtce_parser, xml_string: str, expectation
         # Recover XML and re-parse it to check it's recoverable
         result_string = ElementTree.tostring(result.to_xml(elmaker=elmaker), pretty_print=True).decode()
         full_circle = parameter_types.FloatParameterType.from_xml(
-            ElementTree.fromstring(result_string, parser=xtce_parser))
+            ElementTree.fromstring(result_string, parser=xtce_parser)
+        )
         assert full_circle == expectation
 
 
 @pytest.mark.parametrize(
-    ('xml_string', 'expectation'),
+    ("xml_string", "expectation"),
     [
-        (f"""
+        (
+            f"""
 <xtce:EnumeratedParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_ENUM_Type">
     <xtce:UnitSet/>
     <xtce:IntegerDataEncoding sizeInBits="2" encoding="unsigned"/>
@@ -271,13 +326,15 @@ def test_float_parameter_type(elmaker, xtce_parser, xml_string: str, expectation
     </xtce:EnumerationList>
 </xtce:EnumeratedParameterType>
 """,
-         parameter_types.EnumeratedParameterType(
-             name='TEST_ENUM_Type',
-             encoding=encodings.IntegerDataEncoding(size_in_bits=2, encoding='unsigned'),
-             # NOTE: Duplicate final value is on purpose to make sure we handle that case
-             enumeration={0: 'BOOT_POR', 1: 'BOOT_RETURN', 2: 'OP_LOW', 3: 'OP_HIGH',
-                          4: 'OP_HIGH'})),
-        (f"""
+            parameter_types.EnumeratedParameterType(
+                name="TEST_ENUM_Type",
+                encoding=encodings.IntegerDataEncoding(size_in_bits=2, encoding="unsigned"),
+                # NOTE: Duplicate final value is on purpose to make sure we handle that case
+                enumeration={0: "BOOT_POR", 1: "BOOT_RETURN", 2: "OP_LOW", 3: "OP_HIGH", 4: "OP_HIGH"},
+            ),
+        ),
+        (
+            f"""
 <xtce:EnumeratedParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_ENUM_Type">
     <xtce:UnitSet/>
     <xtce:FloatDataEncoding sizeInBits="32" encoding="IEEE754"/>
@@ -290,13 +347,15 @@ def test_float_parameter_type(elmaker, xtce_parser, xml_string: str, expectation
     </xtce:EnumerationList>
 </xtce:EnumeratedParameterType>
 """,
-         parameter_types.EnumeratedParameterType(
-             name='TEST_ENUM_Type',
-             encoding=encodings.FloatDataEncoding(size_in_bits=32, encoding='IEEE754'),
-             # NOTE: Duplicate final value is on purpose to make sure we handle that case
-             enumeration={0.0: 'BOOT_POR', 1.1: 'BOOT_RETURN', 2.2: 'OP_LOW', 3.3: 'OP_HIGH',
-                          4.4: 'OP_HIGH'})),
-        (f"""
+            parameter_types.EnumeratedParameterType(
+                name="TEST_ENUM_Type",
+                encoding=encodings.FloatDataEncoding(size_in_bits=32, encoding="IEEE754"),
+                # NOTE: Duplicate final value is on purpose to make sure we handle that case
+                enumeration={0.0: "BOOT_POR", 1.1: "BOOT_RETURN", 2.2: "OP_LOW", 3.3: "OP_HIGH", 4.4: "OP_HIGH"},
+            ),
+        ),
+        (
+            f"""
 <xtce:EnumeratedParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_ENUM_Type">
     <xtce:UnitSet/>
     <xtce:StringDataEncoding>
@@ -315,16 +374,21 @@ def test_float_parameter_type(elmaker, xtce_parser, xml_string: str, expectation
     </xtce:EnumerationList>
 </xtce:EnumeratedParameterType>
 """,
-         parameter_types.EnumeratedParameterType(
-             name='TEST_ENUM_Type',
-             encoding=encodings.StringDataEncoding(fixed_raw_length=16),
-             # NOTE: Duplicate final value is on purpose to make sure we handle that case
-             enumeration={b"AA": 'BOOT_POR',
-                          b"BB": 'BOOT_RETURN',
-                          b"CC": 'OP_LOW',
-                          b"DD": 'OP_HIGH',
-                          b"EE": 'OP_HIGH'})),
-        (f"""
+            parameter_types.EnumeratedParameterType(
+                name="TEST_ENUM_Type",
+                encoding=encodings.StringDataEncoding(fixed_raw_length=16),
+                # NOTE: Duplicate final value is on purpose to make sure we handle that case
+                enumeration={
+                    b"AA": "BOOT_POR",
+                    b"BB": "BOOT_RETURN",
+                    b"CC": "OP_LOW",
+                    b"DD": "OP_HIGH",
+                    b"EE": "OP_HIGH",
+                },
+            ),
+        ),
+        (
+            f"""
 <xtce:EnumeratedParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_ENUM_Type">
     <xtce:UnitSet/>
     <xtce:StringDataEncoding encoding="UTF-16BE">
@@ -343,16 +407,20 @@ def test_float_parameter_type(elmaker, xtce_parser, xml_string: str, expectation
     </xtce:EnumerationList>
 </xtce:EnumeratedParameterType>
 """,
-         parameter_types.EnumeratedParameterType(
-             name='TEST_ENUM_Type',
-             encoding=encodings.StringDataEncoding(fixed_raw_length=16, encoding='UTF-16BE'),
-             # NOTE: Duplicate final value is on purpose to make sure we handle that case
-             enumeration={b"\x00A\x00A": 'BOOT_POR',
-                          b"\x00B\x00B": 'BOOT_RETURN',
-                          b"\x00C\x00C": 'OP_LOW',
-                          b"\x00D\x00D": 'OP_HIGH',
-                          b"\x00E\x00E": 'OP_HIGH'})),
-    ]
+            parameter_types.EnumeratedParameterType(
+                name="TEST_ENUM_Type",
+                encoding=encodings.StringDataEncoding(fixed_raw_length=16, encoding="UTF-16BE"),
+                # NOTE: Duplicate final value is on purpose to make sure we handle that case
+                enumeration={
+                    b"\x00A\x00A": "BOOT_POR",
+                    b"\x00B\x00B": "BOOT_RETURN",
+                    b"\x00C\x00C": "OP_LOW",
+                    b"\x00D\x00D": "OP_HIGH",
+                    b"\x00E\x00E": "OP_HIGH",
+                },
+            ),
+        ),
+    ],
 )
 def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an EnumeratedParameterType from an XML string"""
@@ -367,14 +435,16 @@ def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expect
         # Recover XML and re-parse it to check it's recoverable
         result_string = ElementTree.tostring(result.to_xml(elmaker=elmaker), pretty_print=True).decode()
         full_circle = parameter_types.EnumeratedParameterType.from_xml(
-            ElementTree.fromstring(result_string, parser=xtce_parser))
+            ElementTree.fromstring(result_string, parser=xtce_parser)
+        )
         assert full_circle == expectation
 
 
 @pytest.mark.parametrize(
-    ('xml_string', 'expectation'),
+    ("xml_string", "expectation"),
     [
-        (f"""
+        (
+            f"""
 <xtce:BinaryParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
     <xtce:UnitSet>
         <xtce:Unit>m/s</xtce:Unit>
@@ -386,10 +456,12 @@ def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expect
     </xtce:BinaryDataEncoding>
 </xtce:BinaryParameterType>
 """,
-         parameter_types.BinaryParameterType(
-             name='TEST_PARAM_Type', unit='m/s',
-             encoding=encodings.BinaryDataEncoding(fixed_size_in_bits=256))),
-        (f"""
+            parameter_types.BinaryParameterType(
+                name="TEST_PARAM_Type", unit="m/s", encoding=encodings.BinaryDataEncoding(fixed_size_in_bits=256)
+            ),
+        ),
+        (
+            f"""
 <xtce:BinaryParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
     <xtce:UnitSet/>
     <xtce:BinaryDataEncoding>
@@ -399,10 +471,12 @@ def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expect
     </xtce:BinaryDataEncoding>
 </xtce:BinaryParameterType>
 """,
-         parameter_types.BinaryParameterType(
-             name='TEST_PARAM_Type', unit=None,
-             encoding=encodings.BinaryDataEncoding(fixed_size_in_bits=128))),
-        (f"""
+            parameter_types.BinaryParameterType(
+                name="TEST_PARAM_Type", unit=None, encoding=encodings.BinaryDataEncoding(fixed_size_in_bits=128)
+            ),
+        ),
+        (
+            f"""
 <xtce:BinaryParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
     <xtce:UnitSet/>
     <xtce:BinaryDataEncoding>
@@ -415,12 +489,17 @@ def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expect
     </xtce:BinaryDataEncoding>
 </xtce:BinaryParameterType>
 """,
-         parameter_types.BinaryParameterType(name='TEST_PARAM_Type',
-                                                                      encoding=encodings.BinaryDataEncoding(
-                                            size_reference_parameter='SizeFromThisParameter',
-                                            use_calibrated_value=False,
-                                            linear_adjuster=lambda x: x))),
-        (f"""
+            parameter_types.BinaryParameterType(
+                name="TEST_PARAM_Type",
+                encoding=encodings.BinaryDataEncoding(
+                    size_reference_parameter="SizeFromThisParameter",
+                    use_calibrated_value=False,
+                    linear_adjuster=lambda x: x,
+                ),
+            ),
+        ),
+        (
+            f"""
 <xtce:BinaryParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
     <xtce:UnitSet/>
     <xtce:BinaryDataEncoding>
@@ -432,10 +511,13 @@ def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expect
     </xtce:BinaryDataEncoding>
 </xtce:BinaryParameterType>
 """,
-         parameter_types.BinaryParameterType(name='TEST_PARAM_Type', unit=None,
-                                                                      encoding=encodings.BinaryDataEncoding(
-                                            size_reference_parameter='SizeFromThisParameter'))),
-    ]
+            parameter_types.BinaryParameterType(
+                name="TEST_PARAM_Type",
+                unit=None,
+                encoding=encodings.BinaryDataEncoding(size_reference_parameter="SizeFromThisParameter"),
+            ),
+        ),
+    ],
 )
 def test_binary_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an BinaryParameterType from an XML string"""
@@ -450,14 +532,16 @@ def test_binary_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
         # Recover XML and re-parse it to check it's recoverable
         result_string = ElementTree.tostring(result.to_xml(elmaker=elmaker), pretty_print=True).decode()
         full_circle = parameter_types.BinaryParameterType.from_xml(
-            ElementTree.fromstring(result_string, parser=xtce_parser))
+            ElementTree.fromstring(result_string, parser=xtce_parser)
+        )
         assert full_circle == expectation
 
 
 @pytest.mark.parametrize(
-    ('xml_string', 'expectation'),
+    ("xml_string", "expectation"),
     [
-        (f"""
+        (
+            f"""
 <xtce:BooleanParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
     <xtce:UnitSet>
         <xtce:Unit>m/s</xtce:Unit>
@@ -469,10 +553,12 @@ def test_binary_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
     </xtce:BinaryDataEncoding>
 </xtce:BooleanParameterType>
 """,
-         parameter_types.BooleanParameterType(
-             name='TEST_PARAM_Type', unit='m/s',
-             encoding=encodings.BinaryDataEncoding(fixed_size_in_bits=1))),
-        (f"""
+            parameter_types.BooleanParameterType(
+                name="TEST_PARAM_Type", unit="m/s", encoding=encodings.BinaryDataEncoding(fixed_size_in_bits=1)
+            ),
+        ),
+        (
+            f"""
 <xtce:BooleanParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
     <xtce:UnitSet>
         <xtce:Unit>m/s</xtce:Unit>
@@ -480,10 +566,14 @@ def test_binary_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
     <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="1"/>
 </xtce:BooleanParameterType>
 """,
-         parameter_types.BooleanParameterType(
-             name='TEST_PARAM_Type', unit='m/s',
-             encoding=encodings.IntegerDataEncoding(size_in_bits=1, encoding="unsigned"))),
-        (f"""
+            parameter_types.BooleanParameterType(
+                name="TEST_PARAM_Type",
+                unit="m/s",
+                encoding=encodings.IntegerDataEncoding(size_in_bits=1, encoding="unsigned"),
+            ),
+        ),
+        (
+            f"""
 <xtce:BooleanParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
     <xtce:UnitSet>
         <xtce:Unit>m/s</xtce:Unit>
@@ -498,11 +588,13 @@ def test_binary_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
     </xtce:StringDataEncoding>
 </xtce:BooleanParameterType>
 """,
-         parameter_types.BooleanParameterType(
-             name='TEST_PARAM_Type', unit='m/s',
-             encoding=encodings.StringDataEncoding(fixed_raw_length=40,
-                                                   termination_character='00'))),
-    ]
+            parameter_types.BooleanParameterType(
+                name="TEST_PARAM_Type",
+                unit="m/s",
+                encoding=encodings.StringDataEncoding(fixed_raw_length=40, termination_character="00"),
+            ),
+        ),
+    ],
 )
 def test_boolean_parameter_type(elmaker, xtce_parser, xml_string, expectation):
     """Test parsing a BooleanParameterType from an XML string"""
@@ -517,14 +609,16 @@ def test_boolean_parameter_type(elmaker, xtce_parser, xml_string, expectation):
         # Recover XML and re-parse it to check it's recoverable
         result_string = ElementTree.tostring(result.to_xml(elmaker=elmaker), pretty_print=True).decode()
         full_circle = parameter_types.BooleanParameterType.from_xml(
-            ElementTree.fromstring(result_string, parser=xtce_parser))
+            ElementTree.fromstring(result_string, parser=xtce_parser)
+        )
         assert full_circle == expectation
 
 
 @pytest.mark.parametrize(
-    ('xml_string', 'expectation'),
+    ("xml_string", "expectation"),
     [
-        (f"""
+        (
+            f"""
 <xtce:AbsoluteTimeParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
     <xtce:Encoding units="seconds">
         <xtce:IntegerDataEncoding sizeInBits="32"/>
@@ -535,12 +629,16 @@ def test_boolean_parameter_type(elmaker, xtce_parser, xml_string, expectation):
     </xtce:ReferenceTime>
 </xtce:AbsoluteTimeParameterType>
 """,
-         parameter_types.AbsoluteTimeParameterType(
-             name='TEST_PARAM_Type', unit='seconds',
-             encoding=encodings.IntegerDataEncoding(size_in_bits=32,
-                                                    encoding="unsigned"),
-             epoch="TAI", offset_from="MilliSeconds")),
-        (f"""
+            parameter_types.AbsoluteTimeParameterType(
+                name="TEST_PARAM_Type",
+                unit="seconds",
+                encoding=encodings.IntegerDataEncoding(size_in_bits=32, encoding="unsigned"),
+                epoch="TAI",
+                offset_from="MilliSeconds",
+            ),
+        ),
+        (
+            f"""
 <xtce:AbsoluteTimeParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
     <xtce:Encoding scale="1E-6" offset="0" units="s">
         <xtce:IntegerDataEncoding sizeInBits="32"/>
@@ -551,67 +649,90 @@ def test_boolean_parameter_type(elmaker, xtce_parser, xml_string, expectation):
     </xtce:ReferenceTime>
 </xtce:AbsoluteTimeParameterType>
 """,
-         parameter_types.AbsoluteTimeParameterType(
-             name='TEST_PARAM_Type', unit='s',
-             encoding=encodings.IntegerDataEncoding(
-                 size_in_bits=32, encoding="unsigned",
-                 default_calibrator=calibrators.PolynomialCalibrator(
-                     coefficients=[
-                         calibrators.PolynomialCoefficient(0, 0),
-                         calibrators.PolynomialCoefficient(1E-6, 1)
-                     ])),
-             epoch="2009-10-10T12:00:00-05:00", offset_from="MilliSeconds")),
-        (f"""
+            parameter_types.AbsoluteTimeParameterType(
+                name="TEST_PARAM_Type",
+                unit="s",
+                encoding=encodings.IntegerDataEncoding(
+                    size_in_bits=32,
+                    encoding="unsigned",
+                    default_calibrator=calibrators.PolynomialCalibrator(
+                        coefficients=[
+                            calibrators.PolynomialCoefficient(0, 0),
+                            calibrators.PolynomialCoefficient(1e-6, 1),
+                        ]
+                    ),
+                ),
+                epoch="2009-10-10T12:00:00-05:00",
+                offset_from="MilliSeconds",
+            ),
+        ),
+        (
+            f"""
 <xtce:AbsoluteTimeParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
     <xtce:Encoding scale="1.31E-6" units="s">
         <xtce:IntegerDataEncoding sizeInBits="32"/>
     </xtce:Encoding>
 </xtce:AbsoluteTimeParameterType>
 """,
-         parameter_types.AbsoluteTimeParameterType(
-             name='TEST_PARAM_Type', unit='s',
-             encoding=encodings.IntegerDataEncoding(
-                 size_in_bits=32, encoding="unsigned",
-                 default_calibrator=calibrators.PolynomialCalibrator(
-                     coefficients=[
-                         calibrators.PolynomialCoefficient(1.31E-6, 1)
-                     ]))
-         )),
-        (f"""
+            parameter_types.AbsoluteTimeParameterType(
+                name="TEST_PARAM_Type",
+                unit="s",
+                encoding=encodings.IntegerDataEncoding(
+                    size_in_bits=32,
+                    encoding="unsigned",
+                    default_calibrator=calibrators.PolynomialCalibrator(
+                        coefficients=[calibrators.PolynomialCoefficient(1.31e-6, 1)]
+                    ),
+                ),
+            ),
+        ),
+        (
+            f"""
 <xtce:AbsoluteTimeParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
     <xtce:Encoding offset="147.884" units="s">
         <xtce:IntegerDataEncoding sizeInBits="32"/>
     </xtce:Encoding>
 </xtce:AbsoluteTimeParameterType>
 """,
-         parameter_types.AbsoluteTimeParameterType(
-             name='TEST_PARAM_Type', unit='s',
-             encoding=encodings.IntegerDataEncoding(
-                 size_in_bits=32, encoding="unsigned",
-                 default_calibrator=calibrators.PolynomialCalibrator(
-                     coefficients=[
-                         calibrators.PolynomialCoefficient(147.884, 0),
-                         calibrators.PolynomialCoefficient(1, 1)
-                     ]))
-         )),
-        (f"""
+            parameter_types.AbsoluteTimeParameterType(
+                name="TEST_PARAM_Type",
+                unit="s",
+                encoding=encodings.IntegerDataEncoding(
+                    size_in_bits=32,
+                    encoding="unsigned",
+                    default_calibrator=calibrators.PolynomialCalibrator(
+                        coefficients=[
+                            calibrators.PolynomialCoefficient(147.884, 0),
+                            calibrators.PolynomialCoefficient(1, 1),
+                        ]
+                    ),
+                ),
+            ),
+        ),
+        (
+            f"""
 <xtce:AbsoluteTimeParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
     <xtce:Encoding offset="147.884" units="s">
         <xtce:FloatDataEncoding sizeInBits="32"/>
     </xtce:Encoding>
 </xtce:AbsoluteTimeParameterType>
 """,
-         parameter_types.AbsoluteTimeParameterType(
-             name='TEST_PARAM_Type', unit='s',
-             encoding=encodings.FloatDataEncoding(
-                 size_in_bits=32, encoding="IEEE754",
-                 default_calibrator=calibrators.PolynomialCalibrator(
-                     coefficients=[
-                         calibrators.PolynomialCoefficient(147.884, 0),
-                         calibrators.PolynomialCoefficient(1, 1)
-                     ]))
-         )),
-    ]
+            parameter_types.AbsoluteTimeParameterType(
+                name="TEST_PARAM_Type",
+                unit="s",
+                encoding=encodings.FloatDataEncoding(
+                    size_in_bits=32,
+                    encoding="IEEE754",
+                    default_calibrator=calibrators.PolynomialCalibrator(
+                        coefficients=[
+                            calibrators.PolynomialCoefficient(147.884, 0),
+                            calibrators.PolynomialCoefficient(1, 1),
+                        ]
+                    ),
+                ),
+            ),
+        ),
+    ],
 )
 def test_absolute_time_parameter_type(elmaker, xtce_parser, xml_string, expectation):
     """Test parsing an AbsoluteTimeParameterType from an XML string."""
@@ -626,7 +747,6 @@ def test_absolute_time_parameter_type(elmaker, xtce_parser, xml_string, expectat
         # Recover XML and re-parse it to check it's recoverable
         result_string = ElementTree.tostring(result.to_xml(elmaker=elmaker), pretty_print=True).decode()
         full_circle = parameter_types.AbsoluteTimeParameterType.from_xml(
-            ElementTree.fromstring(result_string, parser=xtce_parser))
+            ElementTree.fromstring(result_string, parser=xtce_parser)
+        )
         assert full_circle == expectation
-
-
