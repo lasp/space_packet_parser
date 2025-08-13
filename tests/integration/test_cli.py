@@ -1,4 +1,5 @@
 """Unit tests for the Space Packet Parser `spp` CLI"""
+
 from click.testing import CliRunner
 
 from space_packet_parser import cli
@@ -15,13 +16,11 @@ def test_cli():
 def test_describe_xtce_jpss(jpss_test_data_dir):
     runner = CliRunner()
     print()
-    result = runner.invoke(cli.describe_xtce,
-                           [f"{jpss_test_data_dir / 'jpss1_geolocation_xtce_v1.xml'}"])
+    result = runner.invoke(cli.describe_xtce, [f"{jpss_test_data_dir / 'jpss1_geolocation_xtce_v1.xml'}"])
     print(result.output)
     assert result.exit_code == 0
 
-    result = runner.invoke(cli.describe_xtce,
-                           [f"{jpss_test_data_dir / 'contrived_inheritance_structure.xml'}"])
+    result = runner.invoke(cli.describe_xtce, [f"{jpss_test_data_dir / 'contrived_inheritance_structure.xml'}"])
     print(result.output)
     assert result.exit_code == 0
 
@@ -29,8 +28,7 @@ def test_describe_xtce_jpss(jpss_test_data_dir):
 def test_describe_xtce_suda(suda_test_data_dir):
     runner = CliRunner()
     print()
-    result = runner.invoke(cli.describe_xtce,
-                           [f"{suda_test_data_dir / 'suda_combined_science_definition.xml'}"])
+    result = runner.invoke(cli.describe_xtce, [f"{suda_test_data_dir / 'suda_combined_science_definition.xml'}"])
     print(result.output)
     assert result.exit_code == 0
 
@@ -38,8 +36,9 @@ def test_describe_xtce_suda(suda_test_data_dir):
 def test_describe_packets_jpss(jpss_test_data_dir):
     runner = CliRunner()
     print()
-    result = runner.invoke(cli.describe_packets,
-                           [f"{jpss_test_data_dir / 'J01_G011_LZ_2021-04-09T00-00-00Z_V01.DAT1'}"])
+    result = runner.invoke(
+        cli.describe_packets, [f"{jpss_test_data_dir / 'J01_G011_LZ_2021-04-09T00-00-00Z_V01.DAT1'}"]
+    )
     print(result.output)
     assert result.exit_code == 0
 

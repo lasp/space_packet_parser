@@ -7,6 +7,7 @@ class can be used to inspect the CCSDS header fields of the packet, but it does 
 parsed content from the data field. This generator is useful for debugging and passing off
 to other parsing functions.
 """
+
 import logging
 import socket
 import time
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class SequenceFlags(IntEnum):
     """Enumeration of the possible sequence flags in a CCSDS packet."""
+
     CONTINUATION = 0
     FIRST = 1
     LAST = 2
@@ -33,12 +35,15 @@ class CCSDSPacketBytes(bytes):
 
     Methods to extract the header fields are added to the raw bytes object.
     """
+
     HEADER_LENGTH_BYTES = 6
 
     def __str__(self) -> str:
-        return (f"CCSDSPacket Header: ({self.version_number=}, {self.type=}, "
-                f"{self.secondary_header_flag=}, {self.apid=}, {self.sequence_flags=}, "
-                f"{self.sequence_count=}, {self.data_length=})").replace("self.", "")
+        return (
+            f"CCSDSPacket Header: ({self.version_number=}, {self.type=}, "
+            f"{self.secondary_header_flag=}, {self.apid=}, {self.sequence_flags=}, "
+            f"{self.sequence_count=}, {self.data_length=})"
+        ).replace("self.", "")
 
     @property
     def version_number(self) -> int:
@@ -104,13 +109,15 @@ class CCSDSPacketBytes(bytes):
     @property
     def header_values(self) -> tuple[int, ...]:
         """Convenience property for tuple of header values"""
-        return (self.version_number,
-                self.type,
-                self.secondary_header_flag,
-                self.apid,
-                self.sequence_flags,
-                self.sequence_count,
-                self.data_length)
+        return (
+            self.version_number,
+            self.type,
+            self.secondary_header_flag,
+            self.apid,
+            self.sequence_flags,
+            self.sequence_count,
+            self.data_length,
+        )
 
     @property
     def header(self) -> bytes:
@@ -128,14 +135,16 @@ class CCSDSPacketBytes(bytes):
         return self[6:]
 
 
-def create_ccsds_packet(data=b"\x00",
-                        *,
-                        version_number=0,
-                        type=0,
-                        secondary_header_flag=0,
-                        apid=2047,  # 2047 is defined as a fill packet in the CCSDS spec
-                        sequence_flags=SequenceFlags.UNSEGMENTED,
-                        sequence_count=0) -> CCSDSPacketBytes:
+def create_ccsds_packet(
+    data=b"\x00",
+    *,
+    version_number=0,
+    type=0,
+    secondary_header_flag=0,
+    apid=2047,  # 2047 is defined as a fill packet in the CCSDS spec
+    sequence_flags=SequenceFlags.UNSEGMENTED,
+    sequence_count=0,
+) -> CCSDSPacketBytes:
     """Create a binary CCSDS packet from input values.
 
     Pack the header fields into the proper bit locations and append the data bytes.
@@ -180,13 +189,15 @@ def create_ccsds_packet(data=b"\x00",
     # CCSDS primary header
     # bitshift left to the correct position for that field (48 - start_bit - nbits)
     try:
-        header = (version_number << 48 - 3
-                  | type << 48 - 4
-                  | secondary_header_flag << 48 - 5
-                  | apid << 48 - 16
-                  | sequence_flags << 48 - 18
-                  | sequence_count << 48 - 32
-                  | len(data) - 1)
+        header = (
+            version_number << 48 - 3
+            | type << 48 - 4
+            | secondary_header_flag << 48 - 5
+            | apid << 48 - 16
+            | sequence_flags << 48 - 18
+            | sequence_count << 48 - 32
+            | len(data) - 1
+        )
         packet = header.to_bytes(CCSDSPacketBytes.HEADER_LENGTH_BYTES, "big") + data
     except TypeError as e:
         raise TypeError("CCSDS Header items must be integers and the input data bytes.") from e
@@ -208,21 +219,25 @@ class CCSDSPacket(SpacePacket):
     make up the user data (accessed with ``CCSDSPacket.user_data``). To access the
     raw bytes of the packet, use the ``CCSDSPacket.binary_data`` attribute.
     """
+
     def __init__(self, *args, **kwargs):
-        warnings.warn("The CCSDSPacket class is deprecated and will be removed in a future release. "
-                      "Use the Packet class instead (no CCSDS prefix).",
-                      DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            "The CCSDSPacket class is deprecated and will be removed in a future release. "
+            "Use the Packet class instead (no CCSDS prefix).",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__(*args, **kwargs)
 
 
 def ccsds_generator(
-            binary_data: Union[BinaryIO, socket.socket, bytes],
-            *,
-            buffer_read_size_bytes: Optional[int] = None,
-            show_progress: bool = False,
-            skip_header_bytes: int = 0,
-            combine_segmented_packets: bool = False,
-            secondary_header_bytes: int = 0,
+    binary_data: Union[BinaryIO, socket.socket, bytes],
+    *,
+    buffer_read_size_bytes: Optional[int] = None,
+    show_progress: bool = False,
+    skip_header_bytes: int = 0,
+    combine_segmented_packets: bool = False,
+    secondary_header_bytes: int = 0,
 ) -> Iterator[CCSDSPacketBytes]:
     """A generator that reads raw packet data from a filelike object or a socket.
 
@@ -270,7 +285,8 @@ def ccsds_generator(
     # _segmented_packets[APID] = [CCSDSPacketBytes, ...]
     _segmented_packets = {}
     read_buffer, total_length_bytes, read_bytes_from_source, buffer_read_size_bytes = _setup_binary_reader(
-        binary_data, buffer_read_size_bytes)
+        binary_data, buffer_read_size_bytes
+    )
     current_pos = 0  # Keep track of where we are in the buffer
 
     # ========
@@ -282,8 +298,12 @@ def ccsds_generator(
             break  # Exit if we know the length and we've reached it
 
         if show_progress:
-            _print_progress(current_bytes=n_bytes_parsed, total_bytes=total_length_bytes,
-                            start_time_ns=start_time, current_packets=n_packets_parsed)
+            _print_progress(
+                current_bytes=n_bytes_parsed,
+                total_bytes=total_length_bytes,
+                start_time_ns=start_time,
+                current_packets=n_packets_parsed,
+            )
 
         if current_pos > 20_000_000:
             # Only trim the buffer after 20 MB read to prevent modifying
@@ -320,7 +340,7 @@ def ccsds_generator(
         n_bytes_parsed += skip_header_bytes + n_bytes_packet
 
         # current_pos is still before the header, so we are reading the entire packet here
-        packet_bytes = read_buffer[current_pos:current_pos + n_bytes_packet]
+        packet_bytes = read_buffer[current_pos : current_pos + n_bytes_packet]
         current_pos += n_bytes_packet
         # Wrap the bytes in an object that adds convenience methods for parsing the header
         ccsds_packet = CCSDSPacketBytes(packet_bytes)
@@ -331,8 +351,9 @@ def ccsds_generator(
             _segmented_packets[ccsds_packet.apid] = [ccsds_packet]
             continue
         elif not _segmented_packets.get(ccsds_packet.apid, False):
-            warnings.warn("Continuation packet found without declaring the start, "
-                          f"skipping packet with apid {ccsds_packet.apid}.")
+            warnings.warn(
+                f"Continuation packet found without declaring the start, skipping packet with apid {ccsds_packet.apid}."
+            )
             continue
         elif ccsds_packet.sequence_flags == SequenceFlags.CONTINUATION:
             _segmented_packets[ccsds_packet.apid].append(ccsds_packet)
@@ -343,20 +364,27 @@ def ccsds_generator(
             # the segmented packets into a single "packet" for XTCE parsing
             packets = _segmented_packets.pop(ccsds_packet.apid)
             sequence_counts = [p.sequence_count for p in packets]
-            if not all((sequence_counts[i + 1] - sequence_counts[i]) % 16384 == 1
-                        for i in range(len(sequence_counts) - 1)):
-                warnings.warn(f"Continuation packets for apid {ccsds_packet.apid} "
-                              f"are not in sequence {sequence_counts}, skipping these packets.")
+            if not all(
+                (sequence_counts[i + 1] - sequence_counts[i]) % 16384 == 1 for i in range(len(sequence_counts) - 1)
+            ):
+                warnings.warn(
+                    f"Continuation packets for apid {ccsds_packet.apid} "
+                    f"are not in sequence {sequence_counts}, skipping these packets."
+                )
                 continue
             # Add all content (including header) from the first packet
             binary_data = packets[0]
             # Add the continuation packets to the first packet, skipping the headers
             for p in packets[1:]:
-                binary_data += p[header_length_bytes + secondary_header_bytes:]
+                binary_data += p[header_length_bytes + secondary_header_bytes :]
             yield CCSDSPacketBytes(binary_data)
 
-
     if show_progress:
-        _print_progress(current_bytes=n_bytes_parsed, total_bytes=total_length_bytes,
-                        start_time_ns=start_time, current_packets=n_packets_parsed,
-                        end="\n", log=True)
+        _print_progress(
+            current_bytes=n_bytes_parsed,
+            total_bytes=total_length_bytes,
+            start_time_ns=start_time,
+            current_packets=n_packets_parsed,
+            end="\n",
+            log=True,
+        )

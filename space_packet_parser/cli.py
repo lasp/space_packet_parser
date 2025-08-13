@@ -10,6 +10,7 @@ Use
     spp --help
     spp --describe <packet_file>
 """
+
 import logging
 from pathlib import Path
 from typing import Optional
@@ -36,7 +37,7 @@ HEAD_ROWS = 5
 DISPLAY_HEADER_FIELDS = ("VER", "TYPE", "SHFLG", "APID", "SEQFLG", "SEQCNT", "PKTLEN")
 
 
-@click.group(context_settings={'show_default': True})
+@click.group(context_settings={"show_default": True})
 @click.version_option(message="Space Packet Parser CLI (%(prog)s) v%(version)s")
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose output (DEBUG logging)")
 @click.option("-q", "--quiet", is_flag=True, help="Disable logging output entirely")
@@ -65,7 +66,7 @@ def spp(verbose, quiet, log_level):
         level=loglevel,
         format="%(message)s",
         datefmt="[%X]",
-        handlers=[RichHandler(console=console, rich_tracebacks=True)]
+        handlers=[RichHandler(console=console, rich_tracebacks=True)],
     )
     logging.getLogger("rich").setLevel(loglevel)
 
@@ -75,14 +76,13 @@ def spp(verbose, quiet, log_level):
 @click.option("--sequence-containers", is_flag=True, help="Display sequence containers")
 @click.option("--parameters", is_flag=True, help="Display parameters")
 @click.option("--parameter-types", is_flag=True, help="Display parameter types")
-@click.option("--root-container", default=DEFAULT_ROOT_CONTAINER,
-              help=f"Name of root SequenceContainer element. Default is {DEFAULT_ROOT_CONTAINER}.")
+@click.option(
+    "--root-container",
+    default=DEFAULT_ROOT_CONTAINER,
+    help=f"Name of root SequenceContainer element. Default is {DEFAULT_ROOT_CONTAINER}.",
+)
 def describe_xtce(
-        file_path: Path,
-        sequence_containers: bool,
-        parameters: bool,
-        parameter_types: bool,
-        root_container: str
+    file_path: Path, sequence_containers: bool, parameters: bool, parameter_types: bool, root_container: str
 ) -> None:
     """Describe the contents and structure of an XTCE packet definition file."""
     logging.debug(f"Describing XTCE file: {file_path}")
@@ -94,8 +94,7 @@ def describe_xtce(
         children = definition.containers[parent_key].inheritors
         for child_key in children:
             # Create a new child node (name + comparisons used to distinguish between containers)
-            child_node = tree_node.add(
-                f"{child_key} {definition.containers[child_key].restriction_criteria}")
+            child_node = tree_node.add(f"{child_key} {definition.containers[child_key].restriction_criteria}")
             # Recursively add any children of this child
             add_nodes(child_node, child_key)
 
@@ -103,17 +102,32 @@ def describe_xtce(
 
     console.print(Panel(tree, title="XTCE Container Layout", border_style="cyan", expand=False))
     if sequence_containers:
-        console.print(Panel(pretty.Pretty(definition.containers),
-                            title=f"Sequence Containers ({len(definition.containers)})",
-                            border_style="blue", expand=False))
+        console.print(
+            Panel(
+                pretty.Pretty(definition.containers),
+                title=f"Sequence Containers ({len(definition.containers)})",
+                border_style="blue",
+                expand=False,
+            )
+        )
     if parameters:
-        console.print(Panel(pretty.Pretty(definition.parameters),
-                            title=f"Parameters ({len(definition.parameters)})",
-                            border_style="green", expand=False))
+        console.print(
+            Panel(
+                pretty.Pretty(definition.parameters),
+                title=f"Parameters ({len(definition.parameters)})",
+                border_style="green",
+                expand=False,
+            )
+        )
     if parameter_types:
-        console.print(Panel(pretty.Pretty(definition.parameter_types),
-                            title=f"Parameter Types ({len(definition.parameter_types)})",
-                            border_style="magenta", expand=False))
+        console.print(
+            Panel(
+                pretty.Pretty(definition.parameter_types),
+                title=f"Parameter Types ({len(definition.parameter_types)})",
+                border_style="magenta",
+                expand=False,
+            )
+        )
 
 
 @spp.command()
@@ -132,9 +146,11 @@ def describe_packets(file_path: Path) -> None:
         return
 
     # Create table for packet data display
-    table = Table(title=f"[bold magenta]{file_path}: {npackets} packets[/bold magenta]",
-                  show_header=True,
-                  header_style="bold magenta")
+    table = Table(
+        title=f"[bold magenta]{file_path}: {npackets} packets[/bold magenta]",
+        show_header=True,
+        header_style="bold magenta",
+    )
 
     # Add columns for header fields only
     for key in DISPLAY_HEADER_FIELDS:
@@ -169,12 +185,12 @@ def describe_packets(file_path: Path) -> None:
 @click.option("--max-string", type=int, default=40, help="Maximum length of string data")
 @click.option("--skip-header-bytes", type=int, default=0, help="Number of bytes to skip before each packet")
 def parse(
-        packet_file: Path,
-        definition_file: Path,
-        packet: Optional[int],
-        max_items: int,
-        max_string: int,
-        skip_header_bytes: int
+    packet_file: Path,
+    definition_file: Path,
+    packet: Optional[int],
+    max_items: int,
+    max_string: int,
+    skip_header_bytes: int,
 ) -> None:
     """Parse a packet file using the provided XTCE definition."""
     logging.debug(f"Parsing packet file: {packet_file}")

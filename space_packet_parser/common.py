@@ -1,4 +1,5 @@
 """Common mixins"""
+
 import datetime as dt
 import inspect
 import io
@@ -14,6 +15,7 @@ import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
 
 logger = logging.getLogger(__name__)
+
 
 class NamespaceAwareElement(ElementTree.ElementBase):
     """Custom element that automatically applies namespace mappings."""
@@ -41,9 +43,11 @@ class NamespaceAwareElement(ElementTree.ElementBase):
         """
         if cls._ns_prefix is not None:
             if cls._ns_prefix not in cls._nsmap:
-                raise ValueError(f"XTCE namespace prefix {cls._ns_prefix} not found in namespace mapping "
-                                 f"{cls._nsmap}. If the namespace prefix is not 'None', it must appear as a key in the "
-                                 f"namespace mapping dict.")
+                raise ValueError(
+                    f"XTCE namespace prefix {cls._ns_prefix} not found in namespace mapping "
+                    f"{cls._nsmap}. If the namespace prefix is not 'None', it must appear as a key in the "
+                    f"namespace mapping dict."
+                )
             return f"{cls._ns_prefix}:"
         return ""
 
@@ -64,22 +68,22 @@ class NamespaceAwareElement(ElementTree.ElementBase):
         """
         prefix = cls.element_prefix()
         # Regex to match valid XML element names (avoids matching special characters like `@attr`, `.`, `*`, `()`, `::`)
-        xpath_parts = xpath.split('/')
+        xpath_parts = xpath.split("/")
         new_parts = []
 
         for part in xpath_parts:
             # Skip empty parts (handles leading/trailing slashes)
             if not part:
-                new_parts.append('')
+                new_parts.append("")
                 continue
 
             # Handle special cases (wildcards, functions, attributes, self, parent, axes)
-            if part is None or part in {'.', '..', '*'} or part.startswith('@') or '::' in part or '(' in part:
+            if part is None or part in {".", "..", "*"} or part.startswith("@") or "::" in part or "(" in part:
                 new_parts.append(part)
             else:
                 new_parts.append(f"{prefix}{part}")
 
-        new_path = '/'.join(new_parts)
+        new_path = "/".join(new_parts)
         return new_path
 
     def find(self, path, namespaces=None):
@@ -128,11 +132,14 @@ class AttrComparable(metaclass=ABCMeta):
             raise NotImplementedError(f"No method to compare {type(other)} with {self.__class__}")
 
         compare = inspect.getmembers(self, lambda a: not inspect.isroutine(a))
-        compare = [attr[0] for attr in compare
-                   if not (attr[0].startswith('__') or attr[0].startswith(f'_{self.__class__.__name__}__'))]
+        compare = [
+            attr[0]
+            for attr in compare
+            if not (attr[0].startswith("__") or attr[0].startswith(f"_{self.__class__.__name__}__"))
+        ]
         for attr in compare:
             if getattr(self, attr) != getattr(other, attr):
-                print(f'Mismatch was in {attr}. {getattr(self, attr)} != {getattr(other, attr)}')
+                print(f"Mismatch was in {attr}. {getattr(self, attr)} != {getattr(other, attr)}")
                 return False
         return True
 
@@ -145,14 +152,14 @@ class XmlObject(metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def from_xml(
-            cls,
-            element: ElementTree.Element,
-            *,
-            tree: Optional[ElementTree.ElementTree],
-            parameter_lookup: Optional[dict[str, any]],
-            parameter_type_lookup: Optional[dict[str, any]],
-            container_lookup: Optional[dict[str, any]],
-    ) -> 'XmlObject':
+        cls,
+        element: ElementTree.Element,
+        *,
+        tree: Optional[ElementTree.ElementTree],
+        parameter_lookup: Optional[dict[str, any]],
+        parameter_type_lookup: Optional[dict[str, any]],
+        container_lookup: Optional[dict[str, any]],
+    ) -> "XmlObject":
         """Create an object from an XML element
 
         Notes
@@ -199,12 +206,13 @@ class XmlObject(metaclass=ABCMeta):
 
 class Parseable(Protocol):
     """Defines an object that can be parsed from packet data."""
+
     def parse(self, packet: "SpacePacket") -> None:
         """Parse this entry from the packet data and add the necessary items to the packet."""
 
 
-
 BuiltinDataTypes = Union[bytes, float, int, str]
+
 
 class _Parameter:
     """Mixin class for storing access to the raw value of a parsed data item.
@@ -220,6 +228,7 @@ class _Parameter:
     on immutable built-in types. So this is just a way of allowing us to inject our
     own attribute into the built-in types.
     """
+
     def __new__(cls, value: BuiltinDataTypes, raw_value: BuiltinDataTypes = None) -> BuiltinDataTypes:
         obj = super().__new__(cls, value)
         # Default to the same value as the parsed value if it isn't provided
@@ -233,6 +242,7 @@ class BinaryParameter(_Parameter, bytes):
 
 class BoolParameter(_Parameter, int):
     """A class to represent a parsed boolean data item."""
+
     # A bool is a subclass of int, so all we are really doing here
     # is making a nice representation using the bool type because
     # bool can't be subclassed directly.
@@ -274,10 +284,15 @@ class SpacePacket(dict):
     **kwargs : dict
         Additional packet items to store, passed to the dict() constructor.
     """
+
     def __init__(self, *args, binary_data: bytes = b"", **kwargs):
         if "raw_data" in kwargs:
-            warnings.warn("The 'raw_data' keyword argument is deprecated and will be removed in a future release. "
-                          "Use 'binary_data' instead.", DeprecationWarning, stacklevel=2)
+            warnings.warn(
+                "The 'raw_data' keyword argument is deprecated and will be removed in a future release. "
+                "Use 'binary_data' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             binary_data = kwargs.pop("raw_data")
         self.binary_data = binary_data
         self._parsing_pos = 0
@@ -286,24 +301,34 @@ class SpacePacket(dict):
     @property
     def header(self) -> dict:
         """The header content of the packet."""
-        warnings.warn("The header property is deprecated and will be removed in a future release. "
-                      "To access the header fields of a CCSDS packet, use the CCSDSPacketBytes class.",
-                      DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            "The header property is deprecated and will be removed in a future release. "
+            "To access the header fields of a CCSDS packet, use the CCSDSPacketBytes class.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return dict(list(self.items())[:7])
 
     @property
     def user_data(self) -> dict:
         """The user data content of the packet."""
-        warnings.warn("The user_data property is deprecated and will be removed in a future release. "
-                      "To access the user_data fields of a CCSDS packet, use the CCSDSPacketBytes class.",
-                      DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            "The user_data property is deprecated and will be removed in a future release. "
+            "To access the user_data fields of a CCSDS packet, use the CCSDSPacketBytes class.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return dict(list(self.items())[7:])
 
     @property
     def raw_data(self) -> bytes:
         """The raw binary data of the packet."""
-        warnings.warn("The raw_data property is deprecated and will be removed in a future release. "
-                      "Use the binary_data property instead.", DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            "The raw_data property is deprecated and will be removed in a future release. "
+            "Use the binary_data property instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.binary_data
 
     def _read_from_binary_as_bytes(self, nbits: int) -> bytes:
@@ -323,12 +348,14 @@ class SpacePacket(dict):
             Raw bytes from the packet data
         """
         if self._parsing_pos + nbits > len(self.binary_data) * 8:
-            raise ValueError("Tried to read beyond the end of the packet data. "
-                             f"Tried to read {nbits} bits from position {self._parsing_pos} "
-                             f"in a packet of length {len(self.binary_data) * 8} bits.")
+            raise ValueError(
+                "Tried to read beyond the end of the packet data. "
+                f"Tried to read {nbits} bits from position {self._parsing_pos} "
+                f"in a packet of length {len(self.binary_data) * 8} bits."
+            )
         if self._parsing_pos % 8 == 0 and nbits % 8 == 0:
             # If the read is byte-aligned, we can just return the bytes directly
-            data = self.binary_data[self._parsing_pos//8:self._parsing_pos//8 + (nbits+7) // 8]
+            data = self.binary_data[self._parsing_pos // 8 : self._parsing_pos // 8 + (nbits + 7) // 8]
             self._parsing_pos += nbits
             return data
         # We are non-byte aligned, so we need to extract the bits and convert to bytes
@@ -350,9 +377,11 @@ class SpacePacket(dict):
             Integer representation of the bits read from the packet
         """
         if self._parsing_pos + nbits > len(self.binary_data) * 8:
-            raise ValueError("Tried to read beyond the end of the packet data. "
-                             f"Tried to read {nbits} bits from position {self._parsing_pos} "
-                             f"in a packet of length {len(self.binary_data) * 8} bits.")
+            raise ValueError(
+                "Tried to read beyond the end of the packet data. "
+                f"Tried to read {nbits} bits from position {self._parsing_pos} "
+                f"in a packet of length {len(self.binary_data) * 8} bits."
+            )
         int_data = _extract_bits(self.binary_data, self._parsing_pos, nbits)
         self._parsing_pos += nbits
         return int_data
@@ -386,15 +415,20 @@ def fixed_length_generator(
     n_bytes_parsed = 0  # Keep track of how many bytes we have parsed
     n_packets_parsed = 0  # Keep track of how many packets we have parsed
     read_buffer, total_length_bytes, read_bytes_from_source, buffer_read_size_bytes = _setup_binary_reader(
-        binary_data, buffer_read_size_bytes)
+        binary_data, buffer_read_size_bytes
+    )
     current_pos = 0  # Keep track of where we are in the buffer
     start_time = time.time_ns()
     while True:
         if total_length_bytes and n_bytes_parsed == total_length_bytes:
             break
         if show_progress:
-            _print_progress(current_bytes=n_bytes_parsed, total_bytes=total_length_bytes,
-                            start_time_ns=start_time, current_packets=n_packets_parsed)
+            _print_progress(
+                current_bytes=n_bytes_parsed,
+                total_bytes=total_length_bytes,
+                start_time_ns=start_time,
+                current_packets=n_packets_parsed,
+            )
         if current_pos > 20_000_000:
             # Only trim the buffer after 20 MB read to prevent modifying
             # the bitstream and trimming after every packet
@@ -405,15 +439,20 @@ def fixed_length_generator(
             if not result:
                 break
             read_buffer += result
-        packet_bytes = read_buffer[current_pos:current_pos + packet_length_bytes]
+        packet_bytes = read_buffer[current_pos : current_pos + packet_length_bytes]
         current_pos += packet_length_bytes
         n_packets_parsed += 1
         n_bytes_parsed += packet_length_bytes
         yield packet_bytes
     if show_progress:
-        _print_progress(current_bytes=n_bytes_parsed, total_bytes=total_length_bytes,
-                        start_time_ns=start_time, current_packets=n_packets_parsed,
-                        end="\n", log=True)
+        _print_progress(
+            current_bytes=n_bytes_parsed,
+            total_bytes=total_length_bytes,
+            start_time_ns=start_time,
+            current_packets=n_packets_parsed,
+            end="\n",
+            log=True,
+        )
 
 
 def _setup_binary_reader(binary_data, buffer_read_size_bytes=None):
@@ -430,8 +469,10 @@ def _setup_binary_reader(binary_data, buffer_read_size_bytes=None):
             buffer_read_size_bytes = -1
         total_length_bytes = binary_data.seek(0, io.SEEK_END)  # This is probably preferable to len
         binary_data.seek(0, 0)
-        logger.info(f"Creating packet generator from a filelike object, {binary_data}. "
-                    f"Total length is {total_length_bytes} bytes")
+        logger.info(
+            f"Creating packet generator from a filelike object, {binary_data}. "
+            f"Total length is {total_length_bytes} bytes"
+        )
         read_bytes_from_source = binary_data.read
     elif isinstance(binary_data, socket.socket):  # It's a socket and we don't know how much data we will get
         logger.info("Creating packet generator to read from a socket. Total length to parse is unknown.")
@@ -453,14 +494,14 @@ def _setup_binary_reader(binary_data, buffer_read_size_bytes=None):
 
 
 def _print_progress(
-            *,
-            current_bytes: int,
-            total_bytes: Optional[int],
-            start_time_ns: int,
-            current_packets: int,
-            end: str = '\r',
-            log: bool = False
-        ):
+    *,
+    current_bytes: int,
+    total_bytes: Optional[int],
+    start_time_ns: int,
+    current_packets: int,
+    end: str = "\r",
+    log: bool = False,
+):
     """Prints a progress bar, including statistics on parsing rate.
 
     Parameters
@@ -490,12 +531,12 @@ def _print_progress(
 
     # Fast calls initially on Windows can result in a zero elapsed time
     elapsed_ns = max(time.time_ns() - start_time_ns, 1)
-    delta = dt.timedelta(microseconds=elapsed_ns / 1E3)
-    kbps = int(current_bytes * 8E6 / elapsed_ns)  # 8 bits per byte, 1E9 s per ns, 1E3 bits per kb
-    pps = int(current_packets * 1E9 / elapsed_ns)
-    info_str = f"[Elapsed: {delta}, " \
-               f"Parsed {current_bytes} bytes ({current_packets} packets) " \
-               f"at {kbps}kb/s ({pps}pkts/s)]"
+    delta = dt.timedelta(microseconds=elapsed_ns / 1e3)
+    kbps = int(current_bytes * 8e6 / elapsed_ns)  # 8 bits per byte, 1E9 s per ns, 1E3 bits per kb
+    pps = int(current_packets * 1e9 / elapsed_ns)
+    info_str = (
+        f"[Elapsed: {delta}, Parsed {current_bytes} bytes ({current_packets} packets) at {kbps}kb/s ({pps}pkts/s)]"
+    )
     loadbar = f"Progress: [{progress * progress_char:{bar_length}}]{percentage}% {info_str}"
     print(loadbar, end=end)
     if log:
@@ -537,4 +578,4 @@ def _extract_bits(data: bytes, start_bit: int, nbits: int):
 
     # Shift the value to the right to move the LSB of the data item we want to parse
     # to the least significant position, then mask out the number of bits we want to keep
-    return (value >> (len(data) * 8 - start_bit_within_byte - nbits)) & (2 ** nbits - 1)
+    return (value >> (len(data) * 8 - start_bit_within_byte - nbits)) & (2**nbits - 1)

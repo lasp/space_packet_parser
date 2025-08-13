@@ -1,4 +1,5 @@
 """Space Packet Parser"""
+
 from pathlib import Path
 from typing import Union
 
@@ -12,6 +13,7 @@ __all__ = [
     "XtcePacketDefinition",
     "load_xtce",
 ]
+
 
 def load_xtce(filename: Union[str, Path]) -> XtcePacketDefinition:
     """Create an XtcePacketDefinition object from an XTCE XML file

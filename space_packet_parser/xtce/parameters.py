@@ -1,4 +1,5 @@
 """ParameterType definitions"""
+
 from dataclasses import dataclass
 from typing import Optional
 
@@ -25,6 +26,7 @@ class Parameter(common.Parseable, common.XmlObject):
     long_description : str
         Long description of parameter as parsed from XTCE
     """
+
     name: str
     parameter_type: parameter_types.ParameterType
     short_description: Optional[str] = None
@@ -39,14 +41,14 @@ class Parameter(common.Parseable, common.XmlObject):
 
     @classmethod
     def from_xml(
-            cls,
-            element: ElementTree.Element,
-            *,
-            parameter_type_lookup: dict[str, parameter_types.ParameterType],
-            tree: Optional[ElementTree.ElementTree] = None,
-            parameter_lookup: Optional[dict[str, any]] = None,
-            container_lookup: Optional[dict[str, any]] = None
-    ) -> 'Parameter':
+        cls,
+        element: ElementTree.Element,
+        *,
+        parameter_type_lookup: dict[str, parameter_types.ParameterType],
+        tree: Optional[ElementTree.ElementTree] = None,
+        parameter_lookup: Optional[dict[str, any]] = None,
+        container_lookup: Optional[dict[str, any]] = None,
+    ) -> "Parameter":
         """Create a Parameter object from an XML element.
 
         Parameters
@@ -66,25 +68,25 @@ class Parameter(common.Parseable, common.XmlObject):
         -------
         : Parameter
         """
-        parameter_name = element.attrib['name']
+        parameter_name = element.attrib["name"]
 
-        parameter_type_name = element.attrib['parameterTypeRef']
+        parameter_type_name = element.attrib["parameterTypeRef"]
 
         # Lookup from within the parameter type cache
         parameter_type_object = parameter_type_lookup[parameter_type_name]
 
-        parameter_short_description = element.attrib['shortDescription'] if (
-                'shortDescription' in element.attrib
-        ) else None
-        parameter_long_description = element.find('LongDescription').text if (
-                element.find('LongDescription') is not None
-        ) else None
+        parameter_short_description = (
+            element.attrib["shortDescription"] if ("shortDescription" in element.attrib) else None
+        )
+        parameter_long_description = (
+            element.find("LongDescription").text if (element.find("LongDescription") is not None) else None
+        )
 
         return cls(
             name=parameter_name,
             parameter_type=parameter_type_object,
             short_description=parameter_short_description,
-            long_description=parameter_long_description
+            long_description=parameter_long_description,
         )
 
     def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
@@ -106,13 +108,9 @@ class Parameter(common.Parseable, common.XmlObject):
         if self.short_description:
             parameter_attrib["shortDescription"] = self.short_description
 
-        element = elmaker.Parameter(
-            **parameter_attrib
-        )
+        element = elmaker.Parameter(**parameter_attrib)
 
         if self.long_description:
-            element.append(
-                elmaker.LongDescription(self.long_description)
-            )
+            element.append(elmaker.LongDescription(self.long_description))
 
         return element

@@ -11,6 +11,7 @@ Reference for CCSDSPy CSV format: https://docs.ccsdspy.org/en/1.3.2/user-guide/l
 
 This example was generated based on documentation of CCSDSPy version 1.3.2
 """
+
 import csv
 import re
 import warnings
@@ -23,10 +24,10 @@ from space_packet_parser.xtce import containers, definitions, encodings, paramet
 # the integer value of another field. If you need byte -> bit conversion consider manually editing the
 # resulting XTCE file to add a LinearAdjuster to the packet size reference.
 # This behavior has not been tested yet but the generated XTCE appears valid in tests.
-dynamic_length_ref_pattern = re.compile(r'^(?:uint|int|str|fill)\((?P<len_ref>[A-Za-z_\-]*)\)$')
+dynamic_length_ref_pattern = re.compile(r"^(?:uint|int|str|fill)\((?P<len_ref>[A-Za-z_\-]*)\)$")
 
 # This regex is for detecting Array valued packet fields but has not been tested.
-array_param_pattern = re.compile(r'^int\((?P<dims>\d+(?:,\s*\d+)*)\)$')
+array_param_pattern = re.compile(r"^int\((?P<dims>\d+(?:,\s*\d+)*)\)$")
 
 
 def generate_ccsds_header() -> list[parameters.Parameter]:
@@ -49,50 +50,26 @@ def generate_ccsds_header() -> list[parameters.Parameter]:
         type_name = f"UINT{bits}_Type"
         if type_name not in param_types:
             param_types[type_name] = parameter_types.IntegerParameterType(
-                name=type_name,
-                encoding=encodings.IntegerDataEncoding(
-                    size_in_bits=bits,
-                    encoding="unsigned"
-                )
+                name=type_name, encoding=encodings.IntegerDataEncoding(size_in_bits=bits, encoding="unsigned")
             )
         return param_types[type_name]
 
     return [
+        parameters.Parameter(name="VERSION", parameter_type=_uint_type(3), short_description="CCSDS header version"),
+        parameters.Parameter(name="TYPE", parameter_type=_uint_type(1), short_description="CCSDS header type"),
         parameters.Parameter(
-            name="VERSION",
-            parameter_type=_uint_type(3),
-            short_description="CCSDS header version"
+            name="SEC_HDR_FLG", parameter_type=_uint_type(1), short_description="CCSDS header secondary header flag"
+        ),
+        parameters.Parameter(name="APID", parameter_type=_uint_type(11), short_description="CCSDS header APID"),
+        parameters.Parameter(
+            name="SEQ_FLGS", parameter_type=_uint_type(2), short_description="CCSDS header sequence flags"
         ),
         parameters.Parameter(
-            name="TYPE",
-            parameter_type=_uint_type(1),
-            short_description="CCSDS header type"
+            name="SRC_SEQ_CTR", parameter_type=_uint_type(14), short_description="CCSDS header source sequence counter"
         ),
         parameters.Parameter(
-            name="SEC_HDR_FLG",
-            parameter_type=_uint_type(1),
-            short_description="CCSDS header secondary header flag"
+            name="PKT_LEN", parameter_type=_uint_type(16), short_description="CCSDS header packet length"
         ),
-        parameters.Parameter(
-            name="APID",
-            parameter_type=_uint_type(11),
-            short_description="CCSDS header APID"
-        ),
-        parameters.Parameter(
-            name="SEQ_FLGS",
-            parameter_type=_uint_type(2),
-            short_description="CCSDS header sequence flags"
-        ),
-        parameters.Parameter(
-            name="SRC_SEQ_CTR",
-            parameter_type=_uint_type(14),
-            short_description="CCSDS header source sequence counter"
-        ),
-        parameters.Parameter(
-            name="PKT_LEN",
-            parameter_type=_uint_type(16),
-            short_description="CCSDS header packet length"
-        )
     ]
 
 
@@ -105,7 +82,7 @@ def convert_ccsdspy_to_xtce(csv_path: Path) -> definitions.XtcePacketDefinition:
     csv_path : Path
         Path to the CCSDSPy CSV file.
     """
-    with csv_path.open(newline='', encoding='utf-8') as csvfile:
+    with csv_path.open(newline="", encoding="utf-8") as csvfile:
         reader = csv.DictReader(csvfile)
         ccsdspy_rows = list(reader)
 
@@ -114,8 +91,10 @@ def convert_ccsdspy_to_xtce(csv_path: Path) -> definitions.XtcePacketDefinition:
     packet_parameters = generate_ccsds_header()
 
     if len(ccsdspy_rows[0]) >= 4:
-        warnings.warn("The CSV file you supplied has more than 3 columns (possibly a CCSDSPy extended layout CSV?)."
-                      "This tool will ignore the bit_offset column.")
+        warnings.warn(
+            "The CSV file you supplied has more than 3 columns (possibly a CCSDSPy extended layout CSV?)."
+            "This tool will ignore the bit_offset column."
+        )
 
     if not all(x in ccsdspy_rows[0] for x in ("name", "data_type", "bit_length")):
         raise ValueError("The CCSDSPy CSV must contain the header fields 'name', 'data_type', and 'bit_length'.")
@@ -136,80 +115,53 @@ def convert_ccsdspy_to_xtce(csv_path: Path) -> definitions.XtcePacketDefinition:
                 name=row["name"],
                 parameter_type=parameter_types.IntegerParameterType(
                     name=f"{row['name']}_Type",
-                    encoding=encodings.IntegerDataEncoding(
-                        size_in_bits=int(row["bit_length"]),
-                        encoding="unsigned"
-                    )
-                )
+                    encoding=encodings.IntegerDataEncoding(size_in_bits=int(row["bit_length"]), encoding="unsigned"),
+                ),
             )
         elif row["data_type"] == "int":
             parameter = parameters.Parameter(
                 name=row["name"],
                 parameter_type=parameter_types.IntegerParameterType(
                     name=f"{row['name']}_Type",
-                    encoding=encodings.IntegerDataEncoding(
-                        size_in_bits=int(row["bit_length"]),
-                        encoding="signed"
-                    )
-                )
+                    encoding=encodings.IntegerDataEncoding(size_in_bits=int(row["bit_length"]), encoding="signed"),
+                ),
             )
         elif row["data_type"] == "fill":
             if len_parameter_ref:
-                encoding = encodings.BinaryDataEncoding(
-                    size_reference_parameter=len_parameter_ref
-                )
+                encoding = encodings.BinaryDataEncoding(size_reference_parameter=len_parameter_ref)
             else:
-                encoding = encodings.BinaryDataEncoding(
-                    fixed_size_in_bits=int(row["bit_length"])
-                )
+                encoding = encodings.BinaryDataEncoding(fixed_size_in_bits=int(row["bit_length"]))
 
             parameter = parameters.Parameter(
                 name=row["name"],
-                parameter_type=parameter_types.BinaryParameterType(
-                    name=f"{row['name']}_Type",
-                    encoding=encoding
-                )
+                parameter_type=parameter_types.BinaryParameterType(name=f"{row['name']}_Type", encoding=encoding),
             )
         elif row["data_type"] == "str":
             if len_parameter_ref:
-                encoding = encodings.StringDataEncoding(
-                    dynamic_length_reference=len_parameter_ref
-                )
+                encoding = encodings.StringDataEncoding(dynamic_length_reference=len_parameter_ref)
             else:
-                encoding = encodings.StringDataEncoding(
-                    fixed_raw_length=int(row["bit_length"])
-                )
+                encoding = encodings.StringDataEncoding(fixed_raw_length=int(row["bit_length"]))
 
             parameter = parameters.Parameter(
                 name=row["name"],
-                parameter_type=parameter_types.StringParameterType(
-                    name=f"{row['name']}_Type",
-                    encoding=encoding
-                )
+                parameter_type=parameter_types.StringParameterType(name=f"{row['name']}_Type", encoding=encoding),
             )
         elif row["data_type"] == "float":
             parameter = parameters.Parameter(
                 name=row["name"],
                 parameter_type=parameter_types.FloatParameterType(
                     name=f"{row['name']}_Type",
-                    encoding=encodings.FloatDataEncoding(
-                        size_in_bits=int(row["bit_length"])
-                    )
-                )
+                    encoding=encodings.FloatDataEncoding(size_in_bits=int(row["bit_length"])),
+                ),
             )
         else:
             raise ValueError(f"Unrecognized CCSDSPy data type: {row['data_type']}")
 
         packet_parameters.append(parameter)
 
-    sequence_containers = {
-        containers.SequenceContainer(name="CCSDSPacket", entry_list=packet_parameters)
-    }
+    sequence_containers = {containers.SequenceContainer(name="CCSDSPacket", entry_list=packet_parameters)}
 
-    return definitions.XtcePacketDefinition(
-        sequence_containers,
-        root_container_name="CCSDSPacket"
-    )
+    return definitions.XtcePacketDefinition(sequence_containers, root_container_name="CCSDSPacket")
 
 
 if __name__ == "__main__":

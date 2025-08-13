@@ -131,7 +131,7 @@ filterwarnings = [
 
 # Note: Ruff uses the "nearest" configuration file at runtime so configurations may be overridden
 [tool.ruff]
-line-length = 120
+line-length = 120  # Target line length. ruff format "does its best" to respect this.
 extend-include = [
     "space_packet_parser/**/*.py",
     "examples/**/*.py",
@@ -150,3 +150,4 @@ select = [
     "UP"  # pyupgrade syntax upgrader
 ]
 per-file-ignores = { "tests/*" = ["S"] }
+ignore = ["E501"] # Ignore line length errors, as we trust ruff format to handle this.
