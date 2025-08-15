@@ -1,6 +1,10 @@
 <?xml version="1.0" ?>
-<xtce:SpaceSystem xmlns:xtce="http://www.omg.org/spec/XTCE/1.2" name="MySpaceSystem">
-    <xtce:Header comment="Contains packet defs for 38 different APIDs"/>
+<xtce:SpaceSystem name="CTIM"
+                  xmlns:xtce="http://www.omg.org/spec/XTCE/20180204"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204
+                                      https://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd">
+    <xtce:Header validationStatus="Test"/>
     <xtce:TelemetryMetaData>
         <xtce:ParameterTypeSet>
             <xtce:IntegerParameterType name="U3Type" sizeInBits="3" signed="false">
@@ -30,8 +34,8 @@
             <xtce:IntegerParameterType name="U8Type" sizeInBits="8" signed="false">
                 <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
             </xtce:IntegerParameterType>
-            <xtce:StringParameterType name="C8Type" encoding="UTF-8" sizeInBits="8">
-                <xtce:StringDataEncoding encoding="UTF-8" sizeInBits="8">
+            <xtce:StringParameterType name="C8Type">
+                <xtce:StringDataEncoding encoding="UTF-8">
                     <xtce:SizeInBits>
                         <xtce:Fixed>
                             <xtce:FixedValue>8</xtce:FixedValue>
@@ -48,11 +52,11 @@
             <xtce:IntegerParameterType name="D32Type" sizeInBits="32" signed="false">
                 <xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned"/>
             </xtce:IntegerParameterType>
-            <xtce:FloatParameterType name="F32Type" sizeInBits="32" encoding="IEEE754">
+            <xtce:FloatParameterType name="F32Type" sizeInBits="32">
                 <xtce:FloatDataEncoding sizeInBits="32" encoding="IEEE754"/>
             </xtce:FloatParameterType>
             <xtce:IntegerParameterType name="I16Type" sizeInBits="16" signed="true">
-                <xtce:IntegerDataEncoding sizeInBits="16" encoding="signed"/>
+                <xtce:IntegerDataEncoding sizeInBits="16" encoding="twosComplement"/>
             </xtce:IntegerParameterType>
         </xtce:ParameterTypeSet>
         <xtce:ParameterSet>
@@ -9565,11 +9569,6 @@
                 </xtce:EntryList>
             </xtce:SequenceContainer>
             <xtce:SequenceContainer name="APID_1_Packet">
-                <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
-                    <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="1"/>
-                    </xtce:RestrictionCriteria>
-                </xtce:BaseContainer>
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="sw_major_version"/>
                     <xtce:ParameterRefEntry parameterRef="sw_minor_version"/>
@@ -9630,13 +9629,13 @@
                     <xtce:ParameterRefEntry parameterRef="sw_img_currprocType"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_2_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="2"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="1"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_2_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="lib_reg_err_max"/>
                     <xtce:ParameterRefEntry parameterRef="lib_reg_err_size"/>
@@ -9646,13 +9645,13 @@
                     <xtce:ParameterRefEntry parameterRef="lib_entry_store"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_3_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="3"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="2"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_3_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="mem_op_type"/>
                     <xtce:ParameterRefEntry parameterRef="mem_section"/>
@@ -9665,13 +9664,13 @@
                     <xtce:ParameterRefEntry parameterRef="mem_checksum"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_4_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="4"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="3"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_4_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="tlm_sync_rx_drop_debug"/>
                     <xtce:ParameterRefEntry parameterRef="tlm_sync_len_err_debug"/>
@@ -9697,13 +9696,13 @@
                     <xtce:ParameterRefEntry parameterRef="hw_uart_sc_tx_count"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_6_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="6"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="4"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_6_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="mem_dump_name_0_dmp"/>
                     <xtce:ParameterRefEntry parameterRef="mem_dump_name_1_dmp"/>
@@ -10231,13 +10230,13 @@
                     <xtce:ParameterRefEntry parameterRef="mem_dump_data_511"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_8_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="8"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="6"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_8_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="tbl_unreg_err_count"/>
                     <xtce:ParameterRefEntry parameterRef="tbl_invalid_err_count"/>
@@ -10328,13 +10327,13 @@
                     <xtce:ParameterRefEntry parameterRef="SPARE_8"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_9_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="9"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="8"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_9_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="cmd_echo_opcode"/>
                     <xtce:ParameterRefEntry parameterRef="cmd_echo_seq"/>
@@ -10343,13 +10342,13 @@
                     <xtce:ParameterRefEntry parameterRef="SPARE_8"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_10_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="10"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="9"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_10_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="fs_list_offset"/>
                     <xtce:ParameterRefEntry parameterRef="fs_list_num"/>
@@ -10579,13 +10578,13 @@
                     <xtce:ParameterRefEntry parameterRef="fs_list_file_197"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_12_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="12"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="10"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_12_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="cmd_recv_count_eng"/>
                     <xtce:ParameterRefEntry parameterRef="cmd_fmt_count_eng"/>
@@ -10607,13 +10606,13 @@
                     <xtce:ParameterRefEntry parameterRef="cmd_echo_num"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_15_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="15"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="12"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_15_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="log_reg_count"/>
                     <xtce:ParameterRefEntry parameterRef="log_evt_count"/>
@@ -10635,13 +10634,13 @@
                     <xtce:ParameterRefEntry parameterRef="SPARE_16"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_17_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="17"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="15"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_17_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="tlm_sent_count_dbg"/>
                     <xtce:ParameterRefEntry parameterRef="tlm_err_count_dbg"/>
@@ -10661,13 +10660,13 @@
                     <xtce:ParameterRefEntry parameterRef="SPARE_8"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_18_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="18"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="17"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_18_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="time_recv_count"/>
                     <xtce:ParameterRefEntry parameterRef="time_fmt_count"/>
@@ -10676,13 +10675,13 @@
                     <xtce:ParameterRefEntry parameterRef="time_miss_count"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_20_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="20"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="18"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_20_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="log_time_sec_hdr"/>
                     <xtce:ParameterRefEntry parameterRef="log_time_sub_hdr"/>
@@ -10697,13 +10696,13 @@
                     <xtce:ParameterRefEntry parameterRef="log_params_3"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_22_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="22"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="20"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_22_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="os_mem_partition_cnt"/>
                     <xtce:ParameterRefEntry parameterRef="os_mutex_cnt"/>
@@ -10773,13 +10772,13 @@
                     <xtce:ParameterRefEntry parameterRef="os_task_exec_cnt_sc_tlm"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_23_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="23"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="22"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_23_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="task_hk_cpu_usage"/>
                     <xtce:ParameterRefEntry parameterRef="task_hk_cpu_usage_max"/>
@@ -10794,13 +10793,13 @@
                     <xtce:ParameterRefEntry parameterRef="task_hk_priority"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_24_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="24"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="23"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_24_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="tec_slew_rate"/>
                     <xtce:ParameterRefEntry parameterRef="tec_setpoint"/>
@@ -10820,13 +10819,13 @@
                     <xtce:ParameterRefEntry parameterRef="tec_curr"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_25_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="25"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="24"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_25_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="ccd_ctrl_state"/>
                     <xtce:ParameterRefEntry parameterRef="ccd_shutter"/>
@@ -10846,13 +10845,13 @@
                     <xtce:ParameterRefEntry parameterRef="ccd_dac_clklo_ccd"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_28_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="28"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="25"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_28_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="fs_dev_name_0"/>
                     <xtce:ParameterRefEntry parameterRef="fs_dev_name_1"/>
@@ -10889,13 +10888,13 @@
                     <xtce:ParameterRefEntry parameterRef="fs_vol_tot_sector"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_29_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="29"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="28"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_29_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="os_trace_time_sec"/>
                     <xtce:ParameterRefEntry parameterRef="os_trace_time_ms"/>
@@ -10907,13 +10906,13 @@
                     <xtce:ParameterRefEntry parameterRef="os_trace_params_3"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_30_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="30"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="29"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_30_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="bct_tlm_time_hdr_sec"/>
                     <xtce:ParameterRefEntry parameterRef="bct_tlm_time_hdr_sub"/>
@@ -10938,24 +10937,24 @@
                     <xtce:ParameterRefEntry parameterRef="bct_tlm_time_checksum"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
+                <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
+                    <xtce:RestrictionCriteria>
+                        <xtce:Comparison parameterRef="PKT_APID" value="30"/>
+                    </xtce:RestrictionCriteria>
+                </xtce:BaseContainer>
             </xtce:SequenceContainer>
             <xtce:SequenceContainer name="APID_31_Packet">
+                <xtce:EntryList>
+                    <xtce:ParameterRefEntry parameterRef="fsw_mode"/>
+                    <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
+                </xtce:EntryList>
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
                         <xtce:Comparison parameterRef="PKT_APID" value="31"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
-                <xtce:EntryList>
-                    <xtce:ParameterRefEntry parameterRef="fsw_mode"/>
-                    <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
-                </xtce:EntryList>
             </xtce:SequenceContainer>
             <xtce:SequenceContainer name="APID_32_Packet">
-                <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
-                    <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="32"/>
-                    </xtce:RestrictionCriteria>
-                </xtce:BaseContainer>
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_state"/>
                     <xtce:ParameterRefEntry parameterRef="img_currprocType"/>
@@ -10977,13 +10976,13 @@
                     <xtce:ParameterRefEntry parameterRef="img_biasStatus_15"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_33_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="33"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="32"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_33_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_frame_id_noproc"/>
                     <xtce:ParameterRefEntry parameterRef="img_expose_cmd_noproc"/>
@@ -11014,13 +11013,13 @@
                     <xtce:ParameterRefEntry parameterRef="img_tai_time_noproc"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_34_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="34"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="33"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_34_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_frame_id_bin2d"/>
                     <xtce:ParameterRefEntry parameterRef="img_expose_cmd_bin2d"/>
@@ -11071,13 +11070,13 @@
                     <xtce:ParameterRefEntry parameterRef="tlm_stat_stddev_bin2d_proc_roi3"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_35_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="35"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="34"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_35_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_frame_id_bias"/>
                     <xtce:ParameterRefEntry parameterRef="img_expose_cmd_bias"/>
@@ -11112,13 +11111,13 @@
                     <xtce:ParameterRefEntry parameterRef="tlm_stat_stddev_bias_proc_over"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_36_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="36"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="35"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_36_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_frame_id_dark"/>
                     <xtce:ParameterRefEntry parameterRef="img_expose_cmd_dark"/>
@@ -11165,13 +11164,13 @@
                     <xtce:ParameterRefEntry parameterRef="tlm_stat_stddev_dark_proc_over"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_37_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="37"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="36"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_37_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_frame_id_ospec2d"/>
                     <xtce:ParameterRefEntry parameterRef="img_expose_cmd_ospec2d"/>
@@ -11273,13 +11272,13 @@
                     <xtce:ParameterRefEntry parameterRef="img_outSpcProcCenter"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_38_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="38"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="37"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_38_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_frame_id_spc1d"/>
                     <xtce:ParameterRefEntry parameterRef="img_expose_cmd_spc1d"/>
@@ -11340,13 +11339,13 @@
                     <xtce:ParameterRefEntry parameterRef="img_spc1dRawCenter"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_39_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="39"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="38"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_39_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_frame_id_trim2d"/>
                     <xtce:ParameterRefEntry parameterRef="img_expose_cmd_trim2d"/>
@@ -11393,13 +11392,13 @@
                     <xtce:ParameterRefEntry parameterRef="tlm_stat_stddev_trim2d_proc_roi3"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_40_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="40"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="39"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_40_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_frame_id_cross_d"/>
                     <xtce:ParameterRefEntry parameterRef="img_expose_cmd_cross_d"/>
@@ -11431,13 +11430,13 @@
                     <xtce:ParameterRefEntry parameterRef="img_cross_d_center"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_41_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="41"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="40"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_41_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_id_NOPROC"/>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_tot_NOPROC"/>
@@ -12434,13 +12433,13 @@
                     <xtce:ParameterRefEntry parameterRef="img_frame_cksm_NOPROC"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_42_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="42"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="41"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_42_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_id_BIN2D"/>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_tot_BIN2D"/>
@@ -13437,13 +13436,13 @@
                     <xtce:ParameterRefEntry parameterRef="img_frame_cksm_BIN2D"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_43_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="43"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="42"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_43_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_id_BIAS"/>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_tot_BIAS"/>
@@ -14440,13 +14439,13 @@
                     <xtce:ParameterRefEntry parameterRef="img_frame_cksm_BIAS"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_44_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="44"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="43"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_44_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_id_DARK"/>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_tot_DARK"/>
@@ -15443,13 +15442,13 @@
                     <xtce:ParameterRefEntry parameterRef="img_frame_cksm_DARK"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_45_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="45"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="44"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_45_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_id_OSPEC2D"/>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_tot_OSPEC2D"/>
@@ -16446,13 +16445,13 @@
                     <xtce:ParameterRefEntry parameterRef="img_frame_cksm_OSPEC2D"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_46_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="46"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="45"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_46_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_id_SPEC1D"/>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_tot_SPEC1D"/>
@@ -17449,13 +17448,13 @@
                     <xtce:ParameterRefEntry parameterRef="img_frame_cksm_SPEC1D"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_47_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="47"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="46"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_47_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_id_TRIM2D"/>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_tot_TRIM2D"/>
@@ -18452,13 +18451,13 @@
                     <xtce:ParameterRefEntry parameterRef="img_frame_cksm_TRIM2D"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
-            </xtce:SequenceContainer>
-            <xtce:SequenceContainer name="APID_48_Packet">
                 <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
                     <xtce:RestrictionCriteria>
-                        <xtce:Comparison parameterRef="PKT_APID" value="48"/>
+                        <xtce:Comparison parameterRef="PKT_APID" value="47"/>
                     </xtce:RestrictionCriteria>
                 </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="APID_48_Packet">
                 <xtce:EntryList>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_id_CROSSD"/>
                     <xtce:ParameterRefEntry parameterRef="img_framepkt_tot_CROSSD"/>
@@ -19455,6 +19454,11 @@
                     <xtce:ParameterRefEntry parameterRef="img_frame_cksm_CROSSD"/>
                     <xtce:ParameterRefEntry parameterRef="packet_checksum"/>
                 </xtce:EntryList>
+                <xtce:BaseContainer containerRef="CCSDSTelemetryPacket">
+                    <xtce:RestrictionCriteria>
+                        <xtce:Comparison parameterRef="PKT_APID" value="48"/>
+                    </xtce:RestrictionCriteria>
+                </xtce:BaseContainer>
             </xtce:SequenceContainer>
         </xtce:ContainerSet>
     </xtce:TelemetryMetaData>

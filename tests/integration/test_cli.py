@@ -70,3 +70,11 @@ def test_log_level():
     result = runner.invoke(cli.spp, ["describe-packets", "--help"])
     print(result.output)
     assert result.exit_code == 0
+
+
+def test_validate_xtce(test_data_dir):
+    runner = CliRunner()
+    print()
+    result = runner.invoke(cli.validate, [f"{test_data_dir / 'test_xtce.xml'}"])
+    print(result.output)
+    assert result.exit_code == 0
