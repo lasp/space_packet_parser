@@ -378,7 +378,7 @@ This equation can be implemented in XTCE by referencing the packet length field 
 
 ## XTCE Document Validation
 
-Space Packet Parser provides comprehensive validation capabilities for XTCE documents to help ensure they are correct and will work properly for parsing packets. The validation system operates in two modes:
+Space Packet Parser provides comprehensive validation capabilities for XTCE documents to help ensure they are correct and will work properly for parsing packets. The validation system operates in three modes: "schema", "structure", and a default mode of "all" (both schema and structure validation).
 
 - **Schema Validation**: Validates the XML document against the in-document referenced XTCE XSD schema
 - **Structural Validation**: Validates XTCE-specific structure and reference integrity

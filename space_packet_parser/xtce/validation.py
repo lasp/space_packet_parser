@@ -371,7 +371,7 @@ def _validate_xtce_structure(xml_tree: ElementTree.ElementTree) -> ValidationRes
 
 def validate_xtce(
     xml_source: Union[str, Path, ElementTree.ElementTree],
-    level: str = "schema",
+    level: str = "all",
     timeout: int = 30,
 ) -> ValidationResult:
     """Validate an XTCE XML document.
@@ -384,7 +384,7 @@ def validate_xtce(
     xml_source : Union[str, Path, ElementTree.ElementTree]
         Path to XML file, XML string content, or ElementTree
     level : str
-        Validation level: "schema", "structure", or "all"
+        Validation level: "schema", "structure", or "all". Default "all".
     timeout : int
         Timeout in seconds for schema downloads
 
@@ -395,13 +395,8 @@ def validate_xtce(
     """
     try:
         validation_level = ValidationLevel(level.lower())
-    except ValueError:
-        result = ValidationResult(valid=False, validation_level=ValidationLevel.SCHEMA)
-        result.add_error(
-            f"Invalid validation level '{level}'. Must be one of: schema, structure, all",
-            "INVALID_VALIDATION_LEVEL",
-        )
-        return result
+    except ValueError as invalid_level:
+        raise ValueError(f"Validation level must be one of {[_.value for _ in ValidationLevel]}") from invalid_level
 
     # Parse XML document into a tree object
     if isinstance(xml_source, ElementTree.ElementTree):
