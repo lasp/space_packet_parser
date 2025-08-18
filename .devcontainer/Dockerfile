@@ -92,4 +92,4 @@ USER $USERNAME
 
 # Copy CLAUDE.md and settings to Claude config directory
 COPY CLAUDE.md /home/$USERNAME/.claude/
-COPY claude-settings.json /home/$USERNAME/.claude/.claude.json
+COPY claude-settings.json /home/$USERNAME/.claude/settings.json

@@ -26,6 +26,7 @@ from rich.tree import Tree
 from space_packet_parser import ccsds
 from space_packet_parser.ccsds import ccsds_generator
 from space_packet_parser.xtce.definitions import DEFAULT_ROOT_CONTAINER, XtcePacketDefinition
+from space_packet_parser.xtce.validation import validate_xtce
 
 # Initialize a console instance for rich output
 console = Console()
@@ -208,3 +209,55 @@ def parse(
     # Limit the number of packets and variables printed
     # also limit the length of strings (binary data can be long)
     pretty.pprint(packets, indent_guides=False, max_length=max_items, max_string=max_string)
+
+
+@spp.command()
+@click.argument("file_path", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--level",
+    type=click.Choice(["schema", "structure", "all"], case_sensitive=False),
+    default="all",
+    help="Validation level to perform",
+)
+@click.option("--timeout", type=int, default=30, help="Timeout in seconds for schema downloads")
+@click.option("--local-xsd", type=click.Path(exists=True, path_type=Path), help="Local XSD file for schema validation")
+def validate(file_path: Path, level: str, timeout: int, local_xsd: Path) -> None:
+    """Validate an XTCE document."""
+    logging.info(f"Validating XTCE file: {file_path}")
+    logging.info(f"Validation level: {level}")
+    logging.debug(f"Timeout: {timeout}")
+    logging.debug(f"Local XSD: {local_xsd}")
+
+    result = validate_xtce(
+        file_path,
+        level=level.lower(),
+        timeout=timeout,
+        print_results=False,
+        raise_on_error=False,
+        local_xsd=local_xsd,
+    )
+
+    # Display results in rich format (complementing the print_results from validate_xtce)
+    if result.valid:
+        console.print(f"[bold green]✓ VALID[/bold green] ({result.validation_level.value} level)")
+    else:
+        console.print(f"[bold red]✗ INVALID[/bold red] ({result.validation_level.value} level)")
+
+    if result.schema_location:
+        console.print(f"Schema: {result.schema_location}")
+    if result.schema_version:
+        console.print(f"Version: {result.schema_version}")
+
+    if result.validation_time_ms:
+        console.print(f"Validation time: {result.validation_time_ms:.1f}ms")
+
+    if result.errors:
+        console.print(f"\n[bold red]Errors ({len(result.errors)}):[/bold red]")
+        for error in result.errors:
+            console.print(f"  {error}")
+            if error.context:
+                console.print(f"  - Additional context: {error.context}")
+
+    # Exit with error code if validation failed (unless raise_on_error is True, which already raised)
+    if not result.valid:
+        raise click.ClickException("Validation failed")
