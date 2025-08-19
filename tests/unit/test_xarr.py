@@ -1,11 +1,12 @@
 """Tests for the xarr.py extras module"""
 
+import io
 import struct
 
 import pytest
 
 from space_packet_parser import xarr
-from space_packet_parser.common import fixed_length_generator
+from space_packet_parser.generators.fixed_length import fixed_length_generator
 from space_packet_parser.xtce import calibrators, containers, definitions, encodings, parameter_types, parameters
 
 np = pytest.importorskip("numpy", reason="numpy is not available")
@@ -159,3 +160,172 @@ def test_create_dataset_with_custom_generator(tmp_path):
     assert list(dataset["UINT8_FIELD"].values) == [0x42, 0x55, 0xFF]
     assert list(dataset["STRING_FIELD"].values) == ["ABC", "XYZ", "123"]
     assert list(dataset["INT32_FIELD"].values) == [12345, 67890, -99999]
+
+
+def test_create_dataset_with_file_like_objects(tmp_path):
+    """Test creating a dataset with file-like objects instead of file paths"""
+    # Create a simple fixed-length packet definition
+    container_set = [
+        containers.SequenceContainer(
+            "SIMPLE_CONTAINER",
+            entry_list=[
+                parameters.Parameter(
+                    "FIELD1",
+                    parameter_type=parameter_types.IntegerParameterType(
+                        "UINT8_TYPE", encoding=encodings.IntegerDataEncoding(size_in_bits=8, encoding="unsigned")
+                    ),
+                ),
+                parameters.Parameter(
+                    "FIELD2",
+                    parameter_type=parameter_types.IntegerParameterType(
+                        "UINT16_TYPE", encoding=encodings.IntegerDataEncoding(size_in_bits=16, encoding="unsigned")
+                    ),
+                ),
+            ],
+        )
+    ]
+
+    packet_definition = definitions.XtcePacketDefinition(container_set=container_set)
+
+    # Create test data (3 packets, each 3 bytes: 1 byte + 2 bytes)
+    packet1 = struct.pack(">BH", 0x10, 0x1234)  # FIELD1=16, FIELD2=4660
+    packet2 = struct.pack(">BH", 0x20, 0x5678)  # FIELD1=32, FIELD2=22136
+    packet3 = struct.pack(">BH", 0x30, 0x9ABC)  # FIELD1=48, FIELD2=39612
+    test_data = packet1 + packet2 + packet3
+
+    # Test with single file-like object (simulating file opened in "rb" mode)
+    test_data_file = tmp_path / "test_data.bin"
+    with open(test_data_file, "wb") as f:
+        f.write(test_data)
+
+    with open(test_data_file, "rb") as fh:
+        datasets = xarr.create_dataset(
+            fh,
+            packet_definition,
+            packet_bytes_generator=fixed_length_generator,
+            generator_kwargs={"packet_length_bytes": 3},
+            parse_bytes_kwargs={"root_container_name": "SIMPLE_CONTAINER"},
+        )
+
+    assert len(datasets) == 1
+    dataset = list(datasets.values())[0]
+    assert len(dataset.packet) == 3
+    assert list(dataset["FIELD1"].values) == [16, 32, 48]
+    assert list(dataset["FIELD2"].values) == [4660, 22136, 39612]
+
+    # Test with iterable of file-like objects
+    file_obj1 = io.BytesIO(packet1 + packet2)
+    file_obj2 = io.BytesIO(packet3)
+
+    datasets = xarr.create_dataset(
+        [file_obj1, file_obj2],
+        packet_definition,
+        packet_bytes_generator=fixed_length_generator,
+        generator_kwargs={"packet_length_bytes": 3},
+        parse_bytes_kwargs={"root_container_name": "SIMPLE_CONTAINER"},
+    )
+
+    assert len(datasets) == 1
+    dataset = list(datasets.values())[0]
+    assert len(dataset.packet) == 3
+    assert list(dataset["FIELD1"].values) == [16, 32, 48]
+    assert list(dataset["FIELD2"].values) == [4660, 22136, 39612]
+
+
+def test_create_dataset_with_mixed_file_types(tmp_path):
+    """Test creating a dataset with mixed file paths and file-like objects"""
+    # Create a simple fixed-length packet definition (reuse from above)
+    container_set = [
+        containers.SequenceContainer(
+            "SIMPLE_CONTAINER",
+            entry_list=[
+                parameters.Parameter(
+                    "FIELD1",
+                    parameter_type=parameter_types.IntegerParameterType(
+                        "UINT8_TYPE", encoding=encodings.IntegerDataEncoding(size_in_bits=8, encoding="unsigned")
+                    ),
+                ),
+                parameters.Parameter(
+                    "FIELD2",
+                    parameter_type=parameter_types.IntegerParameterType(
+                        "UINT16_TYPE", encoding=encodings.IntegerDataEncoding(size_in_bits=16, encoding="unsigned")
+                    ),
+                ),
+            ],
+        )
+    ]
+
+    packet_definition = definitions.XtcePacketDefinition(container_set=container_set)
+
+    # Create test data
+    packet1 = struct.pack(">BH", 0x10, 0x1234)
+    packet2 = struct.pack(">BH", 0x20, 0x5678)
+    packet3 = struct.pack(">BH", 0x30, 0x9ABC)
+
+    # Create a test file
+    test_file = tmp_path / "test_packets.dat"
+    with open(test_file, "wb") as f:
+        f.write(packet1 + packet2)
+
+    # Create a file-like object
+    file_obj = io.BytesIO(packet3)
+
+    # Test with mixed types
+    datasets = xarr.create_dataset(
+        [test_file, file_obj],
+        packet_definition,
+        packet_bytes_generator=fixed_length_generator,
+        generator_kwargs={"packet_length_bytes": 3},
+        parse_bytes_kwargs={"root_container_name": "SIMPLE_CONTAINER"},
+    )
+
+    assert len(datasets) == 1
+    dataset = list(datasets.values())[0]
+    assert len(dataset.packet) == 3
+    assert list(dataset["FIELD1"].values) == [16, 32, 48]
+    assert list(dataset["FIELD2"].values) == [4660, 22136, 39612]
+
+
+def test_create_dataset_with_xtce_file_like_object():
+    """Test that XTCE definitions can also be provided as file-like objects"""
+    # Create a minimal XTCE document as a string
+    xtce_xml = """<xtce:SpaceSystem name="TestSystem" xmlns:xtce="http://www.omg.org/space/xtce">
+    <xtce:TelemetryMetaData>
+        <xtce:ParameterTypeSet>
+            <xtce:IntegerParameterType name="UINT8_TYPE">
+                <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+        </xtce:ParameterTypeSet>
+        <xtce:ParameterSet>
+            <xtce:Parameter name="TEST_FIELD" parameterTypeRef="UINT8_TYPE"/>
+        </xtce:ParameterSet>
+        <xtce:ContainerSet>
+            <xtce:SequenceContainer name="TEST_CONTAINER">
+                <xtce:EntryList>
+                    <xtce:ParameterRefEntry parameterRef="TEST_FIELD"/>
+                </xtce:EntryList>
+            </xtce:SequenceContainer>
+        </xtce:ContainerSet>
+    </xtce:TelemetryMetaData>
+</xtce:SpaceSystem>"""
+
+    # Create XTCE file-like object
+    xtce_file_obj = io.StringIO(xtce_xml)
+
+    # Create test packet data
+    test_data = struct.pack("B", 0x42)
+    packet_file_obj = io.BytesIO(test_data)
+
+    # Test with both XTCE and packet data as file-like objects
+    datasets = xarr.create_dataset(
+        packet_file_obj,
+        xtce_file_obj,
+        packet_bytes_generator=fixed_length_generator,
+        generator_kwargs={"packet_length_bytes": 1},
+        parse_bytes_kwargs={"root_container_name": "TEST_CONTAINER"},
+    )
+
+    assert len(datasets) == 1
+    dataset = list(datasets.values())[0]
+    assert len(dataset.packet) == 1
+    assert list(dataset["TEST_FIELD"].values) == [66]

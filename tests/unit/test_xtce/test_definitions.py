@@ -6,7 +6,7 @@ import pytest
 from lxml import etree as ElementTree
 
 import space_packet_parser as spp
-import space_packet_parser.ccsds
+import space_packet_parser.generators.ccsds
 import space_packet_parser.xtce.parameter_types
 from space_packet_parser.xtce import comparisons, containers, definitions, encodings, parameters
 
@@ -589,8 +589,8 @@ def test_parse_methods(test_data_dir):
     xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
 
     # Test parsing a packet
-    empty_packet_data = space_packet_parser.ccsds.create_ccsds_packet(
-        data=bytes(65), apid=11, sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED
+    empty_packet_data = space_packet_parser.generators.ccsds.create_ccsds_packet(
+        data=bytes(65), apid=11, sequence_flags=space_packet_parser.generators.ccsds.SequenceFlags.UNSEGMENTED
     )
 
     # Parse in the simplest way and compare result to other parse methods
@@ -621,8 +621,8 @@ def test_parse_packet_extra_bytes(test_data_dir):
     xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
 
     # Test parsing a packet that is longer than the definition
-    too_long_packet_data = space_packet_parser.ccsds.create_ccsds_packet(
-        data=bytes(70), apid=11, sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED
+    too_long_packet_data = space_packet_parser.generators.ccsds.create_ccsds_packet(
+        data=bytes(70), apid=11, sequence_flags=space_packet_parser.generators.ccsds.SequenceFlags.UNSEGMENTED
     )
 
     with pytest.warns(
@@ -639,8 +639,8 @@ def test_parse_packet_too_few_bytes(test_data_dir):
     xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
 
     # Test parsing a packet that is longer than the definition
-    too_short_packet_data = space_packet_parser.ccsds.create_ccsds_packet(
-        data=bytes(60), apid=11, sequence_flags=space_packet_parser.ccsds.SequenceFlags.UNSEGMENTED
+    too_short_packet_data = space_packet_parser.generators.ccsds.create_ccsds_packet(
+        data=bytes(60), apid=11, sequence_flags=space_packet_parser.generators.ccsds.SequenceFlags.UNSEGMENTED
     )
 
     with pytest.raises(

@@ -8,7 +8,7 @@ from threading import Thread
 
 import pytest
 
-from space_packet_parser import ccsds
+from space_packet_parser import generators
 from space_packet_parser.xtce.definitions import XtcePacketDefinition
 
 
@@ -58,7 +58,7 @@ def test_parsing_from_socket(jpss_test_data_dir):
         )
         t.start()
 
-        ccsds_generator = ccsds.ccsds_generator(receiver, buffer_read_size_bytes=4096)
+        ccsds_generator = generators.ccsds_generator(receiver, buffer_read_size_bytes=4096)
         packets = []
         with pytest.raises(socket.timeout):  # noqa PT012
             for packet_bytes in ccsds_generator:

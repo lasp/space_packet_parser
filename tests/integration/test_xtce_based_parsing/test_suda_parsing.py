@@ -6,7 +6,7 @@ The data used here is SUDA data but the fields are parsed using IDEX naming conv
 
 # Local
 import space_packet_parser as spp
-from space_packet_parser import ccsds
+from space_packet_parser import generators
 from space_packet_parser.xtce import definitions
 
 
@@ -52,14 +52,14 @@ def test_suda_xtce_packet_parsing(suda_test_data_dir):
     suda_packet_file = suda_test_data_dir / "sciData_2022_130_17_41_53.spl"
 
     with suda_packet_file.open("rb") as suda_binary_data:
-        suda_ccsds_generator = ccsds.ccsds_generator(suda_binary_data, skip_header_bytes=4, show_progress=True)
+        suda_ccsds_generator = generators.ccsds_generator(suda_binary_data, skip_header_bytes=4, show_progress=True)
         for packet_bytes in suda_ccsds_generator:
             suda_packet = suda_definition.parse_bytes(packet_bytes)
             assert isinstance(suda_packet, spp.SpacePacket)
             assert suda_packet["PKT_APID"] == 1425, "APID is not as expected."
             assert suda_packet["VERSION"] == 0, "CCSDS header VERSION incorrect."
 
-        suda_ccsds_generator = ccsds.ccsds_generator(suda_binary_data, skip_header_bytes=4)
+        suda_ccsds_generator = generators.ccsds_generator(suda_binary_data, skip_header_bytes=4)
 
         try:
             packet_bytes = next(suda_ccsds_generator)

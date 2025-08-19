@@ -4,6 +4,7 @@ import logging
 import warnings
 from collections.abc import Iterable
 from datetime import datetime
+from os import PathLike
 from pathlib import Path
 from typing import Optional, TextIO, Union
 
@@ -11,8 +12,9 @@ import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
 
 import space_packet_parser as spp
-from space_packet_parser import ccsds, common
+from space_packet_parser import common
 from space_packet_parser.exceptions import InvalidParameterTypeError, UnrecognizedPacketTypeError
+from space_packet_parser.generators import ccsds
 from space_packet_parser.xtce import (
     STANDARD_XTCE_NS_PREFIX,
     STANDARD_XTCE_NSMAP,
@@ -25,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_ROOT_CONTAINER = "CCSDSPacket"
 
-TAG_NAME_TO_PARAMETER_TYPE_OBJECT = {
+TAG_NAME_TO_PARAMETER_TYPE_OBJECT: dict[str, type[parameter_types.ParameterType]] = {
     "StringParameterType": parameter_types.StringParameterType,
     "IntegerParameterType": parameter_types.IntegerParameterType,
     "FloatParameterType": parameter_types.FloatParameterType,
@@ -40,18 +42,13 @@ TAG_NAME_TO_PARAMETER_TYPE_OBJECT = {
 class XtcePacketDefinition(common.AttrComparable):
     """Object representation of the XTCE definition of a CCSDS packet object"""
 
-    # TODO: Allow user to specify the XML schema instance for the XTCE XSD as well
-    #  e.g.
-    #                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    #                   xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd"
-    #  This will require an additional namespace dict entry for xsi (in this example)
     def __init__(
         self,
         container_set: Optional[Iterable[containers.SequenceContainer]] = None,
         *,
         ns: dict = STANDARD_XTCE_NSMAP,
-        xtce_ns_prefix: Optional[str] = STANDARD_XTCE_NS_PREFIX,
-        root_container_name: Optional[str] = DEFAULT_ROOT_CONTAINER,
+        xtce_ns_prefix: str = STANDARD_XTCE_NS_PREFIX,
+        root_container_name: str = DEFAULT_ROOT_CONTAINER,
         space_system_name: Optional[str] = None,
         validation_status: str = "Unknown",
         xtce_version: str = "1.0",
@@ -74,7 +71,7 @@ class XtcePacketDefinition(common.AttrComparable):
         xtce_ns_prefix : str
             XTCE namespace prefix. Default {STANDARD_XTCE_NS_PREFIX}. This is the key for the XTCE namespace in the
             namespace mapping dictionary, `ns` and is used to write XML output when necessary.
-        root_container_name : Optional[str]
+        root_container_name : str
             Name of root sequence container (where to start parsing)
         space_system_name : Optional[str]
             Name of space system to encode in XML when serializing.
@@ -205,9 +202,9 @@ class XtcePacketDefinition(common.AttrComparable):
     @classmethod
     def from_xtce(
         cls,
-        xtce_document: Union[str, Path, TextIO],
+        xtce_document: Union[str, Path, PathLike, TextIO],
         *,
-        root_container_name: Optional[str] = DEFAULT_ROOT_CONTAINER,
+        root_container_name: str = DEFAULT_ROOT_CONTAINER,
     ) -> "XtcePacketDefinition":
         f"""Instantiate an object representation of a CCSDS packet definition,
         according to a format specified in an XTCE XML document.
@@ -225,9 +222,9 @@ class XtcePacketDefinition(common.AttrComparable):
 
         Parameters
         ----------
-        xtce_document : TextIO
+        xtce_document : Union[str, PathLike, TextIO]
             Path to XTCE XML document containing packet definition.
-        root_container_name : Optional[str]
+        root_container_name : str
             Optional override to the root container name. Default is {DEFAULT_ROOT_CONTAINER}.
         """
         # Define a namespace and prefix aware Element subclass so that we don't have to pass the namespace
@@ -352,7 +349,7 @@ class XtcePacketDefinition(common.AttrComparable):
         parameter_type_set_element = tree.getroot().find("TelemetryMetaData/ParameterTypeSet")
         for parameter_type_element in parameter_type_set_element.iterfind("*"):
             try:
-                parameter_type_class = TAG_NAME_TO_PARAMETER_TYPE_OBJECT[
+                parameter_type_class: type[parameter_types.ParameterType] = TAG_NAME_TO_PARAMETER_TYPE_OBJECT[
                     ElementTree.QName(parameter_type_element).localname
                 ]
             except KeyError as e:
@@ -434,8 +431,8 @@ class XtcePacketDefinition(common.AttrComparable):
         """
         packet = spp.SpacePacket(binary_data=binary_data)
 
-        root_container_name = root_container_name or self.root_container_name
-        current_container: containers.SequenceContainer = self.containers[root_container_name]
+        _root_container_name: str = root_container_name or self.root_container_name
+        current_container: containers.SequenceContainer = self.containers[_root_container_name]
         while True:
             current_container.parse(packet)
 
