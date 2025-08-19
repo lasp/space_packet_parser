@@ -13,7 +13,7 @@ import collections
 import logging
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Optional, Union
+from typing import BinaryIO, Callable, Optional, Union
 
 from space_packet_parser import ccsds
 from space_packet_parser.exceptions import UnrecognizedPacketTypeError
@@ -118,13 +118,13 @@ def _get_minimum_numpy_datatype(
 
 
 def create_dataset(
-    packet_files: Union[str, Path, Iterable[Union[str, Path]]],
+    packet_files: Union[str, Path, BinaryIO, bytes, Iterable[Union[str, Path, BinaryIO, bytes]]],
     xtce_packet_definition: Union[str, Path, definitions.XtcePacketDefinition],
     use_raw_values: bool = False,
-    packet_bytes_generator: Optional[callable] = None,
+    packet_bytes_generator: Optional[Callable] = None,
     generator_kwargs: Optional[dict] = None,
     parse_bytes_kwargs: Optional[dict] = None,
-) -> dict[xr.Dataset]:
+) -> dict[int, xr.Dataset]:
     """Create a dictionary of xarray Datasets (per APID) from a set of packet files
 
     Notes
@@ -138,8 +138,8 @@ def create_dataset(
 
     Parameters
     ----------
-    packet_files : Union[str, Path, Iterable[Union[str, Path]]]
-        Packet files
+    packet_files : Union[str, Path, BinaryIO, Iterable[Union[str, Path, BinaryIO]]]
+        Packet files or file-like objects opened in binary mode
     xtce_packet_definition : Union[str, Path, xtce.definitions.XtcePacketDefinition]
         Packet definition for parsing the packet data
     use_raw_values: bool
@@ -169,7 +169,7 @@ def create_dataset(
     if not isinstance(xtce_packet_definition, definitions.XtcePacketDefinition):
         xtce_packet_definition = definitions.XtcePacketDefinition.from_xtce(xtce_packet_definition)
 
-    if isinstance(packet_files, (str, Path)):
+    if isinstance(packet_files, (str, Path, BinaryIO, bytes)):
         packet_files = [packet_files]
 
     # Set up containers to store our data
@@ -183,63 +183,70 @@ def create_dataset(
     # Keep track of which variables (keys) are in the dataset
     variable_mapping: dict[int, set] = {}
 
-    for packet_file in packet_files:
-        with open(packet_file, "rb") as f:
-            generator = packet_bytes_generator(f, **generator_kwargs)
-            packets = []
+    def _process_generator(generator):
+        """Helper function to process packets from a generator"""
+        for binary_data in generator:
+            try:
+                packet = xtce_packet_definition.parse_bytes(binary_data, **parse_bytes_kwargs)
 
-            for binary_data in generator:
-                try:
-                    packet = xtce_packet_definition.parse_bytes(binary_data, **parse_bytes_kwargs)
-
-                    # Always skip packets with incomplete parsing (bad packets)
-                    if packet._parsing_pos != len(packet.binary_data) * 8:
-                        logger.debug(
-                            "Skipping packet with incomplete parsing: "
-                            f"parsed {packet._parsing_pos} bits, expected {len(packet.binary_data) * 8} bits"
-                        )
-                        continue
-
-                    packets.append(packet)
-
-                except UnrecognizedPacketTypeError as e:
-                    # Skip packets that fail to match a concrete packet definition
-                    logger.debug(f"Unrecognized packet: {e}")
+                # Always skip packets with incomplete parsing (bad packets)
+                if packet._parsing_pos != len(packet.binary_data) * 8:
+                    logger.debug(
+                        "Skipping packet with incomplete parsing: "
+                        f"parsed {packet._parsing_pos} bits, expected {len(packet.binary_data) * 8} bits"
+                    )
                     continue
 
-                # Try to get APID from CCSDS packets, default to 0 for non-CCSDS packets
-                try:
-                    apid = packet.binary_data.apid
-                except AttributeError:
-                    apid = 0
+            except UnrecognizedPacketTypeError as e:
+                # Skip packets that fail to match a concrete packet definition
+                logger.debug(f"Unrecognized packet: {e}")
+                continue
 
-                if apid not in data_dict:
-                    # This is the first packet for this APID
-                    data_dict[apid] = collections.defaultdict(list)
-                    datatype_mapping[apid] = {}
-                    variable_mapping[apid] = packet.keys()
+            # Try to get APID from CCSDS packets, default to 0 for non-CCSDS packets
+            try:
+                apid = packet.binary_data.apid
+            except AttributeError:
+                apid = 0
 
-                if variable_mapping[apid] != packet.keys():
-                    raise ValueError(
-                        f"Packet fields do not match for APID {apid}. This could be "
-                        f"due to a conditional (polymorphic) packet definition in the XTCE, while this "
-                        f"function currently only supports flat packet definitions."
-                        f"\nExpected: {variable_mapping[apid]},\ngot: {list(packet.keys())}"
+            if apid not in data_dict:
+                # This is the first packet for this APID
+                data_dict[apid] = collections.defaultdict(list)
+                datatype_mapping[apid] = {}
+                variable_mapping[apid] = packet.keys()
+
+            if variable_mapping[apid] != packet.keys():
+                raise ValueError(
+                    f"Packet fields do not match for APID {apid}. This could be "
+                    f"due to a conditional (polymorphic) packet definition in the XTCE, while this "
+                    f"function currently only supports flat packet definitions."
+                    f"\nExpected: {variable_mapping[apid]},\ngot: {list(packet.keys())}"
+                )
+
+            for key, value in packet.items():
+                if use_raw_values:
+                    # Use the derived value if it exists, otherwise use the raw value
+                    val = value.raw_value
+                else:
+                    val = value
+
+                data_dict[apid][key].append(val)
+                if key not in datatype_mapping[apid]:
+                    # Add this datatype to the mapping
+                    datatype_mapping[apid][key] = _get_minimum_numpy_datatype(
+                        key, xtce_packet_definition, use_raw_value=use_raw_values
                     )
 
-                for key, value in packet.items():
-                    if use_raw_values:
-                        # Use the derived value if it exists, otherwise use the raw value
-                        val = value.raw_value
-                    else:
-                        val = value
-
-                    data_dict[apid][key].append(val)
-                    if key not in datatype_mapping[apid]:
-                        # Add this datatype to the mapping
-                        datatype_mapping[apid][key] = _get_minimum_numpy_datatype(
-                            key, xtce_packet_definition, use_raw_value=use_raw_values
-                        )
+    for packet_file in packet_files:
+        # Handle both file paths and file-like objects
+        if isinstance(packet_file, (str, Path)):
+            # File path, open it
+            with open(packet_file, "rb") as f:
+                generator = packet_bytes_generator(f, **generator_kwargs)
+                _process_generator(generator)
+        else:
+            # File-like object, use directly
+            generator = packet_bytes_generator(packet_file, **generator_kwargs)
+            _process_generator(generator)
 
     # Turn the dict into an xarray dataset
     dataset_by_apid = {}
