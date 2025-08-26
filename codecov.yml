@@ -1,0 +1,20 @@
+# Codecov configuration for space_packet_parser
+# https://docs.codecov.com/docs/codecovyml-reference
+
+coverage:
+  status:
+    project:
+      default:
+        target: 95%  # Target coverage percentage
+        threshold: 5%  # Allow 5% drop without failing
+        if_no_uploads: error  # Fail if no coverage data
+        only_pulls: false  # Check coverage on all commits
+    patch:
+      default:
+        target: 85%  # Lower threshold for new code
+        threshold: 5%
+        only_pulls: true  # Only check patch coverage on PRs
+
+  ignore:
+    - "scripts/**/*"  # Don't include utility scripts
+    - "docs/**/*"  # Don't include documentation

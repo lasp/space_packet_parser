@@ -6,12 +6,14 @@ from typing import Union
 from space_packet_parser.ccsds import ccsds_generator
 from space_packet_parser.common import SpacePacket
 from space_packet_parser.xtce.definitions import XtcePacketDefinition
+from space_packet_parser.xtce.validation import validate_xtce
 
 __all__ = [
     "ccsds_generator",
     "SpacePacket",
     "XtcePacketDefinition",
     "load_xtce",
+    "validate_xtce",
 ]
 
 

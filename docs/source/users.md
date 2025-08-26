@@ -376,6 +376,62 @@ This equation can be implemented in XTCE by referencing the packet length field 
 </xtce:BinaryParameterType>
 ```
 
+## XTCE Document Validation
+
+Space Packet Parser provides comprehensive validation capabilities for XTCE documents to help ensure they are correct and will work properly for parsing packets. The validation system operates in three modes: "schema", "structure", and a default mode of "all" (both schema and structure validation).
+
+- **Schema Validation**: Validates the XML document against the in-document referenced XTCE XSD schema
+- **Structural Validation**: Validates XTCE-specific structure and reference integrity
+
+Schema validation requires correct namespacing declarations at the top of your XTCE document.
+e.g.
+
+```xml
+<xtce:SpaceSystem name="SpacePacketParser"
+                  xmlns:xtce="http://www.omg.org/spec/XTCE/20180204"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204
+                                      https://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd">
+```
+
+### CLI Validation
+
+```shell
+spp --log-level=DEBUG validate my_xtce.xml --local-schema my_xsd.xml --level all
+```
+
+### Programmatic Validation
+
+```python
+from space_packet_parser import validate_xtce
+
+# Validate an XTCE file against the referenced schema
+result = validate_xtce("my_xtce.xml", level="schema")
+if result.errors:
+    for error in result.errors:
+        print(f"Error: {error}")
+else:
+    print("Document is valid")
+
+# Validate an XTCE document structure to check for
+# unused Parameters ParameterTypes and nonexistent references
+result = validate_xtce("my_xtce.xml", level="structure")
+if result.errors:
+    for error in result.errors:
+        print(f"Error: {error}")
+else:
+    print("Document is valid")
+
+# Comprehensive validation (both schema and structure)
+result = validate_xtce("my_xtce.xml", level="all")
+print(f"Validation completed in {result.validation_time_ms:.1f}ms")
+if result.errors:
+    for error in result.errors:
+        print(f"Error: {error}")
+else:
+    print("Document is valid")
+```
+
 ## Troubleshooting Packet Parsing
 Parsing binary packets is error-prone and getting the XTCE definition correct can be a challenge at first.
 Most flight software teams can export XTCE from their command and telemetry database but these exports usually require

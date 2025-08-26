@@ -11,14 +11,98 @@ import space_packet_parser.xtce.parameter_types
 from space_packet_parser.xtce import comparisons, containers, definitions, encodings, parameters
 
 
+def test_xtce_definition_from_xtce_inputs(test_data_dir):
+    """Test that we can create an XtcePacketDefinition from various inputs"""
+    # Test from a Path
+    definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
+
+    # Test from a string path
+    definitions.XtcePacketDefinition.from_xtce(str(test_data_dir / "test_xtce.xml"))
+
+    # Test from a file-like object
+    with (test_data_dir / "test_xtce.xml").open("r") as f:
+        definitions.XtcePacketDefinition.from_xtce(f)
+
+    xtce_str = """<xtce:SpaceSystem name="XTCEStringTest"
+                  xmlns:xtce="http://www.omg.org/spec/XTCE/20180204"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204
+                                      https://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd">
+    <xtce:Header date="2024-03-05T13:36:00MST" version="1.0"/>
+    <xtce:TelemetryMetaData>
+        <xtce:ParameterTypeSet>
+        </xtce:ParameterTypeSet>
+        <xtce:ParameterSet>
+        </xtce:ParameterSet>
+        <xtce:ContainerSet>
+        </xtce:ContainerSet>
+    </xtce:TelemetryMetaData>
+</xtce:SpaceSystem>"""
+
+    # Test from a string input
+    definitions.XtcePacketDefinition.from_xtce(io.StringIO(xtce_str))
+
+    # XTCE string with encoding specified in document
+    xtce_bytes = b"""<?xml version='1.0' encoding='UTF-8'?>
+<xtce:SpaceSystem name="XTCEBytesTest"
+                  xmlns:xtce="http://www.omg.org/spec/XTCE/20180204"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204
+                                      https://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd">
+    <xtce:Header date="2024-03-05T13:36:00MST" version="1.0"/>
+    <xtce:TelemetryMetaData>
+        <xtce:ParameterTypeSet>
+        </xtce:ParameterTypeSet>
+        <xtce:ParameterSet>
+        </xtce:ParameterSet>
+        <xtce:ContainerSet>
+        </xtce:ContainerSet>
+    </xtce:TelemetryMetaData>
+</xtce:SpaceSystem>"""
+
+    # Test from a bytes input
+    definitions.XtcePacketDefinition.from_xtce(io.BytesIO(xtce_bytes))
+
+
+def test_definition_with_nonstandard_namespace_string():
+    """Test definition parsing on XTCE document with non-standard namespace identifier
+
+    Usually the namespace is "http://www.omg.org/spec/XTCE/20180204", but this test uses "http://www.omg.org/spec/xtce"
+    """
+    xtce_str = """<xtce:SpaceSystem name="XTCENamespaceNameChangeTest"
+                  xmlns:xtce="http://www.omg.org/spec/xtce"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.omg.org/spec/xtce
+                                      https://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd">
+    <xtce:Header date="2024-03-05T13:36:00MST" version="1.0"/>
+    <xtce:TelemetryMetaData>
+        <xtce:ParameterTypeSet>
+        </xtce:ParameterTypeSet>
+        <xtce:ParameterSet>
+        </xtce:ParameterSet>
+        <xtce:ContainerSet>
+        </xtce:ContainerSet>
+    </xtce:TelemetryMetaData>
+</xtce:SpaceSystem>"""
+
+    defn = definitions.XtcePacketDefinition.from_xtce(io.StringIO(xtce_str))
+    assert defn.ns == {"xtce": "http://www.omg.org/spec/xtce", "xsi": "http://www.w3.org/2001/XMLSchema-instance"}
+    assert defn.xtce_ns_prefix == "xtce"
+    assert defn.xtce_ns_uri == "http://www.omg.org/spec/xtce"
+
+
 @pytest.mark.parametrize(
-    ("xtcedoc", "xtce_ns_prefix"),
-    [("test_xtce.xml", "xtce"), ("test_xtce_default_namespace.xml", None), ("test_xtce_no_namespace.xml", None)],
+    ("xtcedoc", "warning_expected"),
+    [("test_xtce.xml", False), ("test_xtce_default_namespace.xml", False), ("test_xtce_no_namespace.xml", True)],
 )
-def test_parsing_xtce_document(test_data_dir, xtcedoc, xtce_ns_prefix):
+def test_parsing_xtce_document(test_data_dir, xtcedoc, warning_expected):
     """Tests parsing an entire XTCE document and makes assertions about the contents"""
     with open(test_data_dir / xtcedoc) as x:
-        xdef = definitions.XtcePacketDefinition.from_xtce(x, xtce_ns_prefix=xtce_ns_prefix)
+        if warning_expected:
+            with pytest.warns(UserWarning, match="No XTCE namespace found in the document."):
+                xdef = definitions.XtcePacketDefinition.from_xtce(x)
+        else:
+            xdef = definitions.XtcePacketDefinition.from_xtce(x)
 
     # Test Parameter Types
     ptname = "USEC_Type"
@@ -202,12 +286,12 @@ def test_generating_xtce_from_objects():
 
 
 @pytest.mark.parametrize(
-    ("xml", "ns_prefix", "uri", "ns", "new_ns_prefix", "new_uri", "new_ns"),
+    ("xml", "ns_prefix", "uri", "ns", "warning_expected", "new_ns_prefix", "new_uri", "new_ns", "new_warning_expected"),
     [
         # Custom namespace to new custom namespace
         (
             """
-<custom:SpaceSystem xmlns:custom="http://www.fake-test.org/space/xtce" name="Space Packet Parser">
+<custom:SpaceSystem xmlns:custom="http://www.fake-test.org/space/xtce" name="custom_to_custom">
     <custom:Header date="2024-03-05T13:36:00MST" version="1.0" author="Gavin Medley"/>
     <custom:TelemetryMetaData>
         <custom:ParameterTypeSet/>
@@ -219,50 +303,58 @@ def test_generating_xtce_from_objects():
             "custom",
             "http://www.fake-test.org/space/xtce",
             {"custom": "http://www.fake-test.org/space/xtce"},
+            False,
             "xtcenew",
             "http://www.fake-test.org/space/xtce",
             {"xtcenew": "http://www.fake-test.org/space/xtce"},
+            False,
+        ),
+        # Default namespace to custom namespace
+        (
+            """
+<SpaceSystem xmlns="http://www.fake-test.org/space/xtce" name="default_to_custom">
+    <Header date="2024-03-05T13:36:00MST" version="1.0" author="Gavin Medley"/>
+    <TelemetryMetaData>
+        <ParameterTypeSet/>
+        <ParameterSet/>
+        <ContainerSet/>
+    </TelemetryMetaData>
+</SpaceSystem>
+""",
+            None,
+            "http://www.fake-test.org/space/xtce",
+            {None: "http://www.fake-test.org/space/xtce"},
+            False,
+            "xtce",
+            "http://www.fake-test.org/space/xtce",
+            {"xtce": "http://www.fake-test.org/space/xtce"},
+            False,
+        ),
+        # Custom namespace to default namespace
+        (
+            """
+<custom:SpaceSystem xmlns:custom="http://www.fake-test.org/space/xtce" name="custom_to_default">
+    <custom:Header date="2024-03-05T13:36:00MST" version="1.0" author="Gavin Medley"/>
+    <custom:TelemetryMetaData>
+        <custom:ParameterTypeSet/>
+        <custom:ParameterSet/>
+        <custom:ContainerSet/>
+    </custom:TelemetryMetaData>
+</custom:SpaceSystem>
+""",
+            "custom",
+            "http://www.fake-test.org/space/xtce",
+            {"custom": "http://www.fake-test.org/space/xtce"},
+            False,
+            None,
+            "http://www.fake-test.org/space/xtce",
+            {None: "http://www.fake-test.org/space/xtce"},
+            False,
         ),
         # No namespace to custom namespace
         (
             """
-<SpaceSystem xmlns="http://www.fake-test.org/space/xtce" name="Space Packet Parser">
-    <Header date="2024-03-05T13:36:00MST" version="1.0" author="Gavin Medley"/>
-    <TelemetryMetaData>
-        <ParameterTypeSet/>
-        <ParameterSet/>
-        <ContainerSet/>
-    </TelemetryMetaData>
-</SpaceSystem>
-""",
-            None,
-            "http://www.fake-test.org/space/xtce",
-            {None: "http://www.fake-test.org/space/xtce"},
-            "xtce",
-            "http://www.fake-test.org/space/xtce",
-            {"xtce": "http://www.fake-test.org/space/xtce"},
-        ),
-        (
-            """
-<custom:SpaceSystem xmlns:custom="http://www.fake-test.org/space/xtce" name="Space Packet Parser">
-    <custom:Header date="2024-03-05T13:36:00MST" version="1.0" author="Gavin Medley"/>
-    <custom:TelemetryMetaData>
-        <custom:ParameterTypeSet/>
-        <custom:ParameterSet/>
-        <custom:ContainerSet/>
-    </custom:TelemetryMetaData>
-</custom:SpaceSystem>
-""",
-            "custom",
-            "http://www.fake-test.org/space/xtce",
-            {"custom": "http://www.fake-test.org/space/xtce"},
-            None,
-            "http://www.fake-test.org/space/xtce",
-            {None: "http://www.fake-test.org/space/xtce"},
-        ),
-        (
-            """
-<SpaceSystem name="Space Packet Parser">
+<SpaceSystem name="no_namespace_to_custom">
     <Header date="2024-03-05T13:36:00MST" version="1.0" author="Gavin Medley"/>
     <TelemetryMetaData>
         <ParameterTypeSet/>
@@ -274,13 +366,16 @@ def test_generating_xtce_from_objects():
             None,
             None,
             {},
+            True,
             "xtcenew",
             "http://www.fake-test.org/space/xtce",
             {"xtcenew": "http://www.fake-test.org/space/xtce"},
+            False,
         ),
+        # Custom namespace to no namespace
         (
             """
-<custom:SpaceSystem xmlns:custom="http://www.fake-test.org/space/xtce" name="Space Packet Parser">
+<custom:SpaceSystem xmlns:custom="http://www.fake-test.org/space/xtce" name="custom_to_no_namespace">
     <custom:Header date="2024-03-05T13:36:00MST" version="1.0" author="Gavin Medley"/>
     <custom:TelemetryMetaData>
         <custom:ParameterTypeSet/>
@@ -292,17 +387,38 @@ def test_generating_xtce_from_objects():
             "custom",
             "http://www.fake-test.org/space/xtce",
             {"custom": "http://www.fake-test.org/space/xtce"},
+            False,
             None,
             None,
             {},
+            True,
         ),
     ],
 )
-def test_custom_namespacing(xml, ns_prefix, uri, ns, new_ns_prefix, new_uri, new_ns):
-    """Test parsing XTCE with various namespace configurations"""
+def test_custom_namespacing(
+    xml, ns_prefix, uri, ns, warning_expected, new_ns_prefix, new_uri, new_ns, new_warning_expected
+):
+    """Test parsing XTCE with various namespace configurations
+
+    This tests the behavior of changing namespacing on an XtcePacketDefinition object, which may have an explicitly prefixed
+    namespace, a default namespace, or no namespace at all. Any time we parse or serialize and XML tree in the absence of
+    a defined namespace, we should issue a warning.
+    """
     # Parse directly from string, inferring the namespace mapping
-    xdef = definitions.XtcePacketDefinition.from_xtce(io.StringIO(xml), xtce_ns_prefix=ns_prefix)
-    default_tree = xdef.to_xml_tree()
+    if warning_expected:
+        # Parsing a document with no namespace should issue a warning
+        with pytest.warns(UserWarning, match="No XTCE namespace found in the document."):
+            xdef = definitions.XtcePacketDefinition.from_xtce(io.StringIO(xml))
+    else:
+        xdef = definitions.XtcePacketDefinition.from_xtce(io.StringIO(xml))
+
+    if warning_expected:
+        with pytest.warns(
+            UserWarning, match="No XTCE namespace defined. This is invalid per XSD, but will be serialized."
+        ):
+            default_tree = xdef.to_xml_tree()
+    else:
+        default_tree = xdef.to_xml_tree()
     # Assert that we know what the inferred mapping is
     assert default_tree.getroot().nsmap == ns
 
@@ -320,8 +436,15 @@ def test_custom_namespacing(xml, ns_prefix, uri, ns, new_ns_prefix, new_uri, new
 
     # Create the XML tree using a custom namespace label for the XTCE schema
     xdef.ns = new_ns
-    xdef.xtce_schema_uri = new_uri
-    new_tree = xdef.to_xml_tree()
+    xdef.xtce_ns_uri = new_uri
+    if new_warning_expected:
+        # Changing to no-namespacing will issue a warning
+        with pytest.warns(
+            UserWarning, match="No XTCE namespace defined. This is invalid per XSD, but will be serialized."
+        ):
+            new_tree = xdef.to_xml_tree()
+    else:
+        new_tree = xdef.to_xml_tree()
 
     # Assert the new mapping was applied
     assert new_tree.getroot().nsmap == new_ns

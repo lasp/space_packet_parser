@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xtce:SpaceSystem name="TestSystem" xmlns="http://www.omg.org/space/xtce" xmlns:xtce="http://www.omg.org/spec/XTCE/20180204">
+<xtce:SpaceSystem name="TestSystem"
+                  xmlns:xtce="http://www.omg.org/spec/XTCE/20180204"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204
+                                      https://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd">
   <xtce:TelemetryMetaData>
     <xtce:ParameterTypeSet>
       <xtce:IntegerParameterType name="UINT32" signed="false">
@@ -10,7 +14,7 @@
       <xtce:Parameter name="PKT_VALUE" parameterTypeRef="UINT32"/>
     </xtce:ParameterSet>
     <xtce:ContainerSet>
-      <xtce:SequenceContainer name="PKT_CONTAINER" sizeInBits="32">
+      <xtce:SequenceContainer name="PKT_CONTAINER">
         <xtce:EntryList>
           <xtce:ParameterRefEntry parameterRef="PKT_VALUE"/>
         </xtce:EntryList>
