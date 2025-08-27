@@ -17,7 +17,7 @@ import re
 import warnings
 from pathlib import Path
 
-from space_packet_parser import ccsds
+from space_packet_parser import generators
 from space_packet_parser.xtce import containers, definitions, encodings, parameter_types, parameters
 
 # This regex is for detecting a dynamically sized field where its bit_length is
@@ -170,7 +170,7 @@ if __name__ == "__main__":
 
     packet_file = jpss_test_data_dir / "J01_G011_LZ_2021-04-09T00-00-00Z_V01.DAT1"
     with packet_file.open("rb") as packet_fh:
-        ccsds_generator = ccsds.ccsds_generator(packet_fh)
+        ccsds_generator = generators.ccsds_generator(packet_fh)
         packets = [xtce_definition.parse_bytes(binary_data) for binary_data in ccsds_generator]
 
     assert len(packets) == 7200  # noqa S101

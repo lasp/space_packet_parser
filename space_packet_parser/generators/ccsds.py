@@ -1,4 +1,4 @@
-"""Parsing utilities for CCSDS packets.
+"""Packet generator utilities for CCSDS packets.
 
 The parsing begins with binary data representing CCSDS Packets. A user can then create a generator
 from the binary data reading from a filelike object or a socket. The ``ccsds_generator`` function yields
@@ -16,7 +16,8 @@ from collections.abc import Iterator
 from enum import IntEnum
 from typing import BinaryIO, Optional, Union
 
-from space_packet_parser.common import SpacePacket, _print_progress, _setup_binary_reader
+from space_packet_parser.common import SpacePacket
+from space_packet_parser.generators.utils import _print_progress, _setup_binary_reader
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class SequenceFlags(IntEnum):
 
 
 class CCSDSPacketBytes(bytes):
-    """Binary representation of a CCSDS packet.
+    """Binary (bytes) representation of a CCSDS packet.
 
     Methods to extract the header fields are added to the raw bytes object.
     """
@@ -170,6 +171,10 @@ def create_ccsds_packet(
     -------
     : CCSDSPacketBytes
         Resulting binary packet
+
+    Notes
+    -----
+    This function is extremely useful for generating test packets for debugging or mocking purposes.
     """
     if version_number < 0 or version_number > 7:  # 3 bits
         raise ValueError("version_number must be between 0 and 7")
@@ -223,7 +228,7 @@ class CCSDSPacket(SpacePacket):
     def __init__(self, *args, **kwargs):
         warnings.warn(
             "The CCSDSPacket class is deprecated and will be removed in a future release. "
-            "Use the Packet class instead (no CCSDS prefix).",
+            "Use the SpacePacket class instead (no CCSDS prefix).",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -294,7 +299,7 @@ def ccsds_generator(
     # ========
     start_time = time.time_ns()
     while True:
-        if total_length_bytes and n_bytes_parsed == total_length_bytes:
+        if n_bytes_parsed == total_length_bytes:
             break  # Exit if we know the length and we've reached it
 
         if show_progress:

@@ -4,7 +4,8 @@ import struct
 
 import pytest
 
-from space_packet_parser import SpacePacket, ccsds
+from space_packet_parser import SpacePacket
+from space_packet_parser.generators import ccsds
 from space_packet_parser.xtce import containers, encodings, parameter_types, parameters
 
 

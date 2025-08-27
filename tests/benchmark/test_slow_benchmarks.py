@@ -5,7 +5,7 @@ Each test in this suite tests a specific metric over time
 
 import pytest
 
-from space_packet_parser import ccsds
+from space_packet_parser import generators
 from space_packet_parser.xtce import definitions
 
 
@@ -34,7 +34,7 @@ def test_benchmark_simple_packet_parsing(benchmark, jpss_test_data_dir):
         def _setup():
             """Function that sets up for each benchmark round"""
             packet_fh.seek(0)
-            ccsds_generator = ccsds.ccsds_generator(packet_fh)
+            ccsds_generator = generators.ccsds_generator(packet_fh)
             return (), {"generator": ccsds_generator}  # args, kwargs for benchmarked function
 
         def _make_packet_list(generator):
@@ -67,7 +67,7 @@ def test_benchmark_complex_packet_parsing(benchmark, idex_test_data_dir):
         def _setup():
             """Function that sets up for each benchmark round"""
             packet_fh.seek(0)
-            ccsds_generator = ccsds.ccsds_generator(packet_fh, show_progress=True)
+            ccsds_generator = generators.ccsds_generator(packet_fh, show_progress=True)
             return (), {"generator": ccsds_generator}  # args, kwargs for benchmarked function
 
         def _make_packet_list(generator):

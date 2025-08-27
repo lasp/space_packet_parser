@@ -21,7 +21,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from space_packet_parser import ccsds
+from space_packet_parser import generators
 from space_packet_parser.xtce import definitions
 
 
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     p.start()
 
     # Create a packet generator that listens to a socket
-    idex_ccsds_generator = ccsds.ccsds_generator(receiver)
+    idex_ccsds_generator = generators.ccsds_generator(receiver)
     # No data yet. We start recording data from an event when we encounter a packet with IDX__SCI0TYPE==1
     data: dict[int, bytes] = {}
     try:

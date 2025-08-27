@@ -4,7 +4,9 @@ import socket
 
 import pytest
 
-from space_packet_parser import SpacePacket, ccsds, common
+import space_packet_parser.generators
+from space_packet_parser import SpacePacket, common
+from space_packet_parser.generators import ccsds
 from space_packet_parser.xtce import definitions
 
 
@@ -107,7 +109,7 @@ def test_continuation_packets(test_data_dir):
     d = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
     # We can put that all in one unsegmented packet, just to verify this is working as expected
     raw_bytes = ccsds.create_ccsds_packet(data=b"0" * 65, apid=11, sequence_flags=ccsds.SequenceFlags.UNSEGMENTED)
-    ccsds_generator = ccsds.ccsds_generator(raw_bytes)
+    ccsds_generator = space_packet_parser.generators.ccsds_generator(raw_bytes)
     orig_packets = [d.parse_bytes(binary_data) for binary_data in ccsds_generator]
     assert len(orig_packets) == 1
 
@@ -124,7 +126,8 @@ def test_continuation_packets(test_data_dir):
     p1 = ccsds.create_ccsds_packet(data=b"0" * 1, apid=11, sequence_flags=ccsds.SequenceFlags.LAST, sequence_count=1)
     raw_bytes = p0 + p1
     result_packets = [
-        d.parse_bytes(packet) for packet in ccsds.ccsds_generator(raw_bytes, combine_segmented_packets=True)
+        d.parse_bytes(packet)
+        for packet in space_packet_parser.generators.ccsds_generator(raw_bytes, combine_segmented_packets=True)
     ]
     remove_keys(result_packets[0])
     assert result_packets == orig_packets
@@ -139,7 +142,8 @@ def test_continuation_packets(test_data_dir):
     p2 = ccsds.create_ccsds_packet(data=b"0" * 1, apid=11, sequence_flags=ccsds.SequenceFlags.LAST, sequence_count=0)
     raw_bytes = p0 + p1 + p2
     result_packets = [
-        d.parse_bytes(packet) for packet in ccsds.ccsds_generator(raw_bytes, combine_segmented_packets=True)
+        d.parse_bytes(packet)
+        for packet in space_packet_parser.generators.ccsds_generator(raw_bytes, combine_segmented_packets=True)
     ]
     remove_keys(result_packets[0])
     assert result_packets == orig_packets
@@ -159,7 +163,9 @@ def test_continuation_packets(test_data_dir):
     raw_bytes = p0 + p1 + p2
     result_packets = [
         d.parse_bytes(packet)
-        for packet in ccsds.ccsds_generator(raw_bytes, combine_segmented_packets=True, secondary_header_bytes=4)
+        for packet in space_packet_parser.generators.ccsds_generator(
+            raw_bytes, combine_segmented_packets=True, secondary_header_bytes=4
+        )
     ]
     remove_keys(result_packets[0])
     assert result_packets == orig_packets
@@ -176,7 +182,14 @@ def test_continuation_packet_warnings(test_data_dir):
     with pytest.warns(match="Continuation packet found without declaring the start"):
         # Nothing expected to be returned
         assert (
-            len([d.parse_bytes(packet) for packet in ccsds.ccsds_generator(raw_bytes, combine_segmented_packets=True)])
+            len(
+                [
+                    d.parse_bytes(packet)
+                    for packet in space_packet_parser.generators.ccsds_generator(
+                        raw_bytes, combine_segmented_packets=True
+                    )
+                ]
+            )
             == 0
         )
 
@@ -187,7 +200,7 @@ def test_continuation_packet_warnings(test_data_dir):
 
     with pytest.warns(match="not in sequence"):
         # Nothing expected to be returned
-        assert len(list(ccsds.ccsds_generator(raw_bytes, combine_segmented_packets=True))) == 0
+        assert len(list(space_packet_parser.generators.ccsds_generator(raw_bytes, combine_segmented_packets=True))) == 0
 
 
 @pytest.mark.parametrize(
@@ -210,18 +223,18 @@ def test_ccsds_generator(jpss_test_data_dir):
 
     # From file
     with test_data_file.open("rb") as f:
-        assert next(ccsds.ccsds_generator(f))
+        assert next(space_packet_parser.generators.ccsds_generator(f))
 
     # From socket
     send, recv = socket.socketpair()
     send.send(test_packet)
-    assert next(ccsds.ccsds_generator(recv))
+    assert next(space_packet_parser.generators.ccsds_generator(recv))
     send.close()
     recv.close()
 
     # From bytes
     # This covers show_progress conditional code and also the end of the iterator
-    gen_from_bytes = ccsds.ccsds_generator(test_packet, show_progress=True)
+    gen_from_bytes = space_packet_parser.generators.ccsds_generator(test_packet, show_progress=True)
     assert next(gen_from_bytes)
     with pytest.raises(StopIteration):
         next(gen_from_bytes)
@@ -229,8 +242,8 @@ def test_ccsds_generator(jpss_test_data_dir):
     # From Text file (error)
     with test_data_file.open("rt") as f:
         with pytest.raises(OSError, match="Packet data file opened in TextIO mode"):
-            next(ccsds.ccsds_generator(f))
+            next(space_packet_parser.generators.ccsds_generator(f))
 
     # Unrecognized source (error)
     with pytest.raises(OSError, match="Unrecognized data source"):
-        next(ccsds.ccsds_generator(1))
+        next(space_packet_parser.generators.ccsds_generator(1))

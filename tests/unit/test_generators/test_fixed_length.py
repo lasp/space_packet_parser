@@ -1,5 +1,5 @@
 from space_packet_parser import load_xtce
-from space_packet_parser.common import fixed_length_generator
+from space_packet_parser.generators.fixed_length import fixed_length_generator
 
 
 def test_fixed_length_generator():
