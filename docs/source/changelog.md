@@ -5,7 +5,7 @@ list and release milestones.
 ## Version Release Notes
 Release notes for the `space_packet_parser` library
 
-### v6.0.0 (unreleased)
+### v6.0.0 (released)
 - *BREAKING*: `XtcePacketDefinition` no longer accepts a file object as input.
   Use `spp.xtce.definitions.XtcePacketDefinition.from_xtce()` or `spp.load_xtce()` instead.
 - *BREAKING*: Reorganization of the project into different submodules for more explicit handling
