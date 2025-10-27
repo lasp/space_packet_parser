@@ -4,7 +4,7 @@ ci:
   skip: [no-commit-to-branch, ccv]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
     - id: check-added-large-files
       args: ['--maxkb=1000']
@@ -16,7 +16,7 @@ repos:
     - id: no-commit-to-branch
       args: [--branch, main, --branch, dev]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 'v0.12.2'
+    rev: 'v0.13.3'
     hooks:
     - id: ruff-format
     - id: ruff-check
@@ -36,6 +36,6 @@ repos:
           - pyyaml
           - tomli
   - repo: https://github.com/mashi/codecov-validator
-    rev: v1.0.0
+    rev: 1.0.1
     hooks:
       - id: ccv
