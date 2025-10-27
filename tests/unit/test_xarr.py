@@ -13,7 +13,7 @@ np = pytest.importorskip("numpy", reason="numpy is not available")
 
 
 @pytest.fixture
-def test_xtce():
+def data_type_packet_definition():
     """Test definition for testing surmising data types"""
     container_set = [
         containers.SequenceContainer(
@@ -70,31 +70,9 @@ def test_xtce():
     return definitions.XtcePacketDefinition(container_set=container_set)
 
 
-@pytest.mark.parametrize(
-    ("pname", "use_raw_value", "expected_dtype"),
-    [
-        ("INT32_PARAM", True, "int32"),
-        ("INT32_PARAM", False, "int32"),
-        ("F32_PARAM", False, "float32"),
-        ("F32_PARAM", True, "float32"),
-        ("CAL_INT_PARAM", True, "int32"),
-        ("CAL_INT_PARAM", False, None),
-        ("BIN_PARAM", True, "bytes"),
-        ("BIN_PARAM", False, "bytes"),
-        ("INT_ENUM_PARAM", True, "uint8"),
-        ("INT_ENUM_PARAM", False, "str"),
-        ("STR_PARAM", True, "str"),
-        ("STR_PARAM", False, "str"),
-    ],
-)
-def test_minimum_numpy_dtype(test_xtce, pname, use_raw_value, expected_dtype):
-    """Test finding the minimum numpy data type for a parameter"""
-    assert xarr._get_minimum_numpy_datatype(pname, test_xtce, use_raw_value) == expected_dtype
-
-
-def test_create_dataset_with_custom_generator(tmp_path):
-    """Test creating a dataset with a custom packet generator for non-CCSDS packets"""
-    # Create a simple fixed-length packet definition with 3 fields
+@pytest.fixture
+def fixed_length_packet_definition():
+    """Reusable packet definition with UINT8_FIELD, STRING_FIELD, INT32_FIELD (8 bytes total)"""
     container_set = [
         containers.SequenceContainer(
             "FIXED_LENGTH_CONTAINER",
@@ -123,18 +101,56 @@ def test_create_dataset_with_custom_generator(tmp_path):
             ],
         )
     ]
+    return definitions.XtcePacketDefinition(container_set=container_set)
 
-    packet_definition = definitions.XtcePacketDefinition(container_set=container_set)
 
-    # Create 3 test packets with known data (8 bytes each)
+@pytest.fixture
+def fixed_length_test_packets():
+    """Three standard 8-byte test packets with known values
+
+    Returns
+    -------
+    tuple
+        (packet1_data, packet2_data, packet3_data, binary_data) where:
+        - packet1: UINT8=0x42, STRING="ABC", INT32=12345
+        - packet2: UINT8=0x55, STRING="XYZ", INT32=67890
+        - packet3: UINT8=0xFF, STRING="123", INT32=-99999
+        - binary_data: All three packets concatenated
+    """
     packet1_data = struct.pack(">B3si", 0x42, b"ABC", 12345)
     packet2_data = struct.pack(">B3si", 0x55, b"XYZ", 67890)
     packet3_data = struct.pack(">B3si", 0xFF, b"123", -99999)
-
-    # Concatenate packets into binary data
     binary_data = packet1_data + packet2_data + packet3_data
+    return packet1_data, packet2_data, packet3_data, binary_data
 
-    # Write to a temporary file
+
+@pytest.mark.parametrize(
+    ("pname", "use_raw_value", "expected_dtype"),
+    [
+        ("INT32_PARAM", True, "int32"),
+        ("INT32_PARAM", False, "int32"),
+        ("F32_PARAM", False, "float32"),
+        ("F32_PARAM", True, "float32"),
+        ("CAL_INT_PARAM", True, "int32"),
+        ("CAL_INT_PARAM", False, None),
+        ("BIN_PARAM", True, "bytes"),
+        ("BIN_PARAM", False, "bytes"),
+        ("INT_ENUM_PARAM", True, "uint8"),
+        ("INT_ENUM_PARAM", False, "str"),
+        ("STR_PARAM", True, "str"),
+        ("STR_PARAM", False, "str"),
+    ],
+)
+def test_minimum_numpy_dtype(data_type_packet_definition, pname, use_raw_value, expected_dtype):
+    """Test finding the minimum numpy data type for a parameter"""
+    assert xarr._get_minimum_numpy_datatype(pname, data_type_packet_definition, use_raw_value) == expected_dtype
+
+
+def test_create_dataset_with_custom_generator(tmp_path, fixed_length_packet_definition, fixed_length_test_packets):
+    """Test creating a dataset with a custom packet generator for non-CCSDS packets"""
+    _, _, _, binary_data = fixed_length_test_packets
+
+    # Write test packets to a temporary file
     test_file = tmp_path / "test_packets.bin"
     with open(test_file, "wb") as f:
         f.write(binary_data)
@@ -142,7 +158,7 @@ def test_create_dataset_with_custom_generator(tmp_path):
     # Create dataset using a custom fixed-length generator
     datasets = xarr.create_dataset(
         test_file,
-        packet_definition,
+        fixed_length_packet_definition,
         packet_bytes_generator=fixed_length_generator,
         generator_kwargs={"packet_length_bytes": 8},
         parse_bytes_kwargs={"root_container_name": "FIXED_LENGTH_CONTAINER"},
@@ -162,36 +178,43 @@ def test_create_dataset_with_custom_generator(tmp_path):
     assert list(dataset["INT32_FIELD"].values) == [12345, 67890, -99999]
 
 
-def test_create_dataset_with_file_like_objects(tmp_path):
+def test_create_dataset_with_packet_filter(tmp_path, fixed_length_packet_definition, fixed_length_test_packets):
+    """Test filtering packets with packet_filter parameter using raw byte inspection"""
+    _, _, _, binary_data = fixed_length_test_packets
+
+    # Write to a temporary file
+    test_file = tmp_path / "test_packets_filtered.bin"
+    with open(test_file, "wb") as f:
+        f.write(binary_data)
+
+    # Create dataset with a packet filter that passes packets 1 and 2, but not packet 3
+    # Filter: first byte == 0x42 (packet 1) OR second byte == ord('X') (packet 2)
+    # Packet 1: first byte = 0x42, second byte = ord('A') = 65
+    # Packet 2: first byte = 0x55, second byte = ord('X') = 88
+    # Packet 3: first byte = 0xFF, second byte = ord('1') = 49
+    datasets = xarr.create_dataset(
+        test_file,
+        fixed_length_packet_definition,
+        packet_bytes_generator=fixed_length_generator,
+        generator_kwargs={"packet_length_bytes": 8},
+        parse_bytes_kwargs={"root_container_name": "FIXED_LENGTH_CONTAINER"},
+        packet_filter=lambda pkt: pkt[0] == 0x42 or pkt[1] == ord("X"),
+    )
+
+    # Verify we only got 2 packets (packet 3 was filtered out)
+    assert len(datasets) == 1
+    dataset = list(datasets.values())[0]
+    assert len(dataset.packet) == 2
+
+    # Verify that only packets 1 and 2 are present (packet 3 excluded)
+    assert list(dataset["UINT8_FIELD"].values) == [0x42, 0x55]
+    assert list(dataset["STRING_FIELD"].values) == ["ABC", "XYZ"]
+    assert list(dataset["INT32_FIELD"].values) == [12345, 67890]
+
+
+def test_create_dataset_with_file_like_objects(tmp_path, fixed_length_packet_definition, fixed_length_test_packets):
     """Test creating a dataset with file-like objects instead of file paths"""
-    # Create a simple fixed-length packet definition
-    container_set = [
-        containers.SequenceContainer(
-            "SIMPLE_CONTAINER",
-            entry_list=[
-                parameters.Parameter(
-                    "FIELD1",
-                    parameter_type=parameter_types.IntegerParameterType(
-                        "UINT8_TYPE", encoding=encodings.IntegerDataEncoding(size_in_bits=8, encoding="unsigned")
-                    ),
-                ),
-                parameters.Parameter(
-                    "FIELD2",
-                    parameter_type=parameter_types.IntegerParameterType(
-                        "UINT16_TYPE", encoding=encodings.IntegerDataEncoding(size_in_bits=16, encoding="unsigned")
-                    ),
-                ),
-            ],
-        )
-    ]
-
-    packet_definition = definitions.XtcePacketDefinition(container_set=container_set)
-
-    # Create test data (3 packets, each 3 bytes: 1 byte + 2 bytes)
-    packet1 = struct.pack(">BH", 0x10, 0x1234)  # FIELD1=16, FIELD2=4660
-    packet2 = struct.pack(">BH", 0x20, 0x5678)  # FIELD1=32, FIELD2=22136
-    packet3 = struct.pack(">BH", 0x30, 0x9ABC)  # FIELD1=48, FIELD2=39612
-    test_data = packet1 + packet2 + packet3
+    packet1, packet2, packet3, test_data = fixed_length_test_packets
 
     # Test with single file-like object (simulating file opened in "rb" mode)
     test_data_file = tmp_path / "test_data.bin"
@@ -201,17 +224,18 @@ def test_create_dataset_with_file_like_objects(tmp_path):
     with open(test_data_file, "rb") as fh:
         datasets = xarr.create_dataset(
             fh,
-            packet_definition,
+            fixed_length_packet_definition,
             packet_bytes_generator=fixed_length_generator,
-            generator_kwargs={"packet_length_bytes": 3},
-            parse_bytes_kwargs={"root_container_name": "SIMPLE_CONTAINER"},
+            generator_kwargs={"packet_length_bytes": 8},
+            parse_bytes_kwargs={"root_container_name": "FIXED_LENGTH_CONTAINER"},
         )
 
     assert len(datasets) == 1
     dataset = list(datasets.values())[0]
     assert len(dataset.packet) == 3
-    assert list(dataset["FIELD1"].values) == [16, 32, 48]
-    assert list(dataset["FIELD2"].values) == [4660, 22136, 39612]
+    assert list(dataset["UINT8_FIELD"].values) == [0x42, 0x55, 0xFF]
+    assert list(dataset["STRING_FIELD"].values) == ["ABC", "XYZ", "123"]
+    assert list(dataset["INT32_FIELD"].values) == [12345, 67890, -99999]
 
     # Test with iterable of file-like objects
     file_obj1 = io.BytesIO(packet1 + packet2)
@@ -219,48 +243,23 @@ def test_create_dataset_with_file_like_objects(tmp_path):
 
     datasets = xarr.create_dataset(
         [file_obj1, file_obj2],
-        packet_definition,
+        fixed_length_packet_definition,
         packet_bytes_generator=fixed_length_generator,
-        generator_kwargs={"packet_length_bytes": 3},
-        parse_bytes_kwargs={"root_container_name": "SIMPLE_CONTAINER"},
+        generator_kwargs={"packet_length_bytes": 8},
+        parse_bytes_kwargs={"root_container_name": "FIXED_LENGTH_CONTAINER"},
     )
 
     assert len(datasets) == 1
     dataset = list(datasets.values())[0]
     assert len(dataset.packet) == 3
-    assert list(dataset["FIELD1"].values) == [16, 32, 48]
-    assert list(dataset["FIELD2"].values) == [4660, 22136, 39612]
+    assert list(dataset["UINT8_FIELD"].values) == [0x42, 0x55, 0xFF]
+    assert list(dataset["STRING_FIELD"].values) == ["ABC", "XYZ", "123"]
+    assert list(dataset["INT32_FIELD"].values) == [12345, 67890, -99999]
 
 
-def test_create_dataset_with_mixed_file_types(tmp_path):
+def test_create_dataset_with_mixed_file_types(tmp_path, fixed_length_packet_definition, fixed_length_test_packets):
     """Test creating a dataset with mixed file paths and file-like objects"""
-    # Create a simple fixed-length packet definition (reuse from above)
-    container_set = [
-        containers.SequenceContainer(
-            "SIMPLE_CONTAINER",
-            entry_list=[
-                parameters.Parameter(
-                    "FIELD1",
-                    parameter_type=parameter_types.IntegerParameterType(
-                        "UINT8_TYPE", encoding=encodings.IntegerDataEncoding(size_in_bits=8, encoding="unsigned")
-                    ),
-                ),
-                parameters.Parameter(
-                    "FIELD2",
-                    parameter_type=parameter_types.IntegerParameterType(
-                        "UINT16_TYPE", encoding=encodings.IntegerDataEncoding(size_in_bits=16, encoding="unsigned")
-                    ),
-                ),
-            ],
-        )
-    ]
-
-    packet_definition = definitions.XtcePacketDefinition(container_set=container_set)
-
-    # Create test data
-    packet1 = struct.pack(">BH", 0x10, 0x1234)
-    packet2 = struct.pack(">BH", 0x20, 0x5678)
-    packet3 = struct.pack(">BH", 0x30, 0x9ABC)
+    packet1, packet2, packet3, _ = fixed_length_test_packets
 
     # Create a test file
     test_file = tmp_path / "test_packets.dat"
@@ -273,17 +272,18 @@ def test_create_dataset_with_mixed_file_types(tmp_path):
     # Test with mixed types
     datasets = xarr.create_dataset(
         [test_file, file_obj],
-        packet_definition,
+        fixed_length_packet_definition,
         packet_bytes_generator=fixed_length_generator,
-        generator_kwargs={"packet_length_bytes": 3},
-        parse_bytes_kwargs={"root_container_name": "SIMPLE_CONTAINER"},
+        generator_kwargs={"packet_length_bytes": 8},
+        parse_bytes_kwargs={"root_container_name": "FIXED_LENGTH_CONTAINER"},
     )
 
     assert len(datasets) == 1
     dataset = list(datasets.values())[0]
     assert len(dataset.packet) == 3
-    assert list(dataset["FIELD1"].values) == [16, 32, 48]
-    assert list(dataset["FIELD2"].values) == [4660, 22136, 39612]
+    assert list(dataset["UINT8_FIELD"].values) == [0x42, 0x55, 0xFF]
+    assert list(dataset["STRING_FIELD"].values) == ["ABC", "XYZ", "123"]
+    assert list(dataset["INT32_FIELD"].values) == [12345, 67890, -99999]
 
 
 def test_create_dataset_with_xtce_file_like_object():

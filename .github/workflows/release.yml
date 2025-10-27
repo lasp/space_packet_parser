@@ -8,8 +8,8 @@ concurrency:
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+*'  # Push events for official release tags
-      - 'test-release/[0-9]+.[0-9]+.[0-9]+*'  # Push events for test release tags
+      - "[0-9]+.[0-9]+.[0-9]+*" # Push events for official release tags
+      - "test-release/[0-9]+.[0-9]+.[0-9]+*" # Push events for test release tags
 
 jobs:
   # Job that builds PyPI style distribution artifacts
@@ -28,7 +28,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install build dependencies
         run: python -m pip install build twine
@@ -58,9 +58,9 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: official-pypi-publish-environment
-      url: https://pypi.org/p/space_packet_parser  # Public PyPI
+      url: https://pypi.org/p/space_packet_parser # Public PyPI
     permissions:
-      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
 
     steps:
       # This downloads the build artifacts from the build job
@@ -83,9 +83,9 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: test-pypi-publish-environment
-      url: https://test.pypi.org/p/space_packet_parser  # TestPyPI
+      url: https://test.pypi.org/p/space_packet_parser # TestPyPI
     permissions:
-      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
 
     steps:
       # This downloads the build artifacts from the build job
@@ -167,8 +167,8 @@ jobs:
     environment:
       name: create-github-release-environment
     permissions:
-      id-token: write  # IMPORTANT: mandatory for sigstore
-      contents: write  # IMPORTANT: mandatory for making GitHub Releases
+      id-token: write # IMPORTANT: mandatory for sigstore
+      contents: write # IMPORTANT: mandatory for making GitHub Releases
 
     steps:
       - name: Determine if the release is a prerelease

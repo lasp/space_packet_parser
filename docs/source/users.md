@@ -1,11 +1,15 @@
 # User Documentation (Getting Started)
+
 ## Installation
+
 From PyPI
+
 ```bash
 pip install space_packet_parser
 ```
 
 From Anaconda
+
 ```bash
 conda install -c lasp space_packet_parser
 ```
@@ -16,8 +20,8 @@ The typical workflow for parsing packets is to
 
 1. Load a packet definition
 
-    Packet definitions are the XTCE configuration documents that describe how to parse
-    and extract binary chunks of data into Python variables.
+   Packet definitions are the XTCE configuration documents that describe how to parse
+   and extract binary chunks of data into Python variables.
 
    ```python
    definition = spp.load_xtce("/path/to/xtce_definition.xml")
@@ -25,38 +29,39 @@ The typical workflow for parsing packets is to
 
 2. Iterate over binary data
 
-    You can load binary data from a file all at once, or continually read from a socket stream.
-    To parse individual packets, you can iterate over that binary data to yield individual
-    binary packet chunks one at a time. There is a built-in generator for CCSDS packets.
-    Other binary packet generators can be used as well if your packets follow a different
-    protocol from CCSDS.
+   You can load binary data from a file all at once, or continually read from a socket stream.
+   To parse individual packets, you can iterate over that binary data to yield individual
+   binary packet chunks one at a time. There is a built-in generator for CCSDS packets.
+   Other binary packet generators can be used as well if your packets follow a different
+   protocol from CCSDS.
 
-    ```python
-    for binary_packet in spp.ccsds_generator("/path/to/packet_file.ccsds"):
-        # Print out each packet's header
-        print(binary_packet)
-    ```
+   ```python
+   for binary_packet in spp.ccsds_generator("/path/to/packet_file.ccsds"):
+       # Print out each packet's header
+       print(binary_packet)
+   ```
 
 3. Parse the binary packet data into a dictionary of parsed items
 
-    With a definition (1) and a stream of individual packets (2), one can
-    then parse the contents of that binary data into Python objects. The packet
-    definition defines a lookup structure based on ``Parameter`` names,
-    which are returned as a python dictionary of `{ParameterName: value}` items.
+   With a definition (1) and a stream of individual packets (2), one can
+   then parse the contents of that binary data into Python objects. The packet
+   definition defines a lookup structure based on `Parameter` names,
+   which are returned as a python dictionary of `{ParameterName: value}` items.
 
-    ```python
-    packet = definition.parse_bytes(binary_packet)
-    # All items within the packet
-    print(packet)
-    # An individual item
-    print(packet["my_uint3_param"])
-    ```
+   ```python
+   packet = definition.parse_bytes(binary_packet)
+   # All items within the packet
+   print(packet)
+   # An individual item
+   print(packet["my_uint3_param"])
+   ```
 
 Putting this all together in an example script:
 
 ```python
 from pathlib import Path
 import space_packet_parser as spp
+from space_packet_parser import ccsds
 
 packet_file = Path('my_packets.pkts')
 xtce_document = Path('my_xtce_document.xml')
@@ -77,7 +82,6 @@ sc = packet_definition.containers['SecondaryHeaderContainer']
 # See the API docs for more information about the ParameterType, Parameter, and SequenceContainer classes
 
 with packet_file.open("rb") as binary_data:
-    from space_packet_parser import ccsds
     ccsds_generator = ccsds.ccsds_generator(binary_data)
 
     for packet_bytes in ccsds_generator:
@@ -90,6 +94,33 @@ with packet_file.open("rb") as binary_data:
 
 We aim to provide examples of usage patterns. Please see the `examples` directory in the GitHub repo. If there is
 a specific example you want to see demonstrated, please open a GitHub Issue or Discussion for support.
+
+## Packet Bytes Generators
+
+Packet bytes generators are functions that yield individual packets as `bytes` objects (or subclasses of `bytes`) from a binary data source. Space Packet Parser provides built-in generators like `ccsds_generator` and `fixed_length_generator`, but users can write custom generators to parse any packet format they need.
+
+A generator function should accept a binary data source (file-like object, socket, or bytes) and yield packet bytes one at a time. The `ccsds_generator` implementation in `space_packet_parser/generators/ccsds.py` provides a complete example of how to implement a packet bytes generator. Custom generators allow you to adapt Space Packet Parser to work with any binary packet format, not just CCSDS packets.
+
+While XTCE is commonly used with CCSDS packets, the XTCE standard is not limited to representing CCSDS packet structures. The CCSDS header information (VERSION, TYPE, APID, etc.) is not required by XTCE. You can define XTCE packet structures for any binary format and use a custom generator to yield those packets for parsing.
+
+### Generator Structure
+
+A minimal generator follows this pattern:
+
+```python
+def custom_generator(binary_data):
+    """Yields fixed-length packets from binary data."""
+    while True:
+        packet_bytes = binary_data.read(packet_length)
+        if not packet_bytes:
+            break
+        yield packet_bytes
+```
+
+### Filtering Packets
+
+For generators that expose packet metadata (like `CCSDSPacketBytes` with its `apid` property), you can filter packets before parsing to improve performance. A code
+example of this is linked in [examples](examples.md).
 
 ## Error Handling and Debugging
 
@@ -119,6 +150,7 @@ with packet_file.open("rb") as binary_data:
 ```
 
 ## Packet Objects
+
 The object returned from `parse_bytes()` is a `SpacePacket`. This object subclasses a python dictionary and behaves as a dictionary. To retrieve
 a parameter value from the parsed packet, you can iterate over its `items()` or you can access individual parameters
 by name.
@@ -148,6 +180,7 @@ Space Packet Parser returns the following types for parameters within a packet. 
 base classes (`int`, `float`, `str`, `bytes`, and `bool` respectively) except that each contains a `raw_value`
 attribute that contains the encoded value before applying any calibration or other derived processing of the value.
 The primary value of each parameter type is the fully parsed (calibrated, enumerated, string-parsed, etc.) value.
+
 - `IntParameter`
 - `FloatParameter`
 - `StrParameter`
@@ -155,11 +188,13 @@ The primary value of each parameter type is the fully parsed (calibrated, enumer
 - `BoolParameter`
 
 ### Numeric Calibration
+
 Int and float parameters can be calibrated on the fly during decoding. These calibrators are defined on the data
 encoding XTCE element and can transform the raw encoded value to a calibrated value, e.g. via a polynomial. Calibrated
 values are always floats, even if the raw encoded value is an integer.
 
 For example,
+
 ```xml
 <xtce:IntegerDataEncoding xmlns:xtce="http://www.omg.org/space/xtce" sizeInBits="16" encoding="unsigned">
     <xtce:DefaultCalibrator>
@@ -170,10 +205,12 @@ For example,
     </xtce:DefaultCalibrator>
 </xtce:IntegerDataEncoding>
 ```
+
 in this encoding definition, the raw encoded value is a 16bit unsigned integer that is calibrated by a polynomial
 to produce a calibrated value, which is always a float. In this case `value = .012155 * raw_value + 2.54`.
 
 ### String Parsing
+
 Strings are encoded as a buffer of determined size (either fixed length or dynamic based on previous parameter). The
 raw buffer includes any additional string data such as a leading size integer or a termination character. If a
 leading size or termination character is specified in the XTCE definition, the parsed string value is returned as
@@ -181,6 +218,7 @@ the value of the parameter and the buffer is returned as the `raw_value`. If no 
 is specified, the value and `raw_value` are the same and both refer to the raw string buffer.
 
 For example,
+
 ```xml
 <xtce:StringDataEncoding xmlns:xtce="http://www.omg.org/space/xtce">
     <xtce:Variable maxSizeInBits="32">
@@ -192,6 +230,7 @@ For example,
     </xtce:Variable>
 </xtce:StringDataEncoding>
 ```
+
 in this encoding definition, the size of the raw string buffer (number of bytes in the packet) is defined by a
 parameter named `STR_SIZE`. The value stored in `STR_SIZE` is given in number of bytes so it is multiplied by 8 and a
 constant base length of 27 bits is added to the final buffer size. So if `STR_SIZE` encodes the value 4, the raw string
@@ -206,6 +245,7 @@ of the leading size. If the leading size uint3 represents the integer 4, the `va
 that is made of the first 4 bytes of data in the raw buffer following the leading size.
 
 Termination characters work similarly.
+
 ```xml
 <xtce:StringDataEncoding encoding="UTF-16BE" xmlns:xtce="http://www.omg.org/space/xtce">
     <xtce:SizeInBits>
@@ -216,6 +256,7 @@ Termination characters work similarly.
     </xtce:SizeInBits>
 </xtce:StringDataEncoding>
 ```
+
 In this case, the raw buffer is a fixed length (32bits).
 The parsed `StrParameter.raw_value` will be the full string buffer, including the termination
 character and any additional following bytes. The `value` of the parameter will be a `str` based on all the encoded
@@ -223,6 +264,7 @@ bytes preceding the termination character. In this case, the raw string buffer _
 bytes since a termination character is always an integer number of bytes, so no padding of the raw value is required.
 
 ### Enumerated Lookups
+
 Enums are defined by lookup tables in the XTCE, which are converted to dictionaries internally. Once the raw value
 from the data encoding is parsed, a lookup is made to the lookup table and the final string label is returned.
 Note that the final label from enumerated lookups is always a string. The raw value used in the lookup table is
@@ -234,6 +276,7 @@ Calibrated numeric values cannot be used for enum lookups from numeric encodings
 only raw string buffers may be used for lookups (not fully parsed strings).
 
 For example,
+
 ```xml
 <xtce:EnumeratedParameterType xmlns:xtce="http://www.omg.org/space/xtce" name="TEST_ENUM_Type">
     <xtce:UnitSet/>
@@ -244,10 +287,12 @@ For example,
     </xtce:EnumerationList>
 </xtce:EnumeratedParameterType>
 ```
+
 the encoded value (`raw_value`) is a uint8 integer but the value returned for an enumerated parameter type will
 be a `StrParameter` containing the label string associated with the integer value.
 
 ### Boolean Evaluation
+
 Booleans behave nicely for integers and floats where zero is False and everything else is True. For string and binary
 encoded values, the only falsy value is an empty string, which is kind of silly to encode. XTCE is not specific on the
 interpretation of string and binary encoded values for boolean parameters and there is no generally accepted
@@ -256,6 +301,7 @@ interpretation, so we default to Python's `bool`, which interprets any non-empty
 Only raw values may be used for boolean evaluation. Calibrated values are not considered.
 
 For example,
+
 ```xml
 <xtce:BooleanParameterType xmlns:xtce="http://www.omg.org/space/xtce" name="TEST_PARAM_Type">
     <xtce:UnitSet>
@@ -264,11 +310,13 @@ For example,
     <xtce:IntegerDataEncoding encoding="unsigned" sizeInBits="1"/>
 </xtce:BooleanParameterType>
 ```
+
 the encoded value (`raw_value`) is a single bit interpreted as an integer but the value returned for a boolean
 parameter type will be a `BoolParameter`, evaluated over the encoded integer value. `False` if the integer is 0,
 `True` otherwise.
 
 ## Parsing from a Socket
+
 The input data object to `XtcePacketDefinition.packet_generator` need only be a binary filelike object from which
 bytes can be read. This means the packet generator is not limited to parsing data from files! In an effort to support
 development of quicklook type tools, we provide an example of parsing data streaming through a socket in
@@ -283,11 +331,13 @@ You'll notice that the example ends with a timeout error. This timeout can be co
 connection with `receiver.settimeout(timeout_seconds)`.
 
 ## Variable Length Packet Fields of Explicit Length
+
 Flight software engineers often need to downlink data (usually binary blobs) of variable length. The length of these
 fields is often specified in a _previous_ telemetry point in the same packet, and you have to fetch
 the length by referencing that previous field.
 
 ### Explicit Variable Length Example
+
 Suppose the variable length field is called `SCI_DATA` and is a binary blob (e.g. of compressed data).
 The length of this field is specified earlier in the packet in a field called `SCI_DATA_BYTELEN`, specified in
 number of bytes. To define the type for `SCI_DATA` in XTCE, you could use the following (snippet):
@@ -309,11 +359,13 @@ This tells the parser that the size in bits of data type `SCI_DATA_Type` (the ty
 encoded in the parameter `SCI_DATA_BYTELEN`, multiplied by 8 (to convert number of bytes to number of bits).
 
 ## Variable Length Packet Fields of Implicit Length
+
 In some circumstances, flight software teams define a packet field that simply fills up the "remaining space" in the
 packet. The length of this field is usually implicit but can be computed by subtracting the combined length of all
 fixed length fields in the packet from the total length of the packet specified in the CCSDS header.
 
 The `PKT_LEN` field is the length of the packet user data, in bytes. This field:
+
 - counts from zero
 - does not include the header data (always 6 bytes)
 
@@ -322,19 +374,23 @@ Thus, you can determine the length of your field dynamically from the packet len
 $$len_{var} = 8 \times (len_{packet} + 1) - \sum_n len_{fixed,n}$$
 
 where
+
 - $len_{var}$ is the length, in bits, of the variable length field
 - $len_{packet}$ is the packet user data length in bytes (from the CCSDS header)
 - $\sum_n len_{fixed,n}$ is the combined length of all fixed length fields in the packet user data
 
 There are some limitations to this. If your FSW team is violating these limitations, they are making your life
 extremely difficult, and you have my condolences.
+
 - You can only have a _single_ "remaining packet length" field in a given packet definition. Encoding more than one
   such field makes it impossible to determine the length of the fields.
 - All other fields in the packet _must_ be fixed length. There is no way that I know of in XTCE to calculate a
   dynamic length that is an arbitrary function of multiple previous length specifier fields.
 
 ### Implicit Variable Length Example
+
 Packet Definition:
+
 ```text
 "VERSION" : 3 bits
 "TYPE" : 1 bits
@@ -433,6 +489,7 @@ else:
 ```
 
 ## Troubleshooting Packet Parsing
+
 Parsing binary packets is error-prone and getting the XTCE definition correct can be a challenge at first.
 Most flight software teams can export XTCE from their command and telemetry database but these exports usually require
 some fine-tuning.
@@ -440,7 +497,7 @@ some fine-tuning.
 `UnrecognizedPacketError`s are raised during parsing of an individual packet when either:
 
 - a) multiple child containers are valid inheritors of the current sequence container based on
-   restriction criteria evaluated against the data parsed so far
+  restriction criteria evaluated against the data parsed so far
 - b) no child containers are valid inheritors of the current sequence container based on
   restriction criteria evaluated against the data parsed so far
   and the current container is abstract
@@ -452,13 +509,16 @@ are yielded from the generator with a `partial_data` attribute for user examinat
 see how far it got through a container inheritance structure before failing to determine the rest of the structure.
 
 ## Common Issues and Solutions
+
 ### Parser Generator Completes without Yielding a Packet
+
 This can occur if your data file contains only packets that do not match any packet definitions in your XTCE document
 and `yield_unrecognized_packet_errors=False` (the default). This could mean that your data file actually contains only
 APIDs that are not covered in your packet definition, but usually it means you have incorrectly defined
 restriction criteria for SequenceContainer inheritance.
 
 For example a restriction criteria element that requires an APID which does not exist in the data.
+
 ```xml
 <xtce:RestrictionCriteria>
     <xtce:Comparison parameterRef="PKT_APID" value="-99" useCalibratedValue="false"/>
@@ -466,11 +526,13 @@ For example a restriction criteria element that requires an APID which does not 
 ```
 
 ### Only Packet Headers are Parsed
+
 If you observe that only packet headers are being parsed but no exceptions are being raised (you may be seeing a
 lot of length mismatch warnings if you have logging set up), it likely means that
 you have forgotten to set `abstract="true"` on your non-concrete sequence container elements.
 
 For example
+
 ```xml
 <xtce:SequenceContainer name="CCSDSPacket">
     <xtce:LongDescription>Super-container for telemetry and command packets</xtce:LongDescription>
@@ -480,8 +542,10 @@ For example
     </xtce:EntryList>
 </xtce:SequenceContainer>
 ```
+
 will parse as a complete packet, containing only `VERSION` and `TYPE` instead of searching for inheriting sequence
 containers. To define the container as abstract, change the first element opening tag to
+
 ```xml
 <xtce:SequenceContainer name="CCSDSPacket" abstract="true">
 ...contents
@@ -489,20 +553,21 @@ containers. To define the container as abstract, change the first element openin
 ```
 
 ## Optimizing for Performance
+
 The logic evaluated during packet parsing is largely reflective of the XTCE configuration being used
 to define packet structures. The more logic in the XTCE, the more logic must be evaluated during
 parsing. Below are some common ways to reduce complexity and speed up parsing:
 
 1. **Remove `RestrictionCriteria` Elements:** If your packet stream is a single packet structure,
-    there is no reason to require the evaluation of a restriction criteria for each packet.
+   there is no reason to require the evaluation of a restriction criteria for each packet.
 2. **Remove Unnecessary Packet Definitions:** Even in a packet stream with multiple packet formats, if you only
-    care about one packet type, you can remove the definitions for the other. By default, the packet `Parser` will
-    catch unrecognized packet errors and skip to the next packet. This skips the parsing of packets
-    for which a valid definition cannot be determined.
+   care about one packet type, you can remove the definitions for the other. By default, the packet `Parser` will
+   catch unrecognized packet errors and skip to the next packet. This skips the parsing of packets
+   for which a valid definition cannot be determined.
 3. **Reduce Container Inheritance:** A flat container definition structure will evaluate restriction criteria
-    faster than a nested structure. Each instance of nesting requires an additional `MatchCriteria.evaluate()`
-    call for each packet being parsed.
+   faster than a nested structure. Each instance of nesting requires an additional `MatchCriteria.evaluate()`
+   call for each packet being parsed.
 4. **Reduce Complex Items:** Parameter type definitions that contain calibrators or complex string parsing
-    (especially variable length termination character defined strings) add significant evaluation logic to
-    the parsing of each parameter, as does any parameter type that is variable length.
-    Removing them can speed up parsing.
+   (especially variable length termination character defined strings) add significant evaluation logic to
+   the parsing of each parameter, as does any parameter type that is variable length.
+   Removing them can speed up parsing.
