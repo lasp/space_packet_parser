@@ -294,13 +294,20 @@ def test_string_data_encoding_validation(args, kwargs, expected_error, expected_
                 ],
             ),
         ),
+        # Error case: invalid sizeInBits value
+        (
+            f"""
+<xtce:IntegerDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}" sizeInBits="invalid" encoding="unsigned"/>
+""",
+            ValueError("invalid literal for int()"),
+        ),
     ],
 )
 def test_integer_data_encoding(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an IntegerDataEncoding from an XML string"""
     element = ElementTree.fromstring(xml_string, parser=xtce_parser)
 
-    if isinstance(expectation, Exception):  # pragma: no cover
+    if isinstance(expectation, Exception):
         with pytest.raises(type(expectation)):
             encodings.IntegerDataEncoding.from_xml(element)
     else:
@@ -520,13 +527,26 @@ def test_float_data_encoding_validation(args, kwargs, expected_error, expected_e
                 ]
             ),
         ),
+        # Error case: invalid fixed size value
+        (
+            f"""
+<xtce:BinaryDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:SizeInBits>
+        <xtce:Fixed>
+            <xtce:FixedValue>invalid</xtce:FixedValue>
+        </xtce:Fixed>
+    </xtce:SizeInBits>
+</xtce:BinaryDataEncoding>
+""",
+            ValueError("invalid literal for int()"),
+        ),
     ],
 )
 def test_binary_data_encoding(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an BinaryDataEncoding from an XML string"""
     element = ElementTree.fromstring(xml_string, parser=xtce_parser)
 
-    if isinstance(expectation, Exception):  # pragma: no cover
+    if isinstance(expectation, Exception):
         with pytest.raises(type(expectation)):
             encodings.BinaryDataEncoding.from_xml(element)
     else:

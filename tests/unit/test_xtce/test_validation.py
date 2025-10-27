@@ -16,7 +16,7 @@ def mock_schema_download(test_data_dir):
     """Mock urlopen to return local XSD content instead of downloading from network."""
     local_xsd_path = test_data_dir / "SpaceSystem.xsd"
 
-    def mock_urlopen(url, timeout=None):  # pragma: no cover
+    def mock_urlopen(url, timeout=None):
         """Mock urlopen that returns local XSD content."""
 
         class MockResponse:

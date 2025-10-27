@@ -535,13 +535,13 @@ def test_uniqueness_of_parsed_xtce_objects():
     def _flatten_container(container: containers.SequenceContainer):
         for entry in container.entry_list:
             if isinstance(entry, containers.SequenceContainer):
-                if id(entry) not in def_cont_ids:  # pragma: no cover
+                if id(entry) not in def_cont_ids:
                     raise AssertionError(f"{entry.name} object not in def.containers")
                 _flatten_container(entry)
             else:
-                if id(entry.parameter_type) not in def_param_type_ids:  # pragma: no cover
+                if id(entry.parameter_type) not in def_param_type_ids:
                     raise AssertionError(f"{entry.parameter_type.name} not in definition.parameter_types")
-                if id(entry) not in def_param_ids:  # pragma: no cover
+                if id(entry) not in def_param_ids:
                     raise AssertionError(f"{entry.name} not in definition.parameters")
 
     for sc in xdef.containers.values():

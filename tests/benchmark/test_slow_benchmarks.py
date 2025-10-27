@@ -37,7 +37,7 @@ def test_benchmark_simple_packet_parsing(benchmark, jpss_test_data_dir):
             ccsds_generator = generators.ccsds_generator(packet_fh)
             return (), {"generator": ccsds_generator}  # args, kwargs for benchmarked function
 
-        def _make_packet_list(generator):  # pragma: no cover
+        def _make_packet_list(generator):
             """Function wrapper for list that takes the generator as a kwarg"""
             return [packet_definition.parse_bytes(binary_data) for binary_data in generator]
 
@@ -46,6 +46,12 @@ def test_benchmark_simple_packet_parsing(benchmark, jpss_test_data_dir):
 
         # Make sure the result actually makes sense
         assert len(packet_list) == 7200
+        
+        # Also verify the helper functions work correctly for coverage
+        packet_fh.seek(0)
+        test_gen = generators.ccsds_generator(packet_fh)
+        test_list = _make_packet_list(test_gen)
+        assert len(test_list) == 7200
     finally:
         # Ensure filehandler is closed
         packet_fh.close()
@@ -70,7 +76,7 @@ def test_benchmark_complex_packet_parsing(benchmark, idex_test_data_dir):
             ccsds_generator = generators.ccsds_generator(packet_fh, show_progress=True)
             return (), {"generator": ccsds_generator}  # args, kwargs for benchmarked function
 
-        def _make_packet_list(generator):  # pragma: no cover
+        def _make_packet_list(generator):
             """Function wrapper for list that takes the generator as a kwarg"""
             return [packet_definition.parse_bytes(binary_data) for binary_data in generator]
 
@@ -79,6 +85,12 @@ def test_benchmark_complex_packet_parsing(benchmark, idex_test_data_dir):
 
         # Make sure the result actually makes sense
         assert len(packet_list) == 78
+        
+        # Also verify the helper functions work correctly for coverage
+        packet_fh.seek(0)
+        test_gen = generators.ccsds_generator(packet_fh, show_progress=True)
+        test_list = _make_packet_list(test_gen)
+        assert len(test_list) == 78
     finally:
         # Ensure filehandler is closed
         packet_fh.close()

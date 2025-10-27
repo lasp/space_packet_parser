@@ -21,7 +21,7 @@ def test_attr_comparable():
             """Properties are compared"""
             return 10 * self.public
 
-        def ignored(self, x):  # pragma: no cover
+        def ignored(self, x):
             """Methods are ignored"""
             return 2 * x
 
@@ -32,6 +32,8 @@ def test_attr_comparable():
     a.public += 1  # Change an attribute that _does_ get compared
     with pytest.raises(AssertionError):
         assert a == b
+    # Test that the ignored method works (even though it's ignored in comparison)
+    assert a.ignored(5) == 10
 
 
 @pytest.mark.parametrize(

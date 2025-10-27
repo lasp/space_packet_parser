@@ -394,12 +394,22 @@ def test_condition_validity_check(args, kwargs, expected_error, expected_error_m
             ),
             True,
         ),
+        # Error case: invalid comparison value
+        (
+            f"""
+<xtce:BooleanExpression xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:Condition parameterRef="P" value="invalid" />
+</xtce:BooleanExpression>
+""",
+            SpacePacket(**{"P": common.IntParameter(100, 4)}),
+            ValueError("invalid literal for int()"),
+        ),
     ],
 )
 def test_boolean_expression(elmaker, xtce_parser, xml_string, test_parsed_data, expected_result):
     """Test BooleanExpression object"""
     element = ElementTree.fromstring(xml_string, parser=xtce_parser)
-    if isinstance(expected_result, Exception):  # pragma: no cover
+    if isinstance(expected_result, Exception):
         with pytest.raises(type(expected_result)):
             comparisons.BooleanExpression.from_xml(element)
     else:

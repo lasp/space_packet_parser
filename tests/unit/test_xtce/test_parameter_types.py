@@ -62,13 +62,28 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, encodings, par
                 encoding=encodings.StringDataEncoding(fixed_raw_length=40, termination_character="00"),
             ),
         ),
+        # Error case: missing name attribute
+        (
+            f"""
+<xtce:StringParameterType xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:StringDataEncoding>
+        <xtce:SizeInBits>
+            <xtce:Fixed>
+                <xtce:FixedValue>40</xtce:FixedValue>
+            </xtce:Fixed>
+        </xtce:SizeInBits>
+    </xtce:StringDataEncoding>
+</xtce:StringParameterType>
+""",
+            ValueError("Parameter Type name attribute is required"),
+        ),
     ],
 )
 def test_string_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an StringParameterType from an XML string"""
     element = ElementTree.fromstring(xml_string, xtce_parser)
 
-    if isinstance(expectation, Exception):  # pragma: no cover
+    if isinstance(expectation, Exception):
         with pytest.raises(type(expectation)):
             parameter_types.StringParameterType.from_xml(element)
     else:
@@ -168,13 +183,22 @@ def test_string_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
                 ),
             ),
         ),
+        # Error case: missing name attribute
+        (
+            f"""
+<xtce:IntegerParameterType xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
+</xtce:IntegerParameterType>
+""",
+            ValueError("Parameter Type name attribute is required"),
+        ),
     ],
 )
 def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an IntegerParameterType from an XML string"""
     element = ElementTree.fromstring(xml_string, xtce_parser)
 
-    if isinstance(expectation, Exception):  # pragma: no cover
+    if isinstance(expectation, Exception):
         with pytest.raises(type(expectation)):
             parameter_types.IntegerParameterType.from_xml(element)
     else:
@@ -289,13 +313,22 @@ def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectati
                 ),
             ),
         ),
+        # Error case: missing name attribute
+        (
+            f"""
+<xtce:FloatParameterType xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
+</xtce:FloatParameterType>
+""",
+            ValueError("Parameter Type name attribute is required"),
+        ),
     ],
 )
 def test_float_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an FloatParameterType from an XML string"""
     element = ElementTree.fromstring(xml_string, xtce_parser)
 
-    if isinstance(expectation, Exception):  # pragma: no cover
+    if isinstance(expectation, Exception):
         with pytest.raises(type(expectation)):
             parameter_types.FloatParameterType.from_xml(element)
     else:
@@ -420,13 +453,25 @@ def test_float_parameter_type(elmaker, xtce_parser, xml_string: str, expectation
                 },
             ),
         ),
+        # Error case: missing name attribute
+        (
+            f"""
+<xtce:EnumeratedParameterType xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
+    <xtce:EnumerationList>
+        <xtce:Enumeration label="TEST" value="1"/>
+    </xtce:EnumerationList>
+</xtce:EnumeratedParameterType>
+""",
+            ValueError("Parameter Type name attribute is required"),
+        ),
     ],
 )
 def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an EnumeratedParameterType from an XML string"""
     element = ElementTree.fromstring(xml_string, xtce_parser)
 
-    if isinstance(expectation, Exception):  # pragma: no cover
+    if isinstance(expectation, Exception):
         with pytest.raises(type(expectation)):
             parameter_types.EnumeratedParameterType.from_xml(element)
     else:
@@ -517,13 +562,28 @@ def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expect
                 encoding=encodings.BinaryDataEncoding(size_reference_parameter="SizeFromThisParameter"),
             ),
         ),
+        # Error case: missing name attribute
+        (
+            f"""
+<xtce:BinaryParameterType xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:BinaryDataEncoding>
+        <xtce:SizeInBits>
+            <xtce:Fixed>
+                <xtce:FixedValue>8</xtce:FixedValue>
+            </xtce:Fixed>
+        </xtce:SizeInBits>
+    </xtce:BinaryDataEncoding>
+</xtce:BinaryParameterType>
+""",
+            ValueError("Parameter Type name attribute is required"),
+        ),
     ],
 )
 def test_binary_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing an BinaryParameterType from an XML string"""
     element = ElementTree.fromstring(xml_string, xtce_parser)
 
-    if isinstance(expectation, Exception):  # pragma: no cover
+    if isinstance(expectation, Exception):
         with pytest.raises(type(expectation)):
             parameter_types.BinaryParameterType.from_xml(element)
     else:
@@ -594,13 +654,22 @@ def test_binary_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
                 encoding=encodings.StringDataEncoding(fixed_raw_length=40, termination_character="00"),
             ),
         ),
+        # Error case: missing name attribute
+        (
+            f"""
+<xtce:BooleanParameterType xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:IntegerDataEncoding sizeInBits="1" encoding="unsigned"/>
+</xtce:BooleanParameterType>
+""",
+            ValueError("Parameter Type name attribute is required"),
+        ),
     ],
 )
 def test_boolean_parameter_type(elmaker, xtce_parser, xml_string, expectation):
     """Test parsing a BooleanParameterType from an XML string"""
     element = ElementTree.fromstring(xml_string, xtce_parser)
 
-    if isinstance(expectation, Exception):  # pragma: no cover
+    if isinstance(expectation, Exception):
         with pytest.raises(type(expectation)):
             parameter_types.BooleanParameterType.from_xml(element)
     else:
@@ -732,13 +801,24 @@ def test_boolean_parameter_type(elmaker, xtce_parser, xml_string, expectation):
                 ),
             ),
         ),
+        # Error case: missing name attribute
+        (
+            f"""
+<xtce:AbsoluteTimeParameterType xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:Encoding offset="0" units="s">
+        <xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned"/>
+    </xtce:Encoding>
+</xtce:AbsoluteTimeParameterType>
+""",
+            ValueError("Parameter Type name attribute is required"),
+        ),
     ],
 )
 def test_absolute_time_parameter_type(elmaker, xtce_parser, xml_string, expectation):
     """Test parsing an AbsoluteTimeParameterType from an XML string."""
     element = ElementTree.fromstring(xml_string, xtce_parser)
 
-    if isinstance(expectation, Exception):  # pragma: no cover
+    if isinstance(expectation, Exception):
         with pytest.raises(type(expectation)):
             parameter_types.AbsoluteTimeParameterType.from_xml(element)
     else:

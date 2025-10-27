@@ -87,11 +87,11 @@ def test_suda_xtce_packet_parsing(suda_test_data_dir):
                                 data[scitype] += p_next["IDX__SCIFETCHRAW"].raw_value
                             else:
                                 # Otherwise check if we are at the end of the event (next scitype==1)
-                                if next_scitype == 1:  # pragma: no cover
+                                if next_scitype == 1:
                                     break
                                 scitype = next_scitype
                                 data[scitype] = p_next["IDX__SCIFETCHRAW"].raw_value
-                        p = p_next  # pragma: no cover
+                        p = p_next
                         # If you have more than one event in a file (i.e. scitype 1, 2, 4, 8, 16, 32, 64),
                         # this loop would continue.
                         # For this example, we only have one full event so we have already hit a StopIteration by

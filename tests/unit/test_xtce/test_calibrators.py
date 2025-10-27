@@ -327,13 +327,22 @@ def test_context_calibrator_calibrate(context_calibrator, parsed_data, parsed_va
                 ],
             ),
         ),
+        # Error case: invalid spline point value
+        (
+            f"""
+<xtce:SplineCalibrator xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:SplinePoint raw="invalid" calibrated="10"/>
+</xtce:SplineCalibrator>
+""",
+            ValueError("could not convert string to float"),
+        ),
     ],
 )
 def test_spline_calibrator(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing a StringDataEncoding from an XML string"""
     element = ElementTree.fromstring(xml_string, parser=xtce_parser)
 
-    if isinstance(expectation, Exception):  # pragma: no cover
+    if isinstance(expectation, Exception):
         with pytest.raises(type(expectation)):
             calibrators.SplineCalibrator.from_xml(element)
     else:
@@ -375,7 +384,7 @@ def test_spline_calibrator_calibrate(xq, order, extrapolate, expectation):
     ]
     calibrator = calibrators.SplineCalibrator(spline_points, order=order, extrapolate=extrapolate)
 
-    if isinstance(expectation, Exception):  # pragma: no cover
+    if isinstance(expectation, Exception):
         with pytest.raises(type(expectation)):
             calibrator.calibrate(xq)
     else:
@@ -406,13 +415,22 @@ def test_spline_calibrator_calibrate(xq, order, extrapolate, expectation):
                 ]
             ),
         ),
+        # Error case: invalid coefficient value
+        (
+            f"""
+<xtce:PolynomialCalibrator xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:Term exponent="0" coefficient="invalid"/>
+</xtce:PolynomialCalibrator>
+""",
+            ValueError("could not convert string to float"),
+        ),
     ],
 )
 def test_polynomial_calibrator(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing a StringDataEncoding from an XML string"""
     element = ElementTree.fromstring(xml_string, parser=xtce_parser)
 
-    if isinstance(expectation, Exception):  # pragma: no cover
+    if isinstance(expectation, Exception):
         with pytest.raises(type(expectation)):
             calibrators.PolynomialCalibrator.from_xml(element)
     else:
@@ -439,7 +457,7 @@ def test_polynomial_calibrator_calibrate(xq, expectation):
     ]
     calibrator = calibrators.PolynomialCalibrator(polynomial_coefficients)
 
-    if isinstance(expectation, Exception):  # pragma: no cover
+    if isinstance(expectation, Exception):
         with pytest.raises(type(expectation)):
             calibrator.calibrate(xq)
     else:
