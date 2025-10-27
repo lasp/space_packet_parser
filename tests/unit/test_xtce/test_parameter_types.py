@@ -68,7 +68,7 @@ def test_string_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
     """Test parsing an StringParameterType from an XML string"""
     element = ElementTree.fromstring(xml_string, xtce_parser)
 
-    if isinstance(expectation, Exception):
+    if isinstance(expectation, Exception):  # pragma: no cover
         with pytest.raises(type(expectation)):
             parameter_types.StringParameterType.from_xml(element)
     else:
@@ -174,7 +174,7 @@ def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectati
     """Test parsing an IntegerParameterType from an XML string"""
     element = ElementTree.fromstring(xml_string, xtce_parser)
 
-    if isinstance(expectation, Exception):
+    if isinstance(expectation, Exception):  # pragma: no cover
         with pytest.raises(type(expectation)):
             parameter_types.IntegerParameterType.from_xml(element)
     else:
@@ -295,7 +295,7 @@ def test_float_parameter_type(elmaker, xtce_parser, xml_string: str, expectation
     """Test parsing an FloatParameterType from an XML string"""
     element = ElementTree.fromstring(xml_string, xtce_parser)
 
-    if isinstance(expectation, Exception):
+    if isinstance(expectation, Exception):  # pragma: no cover
         with pytest.raises(type(expectation)):
             parameter_types.FloatParameterType.from_xml(element)
     else:
@@ -426,7 +426,7 @@ def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expect
     """Test parsing an EnumeratedParameterType from an XML string"""
     element = ElementTree.fromstring(xml_string, xtce_parser)
 
-    if isinstance(expectation, Exception):
+    if isinstance(expectation, Exception):  # pragma: no cover
         with pytest.raises(type(expectation)):
             parameter_types.EnumeratedParameterType.from_xml(element)
     else:
@@ -523,7 +523,7 @@ def test_binary_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
     """Test parsing an BinaryParameterType from an XML string"""
     element = ElementTree.fromstring(xml_string, xtce_parser)
 
-    if isinstance(expectation, Exception):
+    if isinstance(expectation, Exception):  # pragma: no cover
         with pytest.raises(type(expectation)):
             parameter_types.BinaryParameterType.from_xml(element)
     else:
@@ -600,7 +600,7 @@ def test_boolean_parameter_type(elmaker, xtce_parser, xml_string, expectation):
     """Test parsing a BooleanParameterType from an XML string"""
     element = ElementTree.fromstring(xml_string, xtce_parser)
 
-    if isinstance(expectation, Exception):
+    if isinstance(expectation, Exception):  # pragma: no cover
         with pytest.raises(type(expectation)):
             parameter_types.BooleanParameterType.from_xml(element)
     else:
@@ -738,7 +738,7 @@ def test_absolute_time_parameter_type(elmaker, xtce_parser, xml_string, expectat
     """Test parsing an AbsoluteTimeParameterType from an XML string."""
     element = ElementTree.fromstring(xml_string, xtce_parser)
 
-    if isinstance(expectation, Exception):
+    if isinstance(expectation, Exception):  # pragma: no cover
         with pytest.raises(type(expectation)):
             parameter_types.AbsoluteTimeParameterType.from_xml(element)
     else:

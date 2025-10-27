@@ -399,7 +399,7 @@ def test_condition_validity_check(args, kwargs, expected_error, expected_error_m
 def test_boolean_expression(elmaker, xtce_parser, xml_string, test_parsed_data, expected_result):
     """Test BooleanExpression object"""
     element = ElementTree.fromstring(xml_string, parser=xtce_parser)
-    if isinstance(expected_result, Exception):
+    if isinstance(expected_result, Exception):  # pragma: no cover
         with pytest.raises(type(expected_result)):
             comparisons.BooleanExpression.from_xml(element)
     else:

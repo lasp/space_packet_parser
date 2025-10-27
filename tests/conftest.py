@@ -48,12 +48,6 @@ def jpss_test_data_dir(test_data_dir):
 
 
 @pytest.fixture
-def clarreo_test_data_dir(test_data_dir):
-    """CLARREO test data directory"""
-    return test_data_dir / "clarreo"
-
-
-@pytest.fixture
 def suda_test_data_dir(test_data_dir):
     """SUDA test data directory"""
     return test_data_dir / "suda"

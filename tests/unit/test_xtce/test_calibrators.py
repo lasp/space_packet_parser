@@ -333,7 +333,7 @@ def test_spline_calibrator(elmaker, xtce_parser, xml_string: str, expectation):
     """Test parsing a StringDataEncoding from an XML string"""
     element = ElementTree.fromstring(xml_string, parser=xtce_parser)
 
-    if isinstance(expectation, Exception):
+    if isinstance(expectation, Exception):  # pragma: no cover
         with pytest.raises(type(expectation)):
             calibrators.SplineCalibrator.from_xml(element)
     else:
@@ -375,7 +375,7 @@ def test_spline_calibrator_calibrate(xq, order, extrapolate, expectation):
     ]
     calibrator = calibrators.SplineCalibrator(spline_points, order=order, extrapolate=extrapolate)
 
-    if isinstance(expectation, Exception):
+    if isinstance(expectation, Exception):  # pragma: no cover
         with pytest.raises(type(expectation)):
             calibrator.calibrate(xq)
     else:
@@ -412,7 +412,7 @@ def test_polynomial_calibrator(elmaker, xtce_parser, xml_string: str, expectatio
     """Test parsing a StringDataEncoding from an XML string"""
     element = ElementTree.fromstring(xml_string, parser=xtce_parser)
 
-    if isinstance(expectation, Exception):
+    if isinstance(expectation, Exception):  # pragma: no cover
         with pytest.raises(type(expectation)):
             calibrators.PolynomialCalibrator.from_xml(element)
     else:
@@ -439,7 +439,7 @@ def test_polynomial_calibrator_calibrate(xq, expectation):
     ]
     calibrator = calibrators.PolynomialCalibrator(polynomial_coefficients)
 
-    if isinstance(expectation, Exception):
+    if isinstance(expectation, Exception):  # pragma: no cover
         with pytest.raises(type(expectation)):
             calibrator.calibrate(xq)
     else:

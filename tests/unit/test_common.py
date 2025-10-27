@@ -21,7 +21,7 @@ def test_attr_comparable():
             """Properties are compared"""
             return 10 * self.public
 
-        def ignored(self, x):
+        def ignored(self, x):  # pragma: no cover
             """Methods are ignored"""
             return 2 * x
 

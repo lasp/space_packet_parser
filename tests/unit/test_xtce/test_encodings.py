@@ -300,7 +300,7 @@ def test_integer_data_encoding(elmaker, xtce_parser, xml_string: str, expectatio
     """Test parsing an IntegerDataEncoding from an XML string"""
     element = ElementTree.fromstring(xml_string, parser=xtce_parser)
 
-    if isinstance(expectation, Exception):
+    if isinstance(expectation, Exception):  # pragma: no cover
         with pytest.raises(type(expectation)):
             encodings.IntegerDataEncoding.from_xml(element)
     else:
@@ -526,7 +526,7 @@ def test_binary_data_encoding(elmaker, xtce_parser, xml_string: str, expectation
     """Test parsing an BinaryDataEncoding from an XML string"""
     element = ElementTree.fromstring(xml_string, parser=xtce_parser)
 
-    if isinstance(expectation, Exception):
+    if isinstance(expectation, Exception):  # pragma: no cover
         with pytest.raises(type(expectation)):
             encodings.BinaryDataEncoding.from_xml(element)
     else:

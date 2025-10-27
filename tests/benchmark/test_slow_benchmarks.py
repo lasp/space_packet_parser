@@ -37,7 +37,7 @@ def test_benchmark_simple_packet_parsing(benchmark, jpss_test_data_dir):
             ccsds_generator = generators.ccsds_generator(packet_fh)
             return (), {"generator": ccsds_generator}  # args, kwargs for benchmarked function
 
-        def _make_packet_list(generator):
+        def _make_packet_list(generator):  # pragma: no cover
             """Function wrapper for list that takes the generator as a kwarg"""
             return [packet_definition.parse_bytes(binary_data) for binary_data in generator]
 
@@ -70,7 +70,7 @@ def test_benchmark_complex_packet_parsing(benchmark, idex_test_data_dir):
             ccsds_generator = generators.ccsds_generator(packet_fh, show_progress=True)
             return (), {"generator": ccsds_generator}  # args, kwargs for benchmarked function
 
-        def _make_packet_list(generator):
+        def _make_packet_list(generator):  # pragma: no cover
             """Function wrapper for list that takes the generator as a kwarg"""
             return [packet_definition.parse_bytes(binary_data) for binary_data in generator]
 
