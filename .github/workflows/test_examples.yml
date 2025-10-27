@@ -9,6 +9,8 @@ on:
 jobs:
   test-examples:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Minimal permissions required for checkout
     defaults:
       run:
         shell: bash
