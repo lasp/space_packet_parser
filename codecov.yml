@@ -14,7 +14,7 @@ coverage:
         target: 99%  # Very high threshold for test files
         threshold: 1%  # Allow only 1% drop
         paths:
-          - "tests/**"  # Adjust this path to match your test directory
+          - "tests/**"  # Coverage for all test files
         if_no_uploads: error
         only_pulls: false
     patch:
