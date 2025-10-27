@@ -36,10 +36,6 @@ jobs:
           cd examples
           for example in *.py; do
             echo "Testing $example..."
-            python "$example"
-            if [ $? -ne 0 ]; then
-              echo "Example $example failed"
-              exit 1
-            fi
+            python "$example" || { echo "Example $example failed"; exit 1; }
             echo "Example $example passed"
           done
