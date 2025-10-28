@@ -1,7 +1,6 @@
 name: Test Examples
 on:
   pull_request:  # Run on all PR changes
-    types: [opened, synchronize, reopened]
   push:  # Run on all changes to main (includes PR merges)
     branches:
       - main
@@ -17,9 +16,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-        with:
-          # We need the full history to generate the proper version number
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v6
