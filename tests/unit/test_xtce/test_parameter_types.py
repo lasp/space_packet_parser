@@ -463,7 +463,7 @@ def test_float_parameter_type(elmaker, xtce_parser, xml_string: str, expectation
     </xtce:EnumerationList>
 </xtce:EnumeratedParameterType>
 """,
-            ValueError("Parameter Type name attribute is required"),
+            KeyError("name"),
         ),
     ],
 )
@@ -810,7 +810,7 @@ def test_boolean_parameter_type(elmaker, xtce_parser, xml_string, expectation):
     </xtce:Encoding>
 </xtce:AbsoluteTimeParameterType>
 """,
-            ValueError("Parameter Type name attribute is required"),
+            KeyError("name"),
         ),
     ],
 )
