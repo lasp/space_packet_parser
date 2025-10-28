@@ -46,7 +46,7 @@ def test_benchmark_simple_packet_parsing(benchmark, jpss_test_data_dir):
 
         # Make sure the result actually makes sense
         assert len(packet_list) == 7200
-        
+
         # Also verify the helper functions work correctly for coverage
         packet_fh.seek(0)
         test_gen = generators.ccsds_generator(packet_fh)
@@ -85,7 +85,7 @@ def test_benchmark_complex_packet_parsing(benchmark, idex_test_data_dir):
 
         # Make sure the result actually makes sense
         assert len(packet_list) == 78
-        
+
         # Also verify the helper functions work correctly for coverage
         packet_fh.seek(0)
         test_gen = generators.ccsds_generator(packet_fh, show_progress=True)
