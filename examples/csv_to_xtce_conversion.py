@@ -159,7 +159,7 @@ def convert_ccsdspy_to_xtce(csv_path: Path) -> definitions.XtcePacketDefinition:
 
         packet_parameters.append(parameter)
 
-    sequence_containers = {containers.SequenceContainer(name="CCSDSPacket", entry_list=packet_parameters)}
+    sequence_containers = [containers.SequenceContainer(name="CCSDSPacket", entry_list=packet_parameters)]
 
     return definitions.XtcePacketDefinition(sequence_containers, root_container_name="CCSDSPacket")
 
