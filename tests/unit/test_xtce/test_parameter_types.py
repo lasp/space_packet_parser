@@ -62,6 +62,21 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, encodings, par
                 encoding=encodings.StringDataEncoding(fixed_raw_length=40, termination_character="00"),
             ),
         ),
+        # Error case: missing name attribute
+        (
+            f"""
+<xtce:StringParameterType xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:StringDataEncoding>
+        <xtce:SizeInBits>
+            <xtce:Fixed>
+                <xtce:FixedValue>40</xtce:FixedValue>
+            </xtce:Fixed>
+        </xtce:SizeInBits>
+    </xtce:StringDataEncoding>
+</xtce:StringParameterType>
+""",
+            ValueError("Parameter Type name attribute is required"),
+        ),
     ],
 )
 def test_string_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
@@ -167,6 +182,15 @@ def test_string_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
                     ),
                 ),
             ),
+        ),
+        # Error case: missing name attribute
+        (
+            f"""
+<xtce:IntegerParameterType xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
+</xtce:IntegerParameterType>
+""",
+            ValueError("Parameter Type name attribute is required"),
         ),
     ],
 )
@@ -288,6 +312,15 @@ def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectati
                     ),
                 ),
             ),
+        ),
+        # Error case: missing name attribute
+        (
+            f"""
+<xtce:FloatParameterType xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
+</xtce:FloatParameterType>
+""",
+            ValueError("Parameter Type name attribute is required"),
         ),
     ],
 )
@@ -420,6 +453,18 @@ def test_float_parameter_type(elmaker, xtce_parser, xml_string: str, expectation
                 },
             ),
         ),
+        # Error case: missing name attribute
+        (
+            f"""
+<xtce:EnumeratedParameterType xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
+    <xtce:EnumerationList>
+        <xtce:Enumeration label="TEST" value="1"/>
+    </xtce:EnumerationList>
+</xtce:EnumeratedParameterType>
+""",
+            KeyError("name"),
+        ),
     ],
 )
 def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
@@ -517,6 +562,21 @@ def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expect
                 encoding=encodings.BinaryDataEncoding(size_reference_parameter="SizeFromThisParameter"),
             ),
         ),
+        # Error case: missing name attribute
+        (
+            f"""
+<xtce:BinaryParameterType xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:BinaryDataEncoding>
+        <xtce:SizeInBits>
+            <xtce:Fixed>
+                <xtce:FixedValue>8</xtce:FixedValue>
+            </xtce:Fixed>
+        </xtce:SizeInBits>
+    </xtce:BinaryDataEncoding>
+</xtce:BinaryParameterType>
+""",
+            ValueError("Parameter Type name attribute is required"),
+        ),
     ],
 )
 def test_binary_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
@@ -593,6 +653,15 @@ def test_binary_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
                 unit="m/s",
                 encoding=encodings.StringDataEncoding(fixed_raw_length=40, termination_character="00"),
             ),
+        ),
+        # Error case: missing name attribute
+        (
+            f"""
+<xtce:BooleanParameterType xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:IntegerDataEncoding sizeInBits="1" encoding="unsigned"/>
+</xtce:BooleanParameterType>
+""",
+            ValueError("Parameter Type name attribute is required"),
         ),
     ],
 )
@@ -731,6 +800,17 @@ def test_boolean_parameter_type(elmaker, xtce_parser, xml_string, expectation):
                     ),
                 ),
             ),
+        ),
+        # Error case: missing name attribute
+        (
+            f"""
+<xtce:AbsoluteTimeParameterType xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:Encoding offset="0" units="s">
+        <xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned"/>
+    </xtce:Encoding>
+</xtce:AbsoluteTimeParameterType>
+""",
+            KeyError("name"),
         ),
     ],
 )

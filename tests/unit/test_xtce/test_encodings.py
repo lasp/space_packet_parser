@@ -294,6 +294,13 @@ def test_string_data_encoding_validation(args, kwargs, expected_error, expected_
                 ],
             ),
         ),
+        # Error case: invalid sizeInBits value
+        (
+            f"""
+<xtce:IntegerDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}" sizeInBits="invalid" encoding="unsigned"/>
+""",
+            ValueError("invalid literal for int()"),
+        ),
     ],
 )
 def test_integer_data_encoding(elmaker, xtce_parser, xml_string: str, expectation):
@@ -519,6 +526,19 @@ def test_float_data_encoding_validation(args, kwargs, expected_error, expected_e
                     comparisons.DiscreteLookup([comparisons.Comparison("2", "P1")], 25),
                 ]
             ),
+        ),
+        # Error case: invalid fixed size value
+        (
+            f"""
+<xtce:BinaryDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:SizeInBits>
+        <xtce:Fixed>
+            <xtce:FixedValue>invalid</xtce:FixedValue>
+        </xtce:Fixed>
+    </xtce:SizeInBits>
+</xtce:BinaryDataEncoding>
+""",
+            ValueError("invalid literal for int()"),
         ),
     ],
 )

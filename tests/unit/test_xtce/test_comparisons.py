@@ -394,6 +394,16 @@ def test_condition_validity_check(args, kwargs, expected_error, expected_error_m
             ),
             True,
         ),
+        # Error case: invalid XML structure (missing ComparisonOperator)
+        (
+            f"""
+<xtce:BooleanExpression xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:Condition parameterRef="P" value="invalid" />
+</xtce:BooleanExpression>
+""",
+            SpacePacket(**{"P": common.IntParameter(100, 4)}),
+            AttributeError("'NoneType' object has no attribute 'text'"),
+        ),
     ],
 )
 def test_boolean_expression(elmaker, xtce_parser, xml_string, test_parsed_data, expected_result):

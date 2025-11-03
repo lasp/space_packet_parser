@@ -9,6 +9,14 @@ coverage:
         threshold: 5%  # Allow 5% drop without failing
         if_no_uploads: error  # Fail if no coverage data
         only_pulls: false  # Check coverage on all commits
+      # Custom group for tests module with higher threshold
+      tests:
+        target: 99%  # Very high threshold for test files
+        threshold: 1%  # Allow only 1% drop
+        paths:
+          - "tests/**"  # Coverage for all test files
+        if_no_uploads: error
+        only_pulls: false
     patch:
       default:
         target: 85%  # Lower threshold for new code

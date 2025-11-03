@@ -327,6 +327,15 @@ def test_context_calibrator_calibrate(context_calibrator, parsed_data, parsed_va
                 ],
             ),
         ),
+        # Error case: invalid spline point value
+        (
+            f"""
+<xtce:SplineCalibrator xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:SplinePoint raw="invalid" calibrated="10"/>
+</xtce:SplineCalibrator>
+""",
+            ValueError("could not convert string to float"),
+        ),
     ],
 )
 def test_spline_calibrator(elmaker, xtce_parser, xml_string: str, expectation):
@@ -405,6 +414,15 @@ def test_spline_calibrator_calibrate(xq, order, extrapolate, expectation):
                     calibrators.PolynomialCoefficient(coefficient=0.0025, exponent=4),
                 ]
             ),
+        ),
+        # Error case: invalid coefficient value
+        (
+            f"""
+<xtce:PolynomialCalibrator xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:Term exponent="0" coefficient="invalid"/>
+</xtce:PolynomialCalibrator>
+""",
+            ValueError("could not convert string to float"),
         ),
     ],
 )
