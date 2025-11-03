@@ -64,7 +64,8 @@ xarray = [
     "numpy>=1.26.0"
 ]
 examples = [
-    "matplotlib>=3.4"
+    "matplotlib>=3.4",
+    "xarray>2024.0.0"
 ]
 test = [
     "pre-commit",

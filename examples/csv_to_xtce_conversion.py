@@ -165,7 +165,8 @@ def convert_ccsdspy_to_xtce(csv_path: Path) -> definitions.XtcePacketDefinition:
 
 
 if __name__ == "__main__":
-    jpss_test_data_dir = Path("../tests/test_data/jpss")
+    script_dir = Path(__file__).parent.resolve()
+    jpss_test_data_dir = script_dir / "../tests/test_data/jpss"
     xtce_definition = convert_ccsdspy_to_xtce(jpss_test_data_dir / "ccsdspy_jpss1_geolocation.csv")
 
     packet_file = jpss_test_data_dir / "J01_G011_LZ_2021-04-09T00-00-00Z_V01.DAT1"
