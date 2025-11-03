@@ -1,7 +1,7 @@
 name: Test Examples
 on:
-  pull_request:  # Run on all PR changes
-  push:  # Run on all changes to main (includes PR merges)
+  pull_request: # Run on all PR changes
+  push: # Run on all changes to main (includes PR merges)
     branches:
       - main
 
@@ -9,7 +9,7 @@ jobs:
   test-examples:
     runs-on: ubuntu-latest
     permissions:
-      contents: read  # Minimal permissions required for checkout
+      contents: read # Minimal permissions required for checkout
     defaults:
       run:
         shell: bash
@@ -20,7 +20,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -29,7 +29,7 @@ jobs:
 
       - name: Test examples
         env:
-          MPLBACKEND: Agg  # Use non-interactive backend for matplotlib
+          MPLBACKEND: Agg # Use non-interactive backend for matplotlib
         run: |
           cd examples
           for example in *.py; do

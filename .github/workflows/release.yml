@@ -42,7 +42,7 @@ jobs:
 
       # Save ("upload") the distribution artifacts for use by downstream Actions jobs
       - name: Upload distribution artifacts
-        uses: actions/upload-artifact@v5  # This allows us to persist the dist directory after the job has completed
+        uses: actions/upload-artifact@v5 # This allows us to persist the dist directory after the job has completed
         with:
           name: python-package-distributions
           path: dist/
