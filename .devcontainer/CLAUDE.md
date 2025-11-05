@@ -1,9 +1,11 @@
 # Space Packet Parser Development Context
 
 ## Project Overview
+
 Space Packet Parser is a Python library for decoding CCSDS telemetry packets according to XTCE packet structure definitions. It's used by multiple space missions for processing and analyzing spacecraft telemetry data.
 
 ## Key Technologies
+
 - **Python 3.9+** - Core language
 - **Poetry** - Dependency management and packaging
 - **XTCE/CCSDS Standards** - Packet format specifications
@@ -15,6 +17,7 @@ Space Packet Parser is a Python library for decoding CCSDS telemetry packets acc
 - **Ruff** - Linting and formatting
 
 ## Architecture
+
 - `space_packet_parser/` - Main package
   - `packets.py` - Core packet parsing logic
   - `xtce/` - XTCE standard implementation
@@ -27,6 +30,7 @@ Space Packet Parser is a Python library for decoding CCSDS telemetry packets acc
 ## Development Guidelines
 
 ### Code Quality
+
 - Follow the existing code style and patterns
 - Use Ruff for linting (configured in pyproject.toml)
 - Maintain high test coverage
@@ -34,6 +38,7 @@ Space Packet Parser is a Python library for decoding CCSDS telemetry packets acc
 - Avoid inline imports unless absolutely necessary
 
 ### Testing
+
 - Run tests with: `pytest`
 - Include benchmarks for performance-critical code
 - Test with real mission data when possible
@@ -42,6 +47,7 @@ Space Packet Parser is a Python library for decoding CCSDS telemetry packets acc
 - Cover edge cases and error conditions
 
 ### Key Commands
+
 - `poetry install` - Install dependencies
 - `pytest` - Run tests
 - `ruff check` - Lint code
@@ -50,9 +56,11 @@ Space Packet Parser is a Python library for decoding CCSDS telemetry packets acc
 - `pre-commit run --all` - Run all pre-commit checks
 
 ### Mission Support
+
 This library actively supports multiple space missions including IMAP, CLARREO Pathfinder, Libera, CTIM-FD, and MMS-FEEPS. Changes should maintain backward compatibility and consider real-world usage patterns.
 
 ## When Contributing
+
 - Understand XTCE/CCSDS standards when modifying parsing logic
 - Consider performance implications for large packet streams
 - Test against mission-specific packet definitions

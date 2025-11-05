@@ -1,7 +1,7 @@
 # Context
 
-*Broader context of the issue or proposed change*
+_Broader context of the issue or proposed change_
 
 # Implementation Plan
 
-*Suggestions for how to approach implementing the fix/change*
+_Suggestions for how to approach implementing the fix/change_

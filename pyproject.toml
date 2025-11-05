@@ -1,6 +1,6 @@
 [project]
 name = "space_packet_parser"
-version = "6.0.0"
+version = "6.1.0"
 description = "A CCSDS telemetry packet decoding library based on the XTCE packet format description standard."
 license = { text = "BSD-3-Clause" }
 readme = "README.md"
@@ -64,7 +64,8 @@ xarray = [
     "numpy>=1.26.0"
 ]
 examples = [
-    "matplotlib>=3.4"
+    "matplotlib>=3.4",
+    "xarray>2024.0.0"
 ]
 test = [
     "pre-commit",

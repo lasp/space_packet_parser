@@ -99,7 +99,8 @@ def plot_full_event(data: dict):
 
 if __name__ == "__main__":
     """Parse IDEX data"""
-    idex_test_data_dir = Path("../tests/test_data/idex")
+    script_dir = Path(__file__).parent.resolve()
+    idex_test_data_dir = script_dir / "../tests/test_data/idex"
     idex_xtce = idex_test_data_dir / "idex_combined_science_definition.xml"
     idex_definition = definitions.XtcePacketDefinition.from_xtce(xtce_document=idex_xtce)
     idex_packet_file = idex_test_data_dir / "sciData_2023_052_14_45_05"

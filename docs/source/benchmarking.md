@@ -7,9 +7,10 @@ structures being parsed. There are a few measures by which we can assess the per
 
 > [!NOTE]
 > Throughout the Space Packet Parser repo and documentation space,
-> B/kB means bytes/kilobytes and b/kb means bits/kilobits.*
+> B/kB means bytes/kilobytes and b/kb means bits/kilobits.\*
 
 Common factors affecting performance:
+
 - Presence of calibrators and context calibrators
 - Complexity of container inheritance structure
 - Number and size of fields in a packet
@@ -40,6 +41,7 @@ and ephemeris data), we benchmarked using 7200 packets with a consistent size of
 - **14998-19664 kilobits per second**
 
 Without progress printing (~13ms faster):
+
 ```
 ---------------------------------------------------------- benchmark: 1 tests ---------------------------------------------------------
 Name (time in ms)                             Min       Max      Mean   StdDev    Median      IQR  Outliers     OPS  Rounds  Iterations
@@ -53,6 +55,7 @@ Legend:
 ```
 
 With progress printing (showing progress output from Space Packet Parser):
+
 ```
 ---------------------------------------------------------- benchmark: 1 tests ---------------------------------------------------------
 Name (time in ms)                             Min       Max      Mean   StdDev    Median      IQR  Outliers     OPS  Rounds  Iterations

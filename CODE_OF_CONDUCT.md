@@ -28,4 +28,3 @@ including warning the offender or expulsion from the project.
 This code of conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org), version 1.4.
 Please see the NumPy [contributors guide](https://numpy.org/devdocs/dev/index.html#contributors-guide) for more
 information about contributing to the project.
-

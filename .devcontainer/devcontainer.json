@@ -7,10 +7,7 @@
     },
     "platform": "linux/aarch64"
   },
-  "runArgs": [
-    "--cap-add=NET_ADMIN",
-    "--cap-add=NET_RAW"
-  ],
+  "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW"],
   "customizations": {
     "vscode": {
       "extensions": [
@@ -38,10 +35,7 @@
         "python.REPL.enableREPLSmartSend": false,
         "python.testing.pytestEnabled": true,
         "python.testing.unittestEnabled": false,
-        "python.testing.pytestArgs": [
-          "-s",
-          "."
-        ],
+        "python.testing.pytestArgs": ["-s", "."],
         "files.associations": {
           "*.xtce": "xml"
         },
