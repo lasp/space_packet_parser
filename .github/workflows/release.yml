@@ -179,7 +179,7 @@ jobs:
         # Note: This environment variable is only available to later steps via the ${{ env.PRE_RELEASE_OPTION }}
         # syntax
         run: |
-          if [[ ${{ github.ref_name }} =~ '^.*[0-9]*\.[0-9]*\.[0-9]*$' ]]; then
+          if [[ ${{ github.ref_name }} =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "PRE_RELEASE_OPTION=''" >> $GITHUB_ENV  # Not a prerelease
           else
             echo "PRE_RELEASE_OPTION=--prerelease" >> $GITHUB_ENV  # Is a prerelease
