@@ -33,8 +33,8 @@ if __name__ == "__main__":
     # Parse all packets in the file to Xarray Datasets
     # Returns a dictionary with one Dataset per APID
     datasets = create_dataset(
-        packet_file,
-        packet_definition,
+        packet_files=[packet_file],
+        xtce_packet_definition=packet_definition,
         parse_bytes_kwargs={"root_container_name": "CCSDSTelemetryPacket"},
     )
 
@@ -64,8 +64,8 @@ if __name__ == "__main__":
     apid_of_interest = 41
 
     filtered_datasets = create_dataset(
-        packet_file,
-        packet_definition,
+        packet_files=[packet_file],
+        xtce_packet_definition=packet_definition,
         parse_bytes_kwargs={"root_container_name": "CCSDSTelemetryPacket"},
         packet_filter=lambda pkt: pkt.apid == apid_of_interest,
     )
