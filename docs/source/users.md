@@ -111,12 +111,12 @@ import space_packet_parser as spp
 from space_packet_parser.xarr import create_dataset
 
 packet_file = Path('my_packets.pkts')
-xtce_document = Path('my_xtce_document.xml')
+xtce_definition_file = Path('my_xtce_document.xml')
 
 # Parse packets directly to Xarray Datasets (one per APID)
 datasets = create_dataset(
     packet_files=[packet_file],
-    xtce_packet_definition=xtce_document
+    xtce_packet_definition=xtce_definition_file
 )
 
 # Access dataset for a specific APID
@@ -133,7 +133,7 @@ You can filter packets by APID or other criteria by passing a `packet_filter` fu
 # Filter to only parse packets with APID 41
 datasets = create_dataset(
     packet_files=[packet_file],
-    xtce_packet_definition=xtce_document,
+    xtce_packet_definition=xtce_definition_file,
     packet_filter=lambda pkt: pkt.apid == 41
 )
 ```
