@@ -138,7 +138,7 @@ datasets = create_dataset(
 )
 ```
 
-**Limitations**: The `create_dataset` function only supports packet definitions with consistent field structure across all packets with the same APID. It cannot handle polymorphic packets where the structure changes based on previously parsed values. For such cases, use the low-level parsing API described in the Basic Usage section.
+**Limitations**: The `create_dataset` function only supports packet definitions with consistent field structure across all packets with the same APID. It cannot handle polymorphic packets where the structure changes based on previously parsed values. For such cases, use the low-level parsing API by calling the `parse_bytes()` method directly.
 
 ## Packet Bytes Generators
 
