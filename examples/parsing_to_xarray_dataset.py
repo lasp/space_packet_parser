@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     print(f"\nFound {len(datasets)} unique APIDs in the packet file:")
     for apid, dataset in datasets.items():
-        num_packets = len(dataset["VERSION"])  # All variables have same length
+        num_packets = dataset.sizes["packet"]
         num_variables = len(dataset.data_vars)
         print(f"  APID {apid}: {num_packets} packets, {num_variables} variables")
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
     print(f"\nFiltered to only APID {apid_of_interest}")
     print(f"Found {len(filtered_datasets)} APID(s) after filtering")
-    print(f"Number of packets: {len(filtered_datasets[apid_of_interest]['VERSION'])}")
+    print(f"Number of packets: {filtered_datasets[apid_of_interest].sizes['packet']}")
 
     print("\n" + "=" * 80)
     print("Example 3: Working with Dataset data")

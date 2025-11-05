@@ -114,7 +114,10 @@ packet_file = Path('my_packets.pkts')
 xtce_document = Path('my_xtce_document.xml')
 
 # Parse packets directly to Xarray Datasets (one per APID)
-datasets = create_dataset(packet_file, xtce_document)
+datasets = create_dataset(
+    packet_files=[packet_file],
+    xtce_packet_definition=xtce_document
+)
 
 # Access dataset for a specific APID
 apid_1_data = datasets[1]
@@ -129,8 +132,8 @@ You can filter packets by APID or other criteria by passing a `packet_filter` fu
 ```python
 # Filter to only parse packets with APID 41
 datasets = create_dataset(
-    packet_file,
-    xtce_document,
+    packet_files=[packet_file],
+    xtce_packet_definition=xtce_document,
     packet_filter=lambda pkt: pkt.apid == 41
 )
 ```
