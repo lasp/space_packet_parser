@@ -381,7 +381,12 @@ def ccsds_generator(
             binary_data = packets[0]
             # Add the continuation packets to the first packet, skipping the headers
             for p in packets[1:]:
-                binary_data += p[header_length_bytes + secondary_header_bytes :]
+                # The continuation packets may or may not have a secondary header,
+                # so we need to account for both cases when trimming the initial header
+                tmp_header_length = (
+                    header_length_bytes + secondary_header_bytes if p.secondary_header_flag else header_length_bytes
+                )
+                binary_data += p[tmp_header_length:]
             yield CCSDSPacketBytes(binary_data)
 
     if show_progress:
