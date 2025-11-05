@@ -123,7 +123,7 @@ def _get_minimum_numpy_datatype(
 
 def create_dataset(
     packet_files: Union[ReadableBinaryPacket, Iterable[ReadableBinaryPacket]],
-    xtce_packet_definition: Union[str, Path, definitions.XtcePacketDefinition],
+    xtce_packet_definition: Union[str, Path, PathLike, definitions.XtcePacketDefinition],
     use_raw_values: bool = False,
     packet_bytes_generator: Optional[Callable] = None,
     generator_kwargs: Optional[dict] = None,
@@ -145,7 +145,7 @@ def create_dataset(
     ----------
     packet_files : Union[str, Path, BinaryIO, Iterable[Union[str, Path, BinaryIO]]]
         Packet files or file-like objects opened in binary mode
-    xtce_packet_definition : Union[str, Path, xtce.definitions.XtcePacketDefinition]
+    xtce_packet_definition : Union[str, Path, PathLike, xtce.definitions.XtcePacketDefinition]
         Packet definition for parsing the packet data
     use_raw_values: bool
         Default False. If True, saves parameter raw values to the resulting Dataset.

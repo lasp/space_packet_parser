@@ -8,13 +8,14 @@ parsed content from the data field. This generator is useful for debugging and p
 to other parsing functions.
 """
 
+import io
 import logging
 import socket
 import time
 import warnings
 from collections.abc import Iterator
 from enum import IntEnum
-from typing import BinaryIO, Optional, Union
+from typing import Optional, Union
 
 from space_packet_parser.common import SpacePacket
 from space_packet_parser.generators.utils import _print_progress, _setup_binary_reader
@@ -236,7 +237,7 @@ class CCSDSPacket(SpacePacket):
 
 
 def ccsds_generator(
-    binary_data: Union[BinaryIO, socket.socket, bytes],
+    binary_data: Union[io.BufferedIOBase, io.RawIOBase, socket.socket, bytes],
     *,
     buffer_read_size_bytes: Optional[int] = None,
     show_progress: bool = False,
@@ -253,7 +254,7 @@ def ccsds_generator(
 
     Parameters
     ----------
-    binary_data : Union[BinaryIO, socket.socket, bytes]
+    binary_data : Union[io.BufferedIOBase, io.RawIOBase, socket.socket, bytes]
         Binary data source containing CCSDSPackets.
     buffer_read_size_bytes : int, optional
         Number of bytes to read from e.g. a BufferedReader or socket binary data source on each read attempt.
