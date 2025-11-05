@@ -20,7 +20,7 @@ def _read_packet_file(packet_file) -> bytes | io.BufferedIOBase | io.RawIOBase:
 
     Parameters
     ----------
-    packet_file : Union[str, Path, PathLike, BinaryIO, bytes]
+    packet_file : Union[str, Path, PathLike, io.BufferedIOBase, io.RawIOBase, bytes]
 
     Notes
     -----
