@@ -10,6 +10,7 @@ Release notes for the `space_packet_parser` library
 ### v6.1.0
 
 - Add support for filtering packets in `create_dataset`
+- BUGFIX: Handle optional secondary headers with CCSDS continuation packets
 
 ### v6.0.0 (released)
 
