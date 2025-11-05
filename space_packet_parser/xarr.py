@@ -163,8 +163,8 @@ def create_dataset(
 
     Returns
     -------
-    : dict[xarray.DataSet]
-        DataSet object parsed from the iterable of packets.
+    : dict[int, xr.Dataset]
+        Dataset objects parsed from the iterable of packets, keyed by APID.
     """
     generator_kwargs = generator_kwargs or {}
     parse_bytes_kwargs = parse_bytes_kwargs or {}
