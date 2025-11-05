@@ -1,4 +1,4 @@
-"""Extras package that supports generating an `xarray.DataSet` directly"""
+"""Extras package that supports generating an `xarray.Dataset` directly"""
 
 # Extras import first since it might fail
 try:
@@ -148,7 +148,7 @@ def create_dataset(
     xtce_packet_definition : Union[str, Path, xtce.definitions.XtcePacketDefinition]
         Packet definition for parsing the packet data
     use_raw_values: bool
-        Default False. If True, saves parameter raw values to the resulting DataSet.
+        Default False. If True, saves parameter raw values to the resulting Dataset.
         e.g. enumerated lookups will be saved as their encoded integer values.
     packet_bytes_generator : Optional[callable]
         The generator function to use for yielding packet bytes. Defaults to
