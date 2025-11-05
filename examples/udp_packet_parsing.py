@@ -30,6 +30,12 @@ class UDPPacketBytes(bytes):
 
     HEADER_LENGTH_BYTES = 8
 
+    def __new__(cls, value: bytes):
+        """Create a new UDPPacketBytes object with validation."""
+        if len(value) < cls.HEADER_LENGTH_BYTES:
+            raise ValueError(f"UDP packet must be at least {cls.HEADER_LENGTH_BYTES} bytes (got {len(value)} bytes)")
+        return super().__new__(cls, value)
+
     def __str__(self) -> str:
         return (
             f"UDPPacket Header: ({self.source_port=}, {self.dest_port=}, {self.length=}, {self.checksum=})"
