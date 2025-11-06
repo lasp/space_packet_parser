@@ -1,7 +1,12 @@
-## Checklist
+# _Checklist_
 
-- [ ] Changes are fully implemented without dangling issues or TODO items
-- [ ] Deprecated/superseded code is removed or marked with deprecation warning
-- [ ] Current dependencies have been properly specified and old dependencies removed
-- [ ] New code/functionality has accompanying tests and any old tests have been updated to match any new assumptions
-- [ ] The changelog.md has been updated
+_Check these items and delete this block:_
+
+- _Test coverage is present for new code_
+- _The changelog.md has been updated if necessary_
+- _Mark deprecated code with deprecation warnings_
+- _Dependency spec updated if necessary_
+
+# Summary
+
+_What has changed?_

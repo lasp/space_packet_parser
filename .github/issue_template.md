@@ -1,7 +1,15 @@
 # Context
 
-_Broader context of the issue or proposed change_
+_What led to this issue being created?_
 
-# Implementation Plan
+# Driving Requirements
 
-_Suggestions for how to approach implementing the fix/change_
+_What is the goal?_
+
+# Implementation Requirements
+
+_What needs to work?_
+
+# Considerations
+
+_What related pieces do we need to think about?_
