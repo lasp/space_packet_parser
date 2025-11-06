@@ -183,7 +183,8 @@ def test_setup_binary_reader_bytes(test_bytes):
 
     assert read_buffer == test_bytes
     assert total_length == len(test_bytes)
-    assert read_func is None
+    assert callable(read_func)
+    assert read_func(10) == b""
     assert buffer_size is None
 
 

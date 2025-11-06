@@ -134,7 +134,11 @@ def _(binary_data: bytes, buffer_read_size_bytes=None) -> tuple:
     read_buffer = b""
     read_buffer = binary_data
     total_length_bytes = len(read_buffer)
-    read_bytes_from_source = None  # No data to read, we've filled the read_buffer already
+
+    def read_bytes_from_source(size: int) -> bytes:
+        """No data to read, we've filled the read_buffer already."""
+        return b""
+
     logger.info(f"Creating packet generator from a bytes object. Total length is {total_length_bytes} bytes")
     return read_buffer, total_length_bytes, read_bytes_from_source, buffer_read_size_bytes
 
