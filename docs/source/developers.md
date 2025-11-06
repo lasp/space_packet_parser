@@ -73,9 +73,9 @@ That is,
 
 #### Major Minor Patch Meanings
 
-Major: Breaking API change
-Minor: Non-breaking features
-Patch: Bugfixes
+- **Major**: Breaking API change.
+- **Minor**: Non-breaking features.
+- **Patch**: Bugfixes.
 
 ### Preparing for Release
 
