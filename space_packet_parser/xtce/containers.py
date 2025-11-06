@@ -43,6 +43,13 @@ class ParameterRefEntry(common.Parseable, common.XmlObject):
             The packet being parsed
         parameter_lookup : dict[str, parameters.Parameter]
             Dictionary to look up parameter objects by name
+
+        Raises
+        ------
+        NotImplementedError
+            If RepeatEntry is specified
+        KeyError
+            If the referenced parameter is not found in parameter_lookup
         """
         # Check if repeat_entry is specified
         if self.repeat_entry is not None:
@@ -55,7 +62,13 @@ class ParameterRefEntry(common.Parseable, common.XmlObject):
                 return
 
         # Parse the parameter
-        parameter = parameter_lookup[self.parameter_ref]
+        try:
+            parameter = parameter_lookup[self.parameter_ref]
+        except KeyError as err:
+            raise KeyError(
+                f"Parameter '{self.parameter_ref}' referenced in ParameterRefEntry not found in parameter lookup. "
+                f"Available parameters: {list(parameter_lookup.keys())}"
+            ) from err
         parameter.parse(packet)
 
     @classmethod
@@ -94,29 +107,27 @@ class ParameterRefEntry(common.Parseable, common.XmlObject):
         if (include_cond_elem := element.find("IncludeCondition")) is not None:
             # IncludeCondition contains a single MatchCriteria element (Comparison, ComparisonList, or BooleanExpression)
             if (comparison_list_elem := include_cond_elem.find("ComparisonList")) is not None:
-                # Multiple comparisons - create a list of Comparison objects
-                # All comparisons in a ComparisonList must be true (AND logic)
-                # We'll store them as individual Comparison objects that will be evaluated separately
-                # The parse method will need to evaluate all of them
+                # ComparisonList contains multiple Comparison elements with AND semantics per XTCE spec
+                # Note: The existing restriction_criteria uses the same pattern (iterfind("*"))
+                # to iterate over Comparison elements in a ComparisonList
                 comparisons_list = [
                     comparisons.Comparison.from_xml(comp) for comp in comparison_list_elem.iterfind("*")
                 ]
-                # For now, we'll use the first comparison. A proper implementation would need
-                # a way to represent multiple conditions that all must be true.
-                # Since the MatchCriteria interface expects a single object, we need a different approach.
-                # Let's create a simple wrapper that can handle multiple comparisons.
-                # Actually, looking at the restriction_criteria handling in SequenceContainer,
-                # they store a list of MatchCriteria. Let's do the same approach here
-                # by storing just the first one for now, and handle multiple in a future enhancement.
+                # LIMITATION: MatchCriteria interface expects a single object, but ComparisonList
+                # requires AND logic across multiple comparisons. For now, we only support single
+                # comparisons in ComparisonList. Full AND logic would require a new MatchCriteria
+                # subclass or modifying include_condition to accept a list of MatchCriteria.
+                # This follows the same limitation pattern used in restriction_criteria where
+                # multiple MatchCriteria are stored in a list on the SequenceContainer itself.
                 if len(comparisons_list) == 1:
                     include_condition = comparisons_list[0]
                 else:
-                    # For multiple comparisons, we need to create a structure that can evaluate all
-                    # For now, we'll just use the first and warn
+                    # For multiple comparisons, warn and use only the first one
                     warnings.warn(
-                        f"ComparisonList with {len(comparisons_list)} comparisons in IncludeCondition. "
-                        f"Only the first comparison will be evaluated. Full support for ComparisonList "
-                        f"in IncludeCondition is not yet implemented.",
+                        f"ComparisonList with {len(comparisons_list)} comparisons in IncludeCondition "
+                        f"for parameter '{parameter_ref}'. Only the first comparison will be evaluated. "
+                        f"Full AND logic for ComparisonList in IncludeCondition requires architectural "
+                        f"changes to support multiple MatchCriteria conditions.",
                         UserWarning,
                     )
                     include_condition = comparisons_list[0] if comparisons_list else None
