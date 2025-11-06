@@ -71,11 +71,17 @@ That is,
 [N!]N(.N)*[{a|b|rc}N][.postN][.devN]
 ```
 
+#### Major Minor Patch Meanings
+
+Major: Breaking API change
+Minor: Non-breaking features
+Patch: Bugfixes
+
 ### Preparing for Release
 
-1. Create a release branch named according to the version to be released. This branch is the long lived branch that
+1. Create a release branch named according to the major and minor version to be released. This branch is the long lived branch that
    will contain the tagged commit for the release (and possible future patch releases).
-   The naming convention is `release/X.Y.Z`.
+   The naming convention is `release/X.Y`. We drop the patch version on release branches so we can make bugfixes there.
 
 2. Bump the version of the package to the version you are about to release, either manually by editing `pyproject.toml`
    or by running `poetry version X.Y.Z` or bumping according to a valid bump rule like `poetry version minor`
@@ -118,7 +124,7 @@ a prerelease in GitHub and PyPI.
 To trigger an official release, push a tag referencing the commit you want to release.
 
 ```bash
-git checkout release/X.Y.Z
+git checkout release/X.Y
 git pull
 git tag -a X.Y.Z -m "Version X.Y.Z"
 git push origin X.Y.Z
@@ -133,7 +139,7 @@ To publish a test release, prefix the tag with `test-release`. This will prevent
 and will prevent the artifacts being published on GitHub.
 
 ```bash
-git checkout release/X.Y.Z
+git checkout release/X.Y
 git pull
 git tag -a test-release/X.Y.Zrc1 -m "Test Release Candidate X.Y.Zrc1"
 git push origin test-release/X.Y.Zrc1
