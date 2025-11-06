@@ -398,3 +398,17 @@ def test_parameter_ref_entry_from_xml_without_condition():
     assert param_ref_entry.parameter_ref == "TestParam"
     assert param_ref_entry.include_condition is None
     assert param_ref_entry.repeat_entry is None
+
+
+def test_parameter_ref_entry_undefined_parameter_error():
+    """Test that ParameterRefEntry raises informative KeyError for undefined parameter"""
+    # Create ParameterRefEntry referencing a non-existent parameter
+    param_ref_entry = containers.ParameterRefEntry(parameter_ref="NonExistentParam")
+
+    # Create packet
+    test_data = struct.pack(">B", 42)
+    packet = SpacePacket(binary_data=test_data)
+
+    # Parse should raise KeyError with helpful message
+    with pytest.raises(KeyError, match="NonExistentParam.*not found in parameter lookup"):
+        param_ref_entry.parse(packet, parameter_lookup={})
