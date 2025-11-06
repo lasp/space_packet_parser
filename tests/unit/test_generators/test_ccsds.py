@@ -295,3 +295,23 @@ def test_ccsds_generator(jpss_test_data_dir):
     # Unrecognized source (error)
     with pytest.raises(OSError, match="Unrecognized data source"):
         next(space_packet_parser.generators.ccsds_generator(1))
+
+
+def test_ccsds_generator_not_enough_bytes():
+    """Test ccsds_generator with not enough bytes for a full header"""
+    # Not enough bytes for a full CCSDS header (6 bytes) should not yield any packets
+    with pytest.warns(
+        UserWarning,
+        match="3 bytes left to read is not enough to read a CCSDS header",
+    ):
+        assert len(list(space_packet_parser.generators.ccsds_generator(b"\x00\x01\x02"))) == 0
+
+    # Make a partial packet
+    p = ccsds.create_ccsds_packet(data=b"12345")
+    # Remove last 2 bytes to make it incomplete
+    incomplete_p = p[:-2]
+    with pytest.warns(
+        UserWarning,
+        match="9 bytes left to read is not enough to read a full packet",
+    ):
+        assert len(list(space_packet_parser.generators.ccsds_generator(incomplete_p))) == 0
