@@ -1,6 +1,6 @@
 # Context
 
-_What let to this issue being created?_
+_What led to this issue being created?_
 
 # Driving Requirements
 
