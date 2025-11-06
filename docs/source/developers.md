@@ -89,7 +89,7 @@ Patch: Bugfixes
 
 3. Update the version identifier in `CITATION.cff` and `meta.yaml`.
 
-4. Update `changelog.md` to ensure the release notes for the version to be to be published is at the top
+4. Update `changelog.md` to ensure the release notes for the version to be published is at the top
    and revisit `README.md` to keep it up to date.
 
 5. Open a PR to merge the release branch into main. This informs the rest of the team how the release
