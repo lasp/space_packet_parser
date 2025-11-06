@@ -329,7 +329,7 @@ def ccsds_generator(
         # 4.1.3.5.3 The length count C shall be expressed as:
         #   C = (Total Number of Octets in the Packet Data Field) – 1
         # Use direct bitshift here rather than _extract_bits for speed
-        n_bytes_data = (read_buffer[current_pos + 4] << 8) | read_buffer[current_pos + 5] + 1
+        n_bytes_data = ((read_buffer[current_pos + 4] << 8) | read_buffer[current_pos + 5]) + 1
         n_bytes_packet = header_length_bytes + n_bytes_data
 
         # Fill the buffer enough to read a full packet, taking into account the user data length

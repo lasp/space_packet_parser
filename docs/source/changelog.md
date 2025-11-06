@@ -5,6 +5,11 @@ list and release milestones.
 ## Version Release Notes
 Release notes for the `space_packet_parser` library
 
+### v6.0.1 (unreleased)
+
+- BUGFIX: Incorrect bitshift logic for ccsds generator packet length creation
+  in very specific circumstances (only if large data on power of 2 boundary)
+
 ### v6.0.0 (released)
 - *BREAKING*: `XtcePacketDefinition` no longer accepts a file object as input.
   Use `spp.xtce.definitions.XtcePacketDefinition.from_xtce()` or `spp.load_xtce()` instead.

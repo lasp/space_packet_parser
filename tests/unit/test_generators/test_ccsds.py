@@ -247,3 +247,25 @@ def test_ccsds_generator(jpss_test_data_dir):
     # Unrecognized source (error)
     with pytest.raises(OSError, match="Unrecognized data source"):
         next(space_packet_parser.generators.ccsds_generator(1))
+
+
+@pytest.mark.parametrize(
+    "data_length_bytes",
+    [
+        1,  # Minimum data length
+        255,
+        256,
+        512,  # Can cause issues with bitshift if implemented incorrectly
+        1023,
+        1024,
+        1025,
+        65536,  # Maximum data length
+    ],
+)
+def test_ccsds_generator_packet_length_math(data_length_bytes):
+    # Test ccsds_generator correctly calculates packet length for various data sizes,
+    # especially power-of-2 boundaries
+    p = ccsds.create_ccsds_packet(data=b"0" * data_length_bytes)
+    parsed_p = next(space_packet_parser.generators.ccsds_generator(p))
+    assert len(parsed_p) == data_length_bytes + 6
+    assert parsed_p.data_length == data_length_bytes - 1
