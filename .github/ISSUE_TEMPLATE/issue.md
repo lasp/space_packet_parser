@@ -1,3 +1,11 @@
+---
+name: Issue Template
+about: Default template for creating new issues
+title: ''
+labels: ''
+assignees: ''
+---
+
 # Context
 
 _What led to this issue being created?_
