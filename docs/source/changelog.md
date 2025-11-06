@@ -13,7 +13,7 @@ Release notes for the `space_packet_parser` library
 - BUGFIX: Handle optional secondary headers with CCSDS continuation packets
 - Add warnings if there are leftover bytes from a CCSDS generator
 
-### v6.0.0 (released)
+### v6.0.0
 
 - _BREAKING_: `XtcePacketDefinition` no longer accepts a file object as input.
   Use `spp.xtce.definitions.XtcePacketDefinition.from_xtce()` or `spp.load_xtce()` instead.
@@ -51,12 +51,12 @@ Release notes for the `space_packet_parser` library
 - Improve XML namespace handling when parsing and serializing XTCE.
 - Package for Anaconda distribution via the `lasp` channel
 
-### v5.0.1 (released)
+### v5.0.1
 
 - BUGFIX: Allow raw_value representation for enums with falsy raw values. Previously these defaulted to the enum label.
 - If a packet definition parses too few bits, a UserWarning is now emitted instead of a logger warning.
 
-### v5.0.0 (released)
+### v5.0.0
 
 - _BREAKING_: Main API changed. No need to create separate definition and parser objects any more. Create only a
   definition from your XTCE document and instead of `my_parser.generator`, use `my_packet_definition.packet_generator`.
@@ -87,7 +87,7 @@ Release notes for the `space_packet_parser` library
 - Add error reporting for unsupported and invalid parameter types
 - Add support for MIL-1750A floats (32-bit only)
 
-### v4.2.0 (released)
+### v4.2.0
 
 - Parse short and long descriptions of parameters
 - Implement equality checking for SequenceContainer objects and Parameter objects
@@ -99,21 +99,21 @@ Release notes for the `space_packet_parser` library
 - Default read size is changed to a full file read on file-like objects
 - Improve error handling for invalid/unsupported parameter types
 
-### v4.1.1 (released)
+### v4.1.1
 
 - Allow Python 3.12
 
-### v4.1.0 (released)
+### v4.1.0
 
 - Bugfix in fill_buffer to allow compatibility with Bitstring 4.1.1
 - Add informative error if user tries to parse a TextIO object
 - Add documentation of some common issues and add changelog to documentation
 
-### v4.0.2 (released)
+### v4.0.2
 
 - Documentation updates for Read The Docs
 
-### v4.0.1 (released)
+### v4.0.1
 
 - Modify API for `PacketParser.generator` to accept a ConstBitStream or a BufferedReader or a socket
   - This will allow us to keep memory overhead of reading a binary stream to almost zero

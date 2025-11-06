@@ -53,7 +53,7 @@ make html && open build/html/index.html
 Feel free to fork this repo and submit a PR!
 
 - If you are working on an issue, link your PR to that issue.
-- All PRs should be destined for the `main` branch (trunk-based development).
+- All feature PRs should be destined for the `main` branch (trunk-based development).
 - Reviews are required before merging and our automated tests must pass.
 - Please fill out the PR template that is populated when creating a PR in the GitHub interface.
 
@@ -73,8 +73,8 @@ That is,
 
 ### Preparing for Release
 
-1. Create a release candidate branch named according to the version to be released. This branch is used to polish
-   the release but is fundamentally not different from any other feature branch in trunk-based development.
+1. Create a release branch named according to the version to be released. This branch is the long lived branch that
+   will contain the tagged commit for the release (and possible future patch releases).
    The naming convention is `release/X.Y.Z`.
 
 2. Bump the version of the package to the version you are about to release, either manually by editing `pyproject.toml`
@@ -83,16 +83,18 @@ That is,
 
 3. Update the version identifier in `CITATION.cff` and `meta.yaml`.
 
-4. Update `changelog.md` to reflect that the version is now "released" and revisit `README.md` to keep it up to date.
+4. Update `changelog.md` to ensure the release notes for the version to be to be published is at the top
+   and revisit `README.md` to keep it up to date.
 
 5. Open a PR to merge the release branch into main. This informs the rest of the team how the release
    process is progressing as you polish the release branch. You may need to rebase the release branch onto
    any recent changes to `main` and resolve any conflicts on a regular basis.
 
-6. When you are satisfied that the release branch is ready, merge the PR into `main`.
-
-7. Check out the `main` branch, pull the merged changes, and tag the newly created merge commit with the
+6. When you are satisfied that the release branch is ready, tag the latest commit on the release branch with the
    desired version `X.Y.Z` and push the tag upstream. This will kick off the automatic release process.
+
+7. Merge the release branch back into `main` via a PR. Resolve any conflicts normally. This ensures that all changes
+   in the release are incorporated into `main` and subsequent version releases.
 
 ### Automatic Release Process
 
@@ -113,12 +115,10 @@ from test releases, which are only published to TestPyPI and are not published t
 If the semantic version has any suffixes (e.g. `rc1`), the release will be marked as
 a prerelease in GitHub and PyPI.
 
-To trigger an official release, push a tag referencing the commit you want to release. Unless you are publishing a
-release candidate or dev build, the commit _MUST_ be on
-the `main` branch. Never publish a non-suffixed release from a commit that hasn't been pushed to `main`.
+To trigger an official release, push a tag referencing the commit you want to release.
 
 ```bash
-git checkout main
+git checkout release/X.Y.Z
 git pull
 git tag -a X.Y.Z -m "Version X.Y.Z"
 git push origin X.Y.Z
@@ -133,7 +133,7 @@ To publish a test release, prefix the tag with `test-release`. This will prevent
 and will prevent the artifacts being published on GitHub.
 
 ```bash
-git checkout <ref-to-test-release-from>
+git checkout release/X.Y.Z
 git pull
 git tag -a test-release/X.Y.Zrc1 -m "Test Release Candidate X.Y.Zrc1"
 git push origin test-release/X.Y.Zrc1
