@@ -3,26 +3,26 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="http://www.omg.org/space/xtce https://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd"
                   name="TestIncludeCondition">
-    
+
     <xtce:Header date="2024-11-06" version="1.0" author="Space Packet Parser Test"/>
-    
+
     <xtce:TelemetryMetaData>
-        
+
         <!-- Define parameter types -->
         <xtce:ParameterTypeSet>
             <xtce:IntegerParameterType name="UINT8_Type" signed="false">
                 <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
             </xtce:IntegerParameterType>
-            
+
             <xtce:IntegerParameterType name="UINT16_Type" signed="false">
                 <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
             </xtce:IntegerParameterType>
-            
+
             <xtce:IntegerParameterType name="UINT32_Type" signed="false">
                 <xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned"/>
             </xtce:IntegerParameterType>
         </xtce:ParameterTypeSet>
-        
+
         <!-- Define parameters -->
         <xtce:ParameterSet>
             <xtce:Parameter name="Mode" parameterTypeRef="UINT8_Type" shortDescription="Mode indicator"/>
@@ -31,37 +31,37 @@
             <xtce:Parameter name="OptionalData2" parameterTypeRef="UINT16_Type" shortDescription="Optional data field 2"/>
             <xtce:Parameter name="MandatoryData" parameterTypeRef="UINT32_Type" shortDescription="Always included data"/>
         </xtce:ParameterSet>
-        
+
         <!-- Define containers -->
         <xtce:ContainerSet>
             <xtce:SequenceContainer name="ConditionalTestPacket">
                 <xtce:EntryList>
                     <!-- Mode parameter - always included -->
                     <xtce:ParameterRefEntry parameterRef="Mode"/>
-                    
+
                     <!-- Flag parameter - always included -->
                     <xtce:ParameterRefEntry parameterRef="Flag"/>
-                    
+
                     <!-- OptionalData1 - included only if Mode == 1 -->
                     <xtce:ParameterRefEntry parameterRef="OptionalData1">
                         <xtce:IncludeCondition>
                             <xtce:Comparison parameterRef="Mode" value="1" comparisonOperator="==" useCalibratedValue="true"/>
                         </xtce:IncludeCondition>
                     </xtce:ParameterRefEntry>
-                    
+
                     <!-- OptionalData2 - included only if Flag == 1 -->
                     <xtce:ParameterRefEntry parameterRef="OptionalData2">
                         <xtce:IncludeCondition>
                             <xtce:Comparison parameterRef="Flag" value="1" comparisonOperator="==" useCalibratedValue="true"/>
                         </xtce:IncludeCondition>
                     </xtce:ParameterRefEntry>
-                    
+
                     <!-- MandatoryData - always included -->
                     <xtce:ParameterRefEntry parameterRef="MandatoryData"/>
                 </xtce:EntryList>
             </xtce:SequenceContainer>
         </xtce:ContainerSet>
-        
+
     </xtce:TelemetryMetaData>
-    
+
 </xtce:SpaceSystem>
