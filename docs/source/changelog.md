@@ -13,6 +13,11 @@ Release notes for the `space_packet_parser` library
 - BUGFIX: Handle optional secondary headers with CCSDS continuation packets
 - Add warnings if there are leftover bytes from a CCSDS generator
 
+### v6.0.1 (released)
+
+- BUGFIX: Incorrect bitshift logic for ccsds generator packet length creation
+  in very specific circumstances (only if large data on power of 2 boundary)
+
 ### v6.0.0 (released)
 
 - _BREAKING_: `XtcePacketDefinition` no longer accepts a file object as input.

@@ -315,3 +315,25 @@ def test_ccsds_generator_not_enough_bytes():
         match="9 bytes left to read is not enough to read a full packet",
     ):
         assert len(list(space_packet_parser.generators.ccsds_generator(incomplete_p))) == 0
+
+
+@pytest.mark.parametrize(
+    "data_length_bytes",
+    [
+        1,  # Minimum data length
+        255,
+        256,
+        512,  # Can cause issues with bitshift if implemented incorrectly
+        1023,
+        1024,
+        1025,
+        65536,  # Maximum data length
+    ],
+)
+def test_ccsds_generator_packet_length_math(data_length_bytes):
+    # Test ccsds_generator correctly calculates packet length for various data sizes,
+    # especially power-of-2 boundaries
+    p = ccsds.create_ccsds_packet(data=b"0" * data_length_bytes)
+    parsed_p = next(space_packet_parser.generators.ccsds_generator(p))
+    assert len(parsed_p) == data_length_bytes + 6
+    assert parsed_p.data_length == data_length_bytes - 1
