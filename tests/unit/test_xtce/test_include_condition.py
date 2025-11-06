@@ -1,7 +1,6 @@
 """Tests for IncludeCondition support in ParameterRefEntry"""
 
 import struct
-from io import BytesIO
 
 import pytest
 
@@ -187,9 +186,7 @@ def test_parameter_ref_entry_with_repeat_entry_raises():
     param = parameters.Parameter(name="TestParam", parameter_type=uint8_type)
 
     # Create ParameterRefEntry with repeat_entry
-    param_ref_entry = containers.ParameterRefEntry(
-        parameter_ref="TestParam", include_condition=None, repeat_entry=True
-    )
+    param_ref_entry = containers.ParameterRefEntry(parameter_ref="TestParam", include_condition=None, repeat_entry=True)
 
     # Create packet
     test_data = struct.pack(">B", 42)
