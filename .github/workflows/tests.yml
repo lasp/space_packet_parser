@@ -1,12 +1,12 @@
 name: Run Style Checks and Test
 on:
-  pull_request:  # Run on all PR changes
-    types: [opened, synchronize, reopened]  # This is the default, but made explicit
-  push:  # Run on all changes to main (includes PR merges)
+  pull_request: # Run on all PR changes
+    types: [opened, synchronize, reopened] # This is the default, but made explicit
+  push: # Run on all changes to main (includes PR merges)
     branches:
       - main
-  schedule:  # Scheduled workflows will only run on the default branch
-    - cron: '50 23 * * *'  # 11:50pm daily (to get ahead of all those midnight jobs)
+  schedule: # Scheduled workflows will only run on the default branch
+    - cron: "50 23 * * *" # 11:50pm daily (to get ahead of all those midnight jobs)
 
 jobs:
   ci-tests:
@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     defaults:
       run:
         shell: bash
@@ -29,7 +29,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 

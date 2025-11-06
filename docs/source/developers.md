@@ -24,44 +24,55 @@ pre-commit install
 to get pre-commit hooks to automatically run the linting and formatting checks for you before each commit.
 
 ## Testing
+
 Testing is run with `pytest` and the order is randomized by `pytest-randomly`.
 To run all tests, run
+
 ```bash
 pytest tests
 ```
 
 To run all tests in docker containers (tests against many versions of python), run
+
 ```bash
 docker-compose up --build && docker-compose down
 ```
 
 ## Building Documentation with Sphinx
+
 Documentation is automatically built on ReadTheDocs in response to every PR and release,
 but you can also build it locally with:
+
 ```bash
 # From docs directory
 make html && open build/html/index.html
 ```
 
 ## Making a Pull Request
+
 Feel free to fork this repo and submit a PR!
+
 - If you are working on an issue, link your PR to that issue.
 - All PRs should be destined for the `main` branch (trunk-based development).
 - Reviews are required before merging and our automated tests must pass.
 - Please fill out the PR template that is populated when creating a PR in the GitHub interface.
 
 ## Release Process
+
 Releases are automatically created using a GitHub Actions workflow that responds to pushes of annotated git tags.
 
 ### Versioning
+
 Version numbers must be PEP440 strings: https://peps.python.org/pep-0440/
 
 That is,
+
 ```
 [N!]N(.N)*[{a|b|rc}N][.postN][.devN]
 ```
 
 ### Preparing for Release
+
 1. Create a release candidate branch named according to the version to be released. This branch is used to polish
    the release but is fundamentally not different from any other feature branch in trunk-based development.
    The naming convention is `release/X.Y.Z`.
@@ -84,6 +95,7 @@ That is,
    desired version `X.Y.Z` and push the tag upstream. This will kick off the automatic release process.
 
 ### Automatic Release Process
+
 We use GitHub Actions for automatic release process that responds to pushes of git tags. When a tag matching
 a semantic version (`[0-9]+.[0-9]+.[0-9]+*` or `test-release/[0-9]+.[0-9]+.[0-9]+*`) is pushed, the release workflow
 runs as follows:
@@ -95,6 +107,7 @@ runs as follows:
 4. Create a GitHub Release that includes auto-generated release notes and the source code.
 
 #### Official Releases
+
 Official releases are published to the public PyPI (even if they are release candidates like `1.2.3rc1`). This differs
 from test releases, which are only published to TestPyPI and are not published to GitHub at all.
 If the semantic version has any suffixes (e.g. `rc1`), the release will be marked as
@@ -112,6 +125,7 @@ git push origin X.Y.Z
 ```
 
 #### Test Releases
+
 Test releases are published to TestPyPI only and are not published on GitHub. Test releases are triggered by tags
 prefixed with `test-release`.
 
@@ -126,8 +140,10 @@ git push origin test-release/X.Y.Zrc1
 ```
 
 #### Prereleases
+
 Unless the pushed tag matches the regex `^[0-9]*\.[0-9]*\.[0-9]*`, the release will be marked as a
 prerelease in GitHub. This allows "official" prereleases of suffixed tags.
 
 #### Release Notes Generation
+
 Release notes are generated based on commit messages since the latest non-prerelease Release.

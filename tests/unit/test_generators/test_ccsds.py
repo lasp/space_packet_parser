@@ -152,13 +152,25 @@ def test_continuation_packets(test_data_dir):
     # but skip the following
     # Add in 4 1s to the 2nd and 3rd packet that should be removed
     p0 = ccsds.create_ccsds_packet(
-        data=b"0" * 63, apid=11, sequence_flags=ccsds.SequenceFlags.FIRST, sequence_count=16382
+        data=b"0" * 63,
+        apid=11,
+        sequence_flags=ccsds.SequenceFlags.FIRST,
+        sequence_count=16382,
+        secondary_header_flag=False,
     )
     p1 = ccsds.create_ccsds_packet(
-        data=b"1" * 4 + b"0" * 1, apid=11, sequence_flags=ccsds.SequenceFlags.CONTINUATION, sequence_count=16383
+        data=b"1" * 4 + b"0" * 1,
+        apid=11,
+        sequence_flags=ccsds.SequenceFlags.CONTINUATION,
+        sequence_count=16383,
+        secondary_header_flag=True,
     )
     p2 = ccsds.create_ccsds_packet(
-        data=b"1" * 4 + b"0" * 1, apid=11, sequence_flags=ccsds.SequenceFlags.LAST, sequence_count=0
+        data=b"1" * 4 + b"0" * 1,
+        apid=11,
+        sequence_flags=ccsds.SequenceFlags.LAST,
+        sequence_count=0,
+        secondary_header_flag=True,
     )
     raw_bytes = p0 + p1 + p2
     result_packets = [
@@ -169,6 +181,42 @@ def test_continuation_packets(test_data_dir):
     ]
     remove_keys(result_packets[0])
     assert result_packets == orig_packets
+
+
+def test_continuation_packets_secondary_header(test_data_dir):
+    """Continuation packets may or may not contain secondary headers.
+
+    When combining the bytes from multiple packets, the secondary headers from all but the first packet
+    should be stripped out.
+    """
+    # 8 byte long data, with 4 byte secondary headers in each packet
+    data = b"0" * 8
+    p0 = ccsds.create_ccsds_packet(
+        data=data, apid=11, sequence_flags=ccsds.SequenceFlags.FIRST, sequence_count=0, secondary_header_flag=True
+    )
+    p1 = ccsds.create_ccsds_packet(
+        data=data,
+        apid=11,
+        sequence_flags=ccsds.SequenceFlags.CONTINUATION,
+        sequence_count=1,
+        secondary_header_flag=True,
+    )
+    p2 = ccsds.create_ccsds_packet(
+        data=data, apid=11, sequence_flags=ccsds.SequenceFlags.LAST, sequence_count=2, secondary_header_flag=False
+    )
+    raw_bytes = p0 + p1 + p2
+    result_packets = [
+        packet
+        for packet in space_packet_parser.generators.ccsds_generator(
+            raw_bytes, combine_segmented_packets=True, secondary_header_bytes=4
+        )
+    ]
+    assert len(result_packets) == 1
+    # The combined packet should strip the secondary header from packet 2, but packet 3 has no secondary header
+    combined_packet = result_packets[0]
+    assert combined_packet.secondary_header_flag == 1
+    # The data should be 8 + 4 + 8 = 20 bytes long
+    assert len(combined_packet.user_data) == 20
 
 
 def test_continuation_packet_warnings(test_data_dir):
@@ -247,6 +295,26 @@ def test_ccsds_generator(jpss_test_data_dir):
     # Unrecognized source (error)
     with pytest.raises(OSError, match="Unrecognized data source"):
         next(space_packet_parser.generators.ccsds_generator(1))
+
+
+def test_ccsds_generator_not_enough_bytes():
+    """Test ccsds_generator with not enough bytes for a full header"""
+    # Not enough bytes for a full CCSDS header (6 bytes) should not yield any packets
+    with pytest.warns(
+        UserWarning,
+        match="3 bytes left to read is not enough to read a CCSDS header",
+    ):
+        assert len(list(space_packet_parser.generators.ccsds_generator(b"\x00\x01\x02"))) == 0
+
+    # Make a partial packet
+    p = ccsds.create_ccsds_packet(data=b"12345")
+    # Remove last 2 bytes to make it incomplete
+    incomplete_p = p[:-2]
+    with pytest.warns(
+        UserWarning,
+        match="9 bytes left to read is not enough to read a full packet",
+    ):
+        assert len(list(space_packet_parser.generators.ccsds_generator(incomplete_p))) == 0
 
 
 @pytest.mark.parametrize(

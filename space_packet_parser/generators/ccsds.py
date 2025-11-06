@@ -324,6 +324,12 @@ def ccsds_generator(
             read_buffer += result
         # Skip the header bytes
         current_pos += skip_header_bytes
+        if len(read_buffer) - current_pos < header_length_bytes:
+            warnings.warn(
+                f"{len(read_buffer) - current_pos} bytes left to read is not enough to read "
+                f"a CCSDS header ({header_length_bytes} bytes), ending generator with leftover bytes."
+            )
+            break
 
         # per the CCSDS spec
         # 4.1.3.5.3 The length count C shall be expressed as:
@@ -338,6 +344,13 @@ def ccsds_generator(
             if not result:  # If there is verifiably no more data to add, break
                 break
             read_buffer += result
+        if len(read_buffer) - current_pos < n_bytes_packet:
+            warnings.warn(
+                f"{len(read_buffer) - current_pos} bytes left to read is not enough to read "
+                f"a full packet ({n_bytes_packet}) based on the data length field, "
+                "ending generator with leftover bytes."
+            )
+            break
 
         # Consider it a counted packet once we've verified that we have read the full packet and parsed the header
         # Update the number of packets and bytes parsed
@@ -381,7 +394,12 @@ def ccsds_generator(
             binary_data = packets[0]
             # Add the continuation packets to the first packet, skipping the headers
             for p in packets[1:]:
-                binary_data += p[header_length_bytes + secondary_header_bytes :]
+                # The continuation packets may or may not have a secondary header,
+                # so we need to account for both cases when trimming the initial header
+                tmp_header_length = (
+                    header_length_bytes + secondary_header_bytes if p.secondary_header_flag else header_length_bytes
+                )
+                binary_data += p[tmp_header_length:]
             yield CCSDSPacketBytes(binary_data)
 
     if show_progress:

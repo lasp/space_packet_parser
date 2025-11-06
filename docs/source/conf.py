@@ -13,7 +13,26 @@ author = "Gavin Medley, Michael Chambliss"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["myst_parser", "sphinx.ext.napoleon", "autoapi.extension", "sphinx.ext.mathjax"]
+extensions = [
+    "myst_parser",
+    "sphinx.ext.napoleon",
+    "autoapi.extension",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.intersphinx",
+]
+
+# -- Intersphinx configuration -----------------------------------------------
+# Intersphinx allows linking to other Sphinx documentation
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "click": ("https://click.palletsprojects.com/en/stable/", None),
+    "rich": ("https://rich.readthedocs.io/en/stable/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    # Note: lxml does not use Sphinx for its documentation, so intersphinx is not available
+    # Note: xarray does not currently support intersphinx properly.
+    # See: https://github.com/pydata/xarray/issues/4279
+}
 
 myst_enable_extensions = ["html_image", "dollarmath"]
 

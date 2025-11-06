@@ -1,4 +1,4 @@
-"""Extras package that supports generating an `xarray.DataSet` directly"""
+"""Extras package that supports generating an `xarray.Dataset` directly"""
 
 # Extras import first since it might fail
 try:
@@ -128,6 +128,7 @@ def create_dataset(
     packet_bytes_generator: Optional[Callable] = None,
     generator_kwargs: Optional[dict] = None,
     parse_bytes_kwargs: Optional[dict] = None,
+    packet_filter: Optional[Callable[[bytes], bool]] = None,
 ) -> dict[int, xr.Dataset]:
     """Create a dictionary of xarray Datasets (per APID) from a set of packet files
 
@@ -147,7 +148,7 @@ def create_dataset(
     xtce_packet_definition : Union[str, Path, xtce.definitions.XtcePacketDefinition]
         Packet definition for parsing the packet data
     use_raw_values: bool
-        Default False. If True, saves parameter raw values to the resulting DataSet.
+        Default False. If True, saves parameter raw values to the resulting Dataset.
         e.g. enumerated lookups will be saved as their encoded integer values.
     packet_bytes_generator : Optional[callable]
         The generator function to use for yielding packet bytes. Defaults to
@@ -157,11 +158,13 @@ def create_dataset(
         Keyword arguments passed to the packet bytes generator.
     parse_bytes_kwargs : Optional[dict]
         Keyword arguments passed to `XtcePacketDefinition.parse_bytes()`.
+    packet_filter : Optional[Callable[[bytes], bool]]
+        Optional function to filter items returned from the packet generator (e.g. `lambda pkt: pkt.apid == 100`)
 
     Returns
     -------
-    : dict[xarray.DataSet]
-        DataSet object parsed from the iterable of packets.
+    : dict[int, xr.Dataset]
+        Dataset objects parsed from the iterable of packets, keyed by APID.
     """
     generator_kwargs = generator_kwargs or {}
     parse_bytes_kwargs = parse_bytes_kwargs or {}
@@ -243,6 +246,9 @@ def create_dataset(
     for packet_file in packet_files:
         packet_data = _read_packet_file(packet_file)
         generator = packet_bytes_generator(packet_data, **generator_kwargs)
+        # Apply optional packet filtering function to generator
+        if packet_filter is not None:
+            generator = filter(packet_filter, generator)
         _process_generator(generator)
 
     # Turn the dict into an xarray dataset
