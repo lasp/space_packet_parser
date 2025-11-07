@@ -1,9 +1,9 @@
 ---
 name: Issue Template
 about: Default template for creating new issues
-title: ''
-labels: ''
-assignees: ''
+title: ""
+labels: ""
+assignees: ""
 ---
 
 # Context
