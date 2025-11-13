@@ -7,7 +7,8 @@ Space Packet Parser is a Python library for decoding CCSDS telemetry packets acc
 ## Key Technologies
 
 - **Python 3.9+** - Core language
-- **Poetry** - Dependency management and packaging
+- **uv** - Fast, PEP-compliant Python project management (preferred)
+- **pip** - Standard Python package installer (fallback)
 - **XTCE/CCSDS Standards** - Packet format specifications
 - **lxml** - XML parsing for XTCE definitions
 - **Click** - CLI interface
@@ -48,7 +49,8 @@ Space Packet Parser is a Python library for decoding CCSDS telemetry packets acc
 
 ### Key Commands
 
-- `poetry install` - Install dependencies
+- `uv sync --all-extras` - Install all dependencies (preferred)
+- `pip install ".[test,xarray]"` - Install dependencies with pip
 - `pytest` - Run tests
 - `ruff check` - Lint code
 - `ruff format` - Format code

@@ -47,7 +47,7 @@ ENV VIRTUAL_ENV=/opt/venv
 RUN python -m venv $VIRTUAL_ENV && chown $USERNAME:$USERNAME -R $VIRTUAL_ENV
 # This adds not only the venv python executable but also all installed entrypoints to the PATH
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-# Upgrade pip to the latest version because poetry uases pip in the background to install packages
+# Upgrade pip to the latest version
 RUN pip install --upgrade pip
 
 # Set up non-root user
@@ -64,7 +64,6 @@ ENV SHELL=/bin/zsh
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.2.0/zsh-in-docker.sh)" -- \
   -p git \
   -p colorize \
-  -p poetry \
   -p https://github.com/zsh-users/zsh-autosuggestions \
   -p https://github.com/zsh-users/zsh-completions \
   -x
@@ -72,9 +71,8 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 # Install Claude
 RUN npm install -g @anthropic-ai/claude-code
 
-# Install poetry
-RUN curl -sSL https://install.python-poetry.org | python -
-# Add poetry to path
+# Install uv for Python project management
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="$PATH:/home/$USERNAME/.local/bin"
 
 # Copy and set up firewall script

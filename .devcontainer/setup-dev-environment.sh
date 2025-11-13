@@ -2,8 +2,10 @@
 
 # Set up the development environment
 
-# Install poetry dependencies
-poetry lock && poetry sync
+# Install project dependencies with uv
+# uv sync creates a virtual environment and installs dependencies
+# We use --all-extras to install all optional dependency groups
+uv sync --all-extras
 
 # Install pre-commit and pre-commit hooks
 pre-commit install
