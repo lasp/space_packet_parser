@@ -12,6 +12,7 @@ Release notes for the `space_packet_parser` library
 - Add support for filtering packets in `create_dataset`
 - BUGFIX: Handle optional secondary headers with CCSDS continuation packets
 - Add warnings if there are leftover bytes from a CCSDS generator
+- Add support for Python 3.14
 
 ### v6.0.1
 
