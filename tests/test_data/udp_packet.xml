@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xtce:SpaceSystem name="UDPPacketExample"
+                  xmlns:xtce="http://www.omg.org/spec/XTCE/20180204"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204
+                                      https://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd">
+    <xtce:Header date="2024-11-05T00:00:00Z" version="1.0" validationStatus="Working"/>
+    <xtce:TelemetryMetaData>
+        <xtce:ParameterTypeSet>
+            <xtce:IntegerParameterType name="UDP_PORT_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="UDP_LENGTH_Type" signed="false">
+                <xtce:UnitSet>
+                    <xtce:Unit>byte</xtce:Unit>
+                </xtce:UnitSet>
+                <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="UDP_CHECKSUM_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:BinaryParameterType name="UDP_DATA_Type">
+                <xtce:UnitSet/>
+                <xtce:BinaryDataEncoding>
+                    <xtce:SizeInBits>
+                        <xtce:DynamicValue>
+                            <xtce:ParameterInstanceRef parameterRef="UDP_LENGTH"/>
+                            <xtce:LinearAdjustment intercept="-64" slope="8"/>
+                        </xtce:DynamicValue>
+                    </xtce:SizeInBits>
+                </xtce:BinaryDataEncoding>
+            </xtce:BinaryParameterType>
+        </xtce:ParameterTypeSet>
+        <xtce:ParameterSet>
+            <xtce:Parameter name="SOURCE_PORT" parameterTypeRef="UDP_PORT_Type">
+                <xtce:LongDescription>UDP source port number (0-65535)</xtce:LongDescription>
+            </xtce:Parameter>
+            <xtce:Parameter name="DEST_PORT" parameterTypeRef="UDP_PORT_Type">
+                <xtce:LongDescription>UDP destination port number (0-65535)</xtce:LongDescription>
+            </xtce:Parameter>
+            <xtce:Parameter name="UDP_LENGTH" parameterTypeRef="UDP_LENGTH_Type">
+                <xtce:LongDescription>Length in bytes of the UDP header and UDP data. Minimum value is 8 bytes (header only).</xtce:LongDescription>
+            </xtce:Parameter>
+            <xtce:Parameter name="CHECKSUM" parameterTypeRef="UDP_CHECKSUM_Type">
+                <xtce:LongDescription>UDP checksum for error checking. May be zero if not used.</xtce:LongDescription>
+            </xtce:Parameter>
+            <xtce:Parameter name="DATA" parameterTypeRef="UDP_DATA_Type">
+                <xtce:LongDescription>UDP payload data. Size is determined by UDP_LENGTH - 8 bytes.</xtce:LongDescription>
+            </xtce:Parameter>
+        </xtce:ParameterSet>
+        <xtce:ContainerSet>
+            <xtce:SequenceContainer name="UDPPacket">
+                <xtce:LongDescription>UDP (User Datagram Protocol) packet structure</xtce:LongDescription>
+                <xtce:EntryList>
+                    <xtce:ParameterRefEntry parameterRef="SOURCE_PORT"/>
+                    <xtce:ParameterRefEntry parameterRef="DEST_PORT"/>
+                    <xtce:ParameterRefEntry parameterRef="UDP_LENGTH"/>
+                    <xtce:ParameterRefEntry parameterRef="CHECKSUM"/>
+                    <xtce:ParameterRefEntry parameterRef="DATA"/>
+                </xtce:EntryList>
+            </xtce:SequenceContainer>
+        </xtce:ContainerSet>
+    </xtce:TelemetryMetaData>
+</xtce:SpaceSystem>

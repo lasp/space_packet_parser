@@ -162,6 +162,8 @@ def custom_generator(binary_data):
         yield packet_bytes
 ```
 
+For a complete example of implementing a custom generator with a custom packet bytes class, see the [UDP packet parsing example](https://github.com/lasp/space_packet_parser/blob/main/examples/udp_packet_parsing.py). This example demonstrates how to create a `UDPPacketBytes` class (similar to `CCSDSPacketBytes`) that exposes UDP header fields as properties, and how to implement a `udp_generator` function that yields individual UDP packets from binary data.
+
 ### Filtering Packets
 
 For generators that expose packet metadata (like `CCSDSPacketBytes` with its `apid` property), you can filter packets before parsing to improve performance. A code
