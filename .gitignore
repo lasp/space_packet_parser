@@ -13,6 +13,7 @@
 #####################
 .coverage*
 coverage_report
+coverage.xml
 corbertura_report.xml
 tests/test_data/hidden
 */.benchmarks
@@ -24,7 +25,7 @@ tests/test_data/hidden
 build
 dist
 space_packet_parser/_version.py
-poetry.lock
+uv.lock
 
 # Packages #
 ############

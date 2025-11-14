@@ -5,14 +5,10 @@ build:
   tools:
     python: "3.11"
   jobs:
-    post_create_environment:
-      # Install poetry
-      - pip install poetry==2.0.1
-      # Tell poetry to not create a new virtual environment but use the current one
-      - poetry config virtualenvs.create false
     post_install:
-      # Install dependencies. Our doc building dependencies are part of the dev group
-      - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry install
+      # Install the project with documentation dependencies using pip
+      # This is the standard approach for PEP 517/518 compliant projects
+      - pip install ".[docs,xarray]"
 
 sphinx:
   configuration: docs/source/conf.py
