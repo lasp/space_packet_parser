@@ -2,7 +2,7 @@
 
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from typing import Any, Optional, Union
+from typing import Any
 
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
@@ -42,7 +42,7 @@ class MatchCriteria(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
     }
 
     @abstractmethod
-    def evaluate(self, packet: spp.SpacePacket, current_parsed_value: Optional[Union[int, float]] = None) -> bool:
+    def evaluate(self, packet: spp.SpacePacket, current_parsed_value: int | float | None = None) -> bool:
         """Evaluate match criteria down to a boolean.
 
         Parameters
@@ -107,10 +107,10 @@ class Comparison(MatchCriteria):
         cls,
         element: ElementTree.Element,
         *,
-        tree: Optional[ElementTree.Element] = None,
-        parameter_lookup: Optional[dict[str, any]] = None,
-        parameter_type_lookup: Optional[dict[str, any]] = None,
-        container_lookup: Optional[dict[str, any]] = None,
+        tree: ElementTree.Element | None = None,
+        parameter_lookup: dict[str, any] | None = None,
+        parameter_type_lookup: dict[str, any] | None = None,
+        container_lookup: dict[str, any] | None = None,
     ) -> "Comparison":
         """Create
 
@@ -163,7 +163,7 @@ class Comparison(MatchCriteria):
             value=str(self.required_value),
         )
 
-    def evaluate(self, packet: spp.SpacePacket, current_parsed_value: Optional[Union[int, float]] = None) -> bool:
+    def evaluate(self, packet: spp.SpacePacket, current_parsed_value: int | float | None = None) -> bool:
         """Evaluate comparison down to a boolean. If the parameter to compare is not present in the parsed_data dict,
         we assume that we are comparing against the current raw value in current_parsed_value.
 
@@ -221,8 +221,8 @@ class Condition(MatchCriteria):
         left_param: str,
         operator: str,
         *,
-        right_param: Optional[str] = None,
-        right_value: Optional[Any] = None,
+        right_param: str | None = None,
+        right_value: Any | None = None,
         left_use_calibrated_value: bool = True,
         right_use_calibrated_value: bool = True,
     ):
@@ -297,10 +297,10 @@ class Condition(MatchCriteria):
         cls,
         element: ElementTree.Element,
         *,
-        tree: Optional[ElementTree.Element] = None,
-        parameter_lookup: Optional[dict[str, any]] = None,
-        parameter_type_lookup: Optional[dict[str, any]] = None,
-        container_lookup: Optional[dict[str, any]] = None,
+        tree: ElementTree.Element | None = None,
+        parameter_lookup: dict[str, any] | None = None,
+        parameter_type_lookup: dict[str, any] | None = None,
+        container_lookup: dict[str, any] | None = None,
     ) -> "Condition":
         """Classmethod to create a Condition object from an XML element.
 
@@ -380,7 +380,7 @@ class Condition(MatchCriteria):
 
         return condition
 
-    def evaluate(self, packet: spp.SpacePacket, current_parsed_value: Optional[Union[int, float]] = None) -> bool:
+    def evaluate(self, packet: spp.SpacePacket, current_parsed_value: int | float | None = None) -> bool:
         """Evaluate match criteria down to a boolean.
 
         Parameters
@@ -433,7 +433,7 @@ class Ored(namedtuple("Ored", ["conditions", "ands"])):
 class BooleanExpression(MatchCriteria):
     """<xtce:BooleanExpression>"""
 
-    def __init__(self, expression: Union[Condition, Anded, Ored]):
+    def __init__(self, expression: Condition | Anded | Ored):
         self.expression = expression
 
     def __repr__(self):
@@ -444,10 +444,10 @@ class BooleanExpression(MatchCriteria):
         cls,
         element: ElementTree.Element,
         *,
-        tree: Optional[ElementTree.Element] = None,
-        parameter_lookup: Optional[dict[str, any]] = None,
-        parameter_type_lookup: Optional[dict[str, any]] = None,
-        container_lookup: Optional[dict[str, any]] = None,
+        tree: ElementTree.Element | None = None,
+        parameter_lookup: dict[str, any] | None = None,
+        parameter_type_lookup: dict[str, any] | None = None,
+        container_lookup: dict[str, any] | None = None,
     ) -> "BooleanExpression":
         """Abstract classmethod to create a match criteria object from an XML element.
 
@@ -510,7 +510,7 @@ class BooleanExpression(MatchCriteria):
             return cls(expression=_parse_ored(ored_conditions_element))
         raise ValueError(f"Failed to parse {element}")
 
-    def evaluate(self, packet: spp.SpacePacket, current_parsed_value: Optional[Union[int, float]] = None) -> bool:
+    def evaluate(self, packet: spp.SpacePacket, current_parsed_value: int | float | None = None) -> bool:
         """Evaluate the criteria in the BooleanExpression down to a single boolean.
 
         Parameters
@@ -593,7 +593,7 @@ class BooleanExpression(MatchCriteria):
 class DiscreteLookup(common.AttrComparable, common.XmlObject):
     """<xtce:DiscreteLookup>"""
 
-    def __init__(self, match_criteria: list[Comparison], lookup_value: Union[int, float]):
+    def __init__(self, match_criteria: list[Comparison], lookup_value: int | float):
         """Constructor
 
         Parameters
@@ -611,10 +611,10 @@ class DiscreteLookup(common.AttrComparable, common.XmlObject):
         cls,
         element: ElementTree.Element,
         *,
-        tree: Optional[ElementTree.ElementTree] = None,
-        parameter_lookup: Optional[dict[str, any]] = None,
-        parameter_type_lookup: Optional[dict[str, any]] = None,
-        container_lookup: Optional[dict[str, any]] = None,
+        tree: ElementTree.ElementTree | None = None,
+        parameter_lookup: dict[str, any] | None = None,
+        parameter_type_lookup: dict[str, any] | None = None,
+        container_lookup: dict[str, any] | None = None,
     ) -> "DiscreteLookup":
         """Create a DiscreteLookup object from an <xtce:DiscreteLookup> XML element
 
@@ -666,7 +666,7 @@ class DiscreteLookup(common.AttrComparable, common.XmlObject):
 
         return elmaker.DiscreteLookup(*dl_contents, value=str(self.lookup_value))
 
-    def evaluate(self, packet: spp.SpacePacket, current_parsed_value: Optional[Union[int, float]] = None) -> Any:
+    def evaluate(self, packet: spp.SpacePacket, current_parsed_value: int | float | None = None) -> Any:
         """Evaluate the lookup to determine if it is valid.
 
         Parameters

@@ -2,20 +2,19 @@
 
 ## Installing Development Dependencies
 
-Poetry installs dev dependencies by default from the `poetry.lock` or `pyproject.toml` files.
+Install development dependencies using `uv`` with all the extras groups:
 
 ```bash
-poetry install
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install all dependencies including optional extras
+uv sync --all-extras
 ```
 
-Alternatively, if you are using something other than Poetry for development you can install from
-the `dev` extras group.
+Note: `uv` is a fast, Rust-based Python package installer and resolver that is PEP-compliant and fully compatible with pip and PyPI.
 
-```bash
-pip install ".[dev]"
-```
-
-Once the development dependencies are installed, you can run
+Once the development dependencies are installed and the uv-generated `.venv` is activated, you can run
 
 ```bash
 pre-commit install
@@ -83,9 +82,7 @@ That is,
    will contain the tagged commit for the release (and possible future patch releases).
    The naming convention is `release/X.Y`. We drop the patch version on release branches so we can make bugfixes there.
 
-2. Bump the version of the package to the version you are about to release, either manually by editing `pyproject.toml`
-   or by running `poetry version X.Y.Z` or bumping according to a valid bump rule like `poetry version minor`
-   (see poetry docs: https://python-poetry.org/docs/cli/#version).
+2. Bump the version of the package to the version you are about to release by manually editing the `version` field in the `[project]` section of `pyproject.toml`.
 
 3. Update the version identifier in `CITATION.cff` and `meta.yaml`.
 

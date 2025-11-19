@@ -7,7 +7,7 @@ source:
 
 build:
   number: 0
-  # Uses pip to install since Poetry isn't natively supported in Conda builds
+  # Uses pip to install with PEP 517/518 compliant build system
   script: |
     pip install .
   noarch: python
@@ -16,11 +16,11 @@ build:
 
 requirements:
   build:
-    - python>=3.9
+    - python>=3.10
     - pip
-    - poetry-core>=2.0.1
+    - hatchling
   run:
-    - python>=3.9
+    - python>=3.10
     - lxml>=4.8.0
     - click>=8.0
     - rich>=13.0

@@ -11,10 +11,10 @@ except ImportError as ie:
 
 import collections
 import logging
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from os import PathLike
 from pathlib import Path
-from typing import BinaryIO, Callable, Optional, Union
+from typing import BinaryIO
 
 from space_packet_parser.exceptions import UnrecognizedPacketTypeError
 from space_packet_parser.generators import ccsds_generator
@@ -23,7 +23,7 @@ from space_packet_parser.xtce import definitions, encodings, parameter_types
 
 logger = logging.getLogger(__name__)
 
-ReadableBinaryPacket = Union[str, Path, PathLike, BinaryIO, bytes]
+ReadableBinaryPacket = str | Path | PathLike | BinaryIO | bytes
 
 
 def _min_dtype_for_encoding(data_encoding: encodings.DataEncoding):
@@ -73,7 +73,7 @@ def _min_dtype_for_encoding(data_encoding: encodings.DataEncoding):
 
 def _get_minimum_numpy_datatype(
     name: str, definition: definitions.XtcePacketDefinition, use_raw_value: bool = False
-) -> Optional[str]:
+) -> str | None:
     """
     Get the minimum datatype for a given variable.
 
@@ -122,13 +122,13 @@ def _get_minimum_numpy_datatype(
 
 
 def create_dataset(
-    packet_files: Union[ReadableBinaryPacket, Iterable[ReadableBinaryPacket]],
-    xtce_packet_definition: Union[str, Path, definitions.XtcePacketDefinition],
+    packet_files: ReadableBinaryPacket | Iterable[ReadableBinaryPacket],
+    xtce_packet_definition: str | Path | definitions.XtcePacketDefinition,
     use_raw_values: bool = False,
-    packet_bytes_generator: Optional[Callable] = None,
-    generator_kwargs: Optional[dict] = None,
-    parse_bytes_kwargs: Optional[dict] = None,
-    packet_filter: Optional[Callable[[bytes], bool]] = None,
+    packet_bytes_generator: Callable | None = None,
+    generator_kwargs: dict | None = None,
+    parse_bytes_kwargs: dict | None = None,
+    packet_filter: Callable[[bytes], bool] | None = None,
 ) -> dict[int, xr.Dataset]:
     """Create a dictionary of xarray Datasets (per APID) from a set of packet files
 

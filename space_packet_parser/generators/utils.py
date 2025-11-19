@@ -8,13 +8,12 @@ import time
 from functools import singledispatch
 from os import PathLike
 from pathlib import Path
-from typing import Optional, Union
 
 logger = logging.getLogger(__name__)
 
 
 @singledispatch
-def _read_packet_file(packet_file) -> Union[bytes, io.BufferedIOBase, io.RawIOBase]:
+def _read_packet_file(packet_file) -> bytes | io.BufferedIOBase | io.RawIOBase:
     """Read a packet file or file-like object and return an object suitable for passing to a generator.
 
     Specifically this function prepares the input for use with _setup_binary_reader.
@@ -34,7 +33,7 @@ def _read_packet_file(packet_file) -> Union[bytes, io.BufferedIOBase, io.RawIOBa
 
 @_read_packet_file.register(io.BufferedIOBase)
 @_read_packet_file.register(io.RawIOBase)
-def _(packet_file: Union[io.BufferedIOBase, io.RawIOBase]) -> Union[io.BufferedIOBase, io.RawIOBase]:
+def _(packet_file: io.BufferedIOBase | io.RawIOBase) -> io.BufferedIOBase | io.RawIOBase:
     """File-like object, this can be passed directly to a generator."""
     return packet_file
 
@@ -100,7 +99,7 @@ def _setup_binary_reader(binary_data, buffer_read_size_bytes=None) -> tuple:
 
 @_setup_binary_reader.register(io.BufferedIOBase)
 @_setup_binary_reader.register(io.RawIOBase)
-def _(binary_data: Union[io.BufferedIOBase, io.RawIOBase], buffer_read_size_bytes=None) -> tuple:
+def _(binary_data: io.BufferedIOBase | io.RawIOBase, buffer_read_size_bytes=None) -> tuple:
     """Set up a binary reader from a file-like object."""
     read_buffer = b""
     if buffer_read_size_bytes is None:
@@ -152,7 +151,7 @@ def _(binary_data: io.TextIOWrapper, buffer_read_size_bytes=None):
 def _print_progress(
     *,
     current_bytes: int,
-    total_bytes: Optional[int],
+    total_bytes: int | None,
     start_time_ns: int,
     current_packets: int,
     end: str = "\r",
@@ -179,7 +178,7 @@ def _print_progress(
     bar_length = 20
 
     if total_bytes is not None:  # If we actually have an endpoint (i.e. not using a socket)
-        percentage: Union[str, int] = int((current_bytes / total_bytes) * 100)  # Percent Completed Calculation
+        percentage: str | int = int((current_bytes / total_bytes) * 100)  # Percent Completed Calculation
         progress = int((bar_length * current_bytes) / total_bytes)  # Progress Done Calculation
     else:
         percentage = "???"

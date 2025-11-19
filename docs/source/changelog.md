@@ -7,6 +7,10 @@ list and release milestones.
 
 Release notes for the `space_packet_parser` library
 
+### v6.2.0
+
+- Migrated from Poetry to uv/hatchling for Python project management
+
 ### v6.1.0
 
 - Add support for filtering packets in `create_dataset`

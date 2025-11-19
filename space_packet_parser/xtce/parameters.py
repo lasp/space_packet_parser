@@ -1,7 +1,6 @@
 """ParameterType definitions"""
 
 from dataclasses import dataclass
-from typing import Optional
 
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
@@ -29,8 +28,8 @@ class Parameter(common.Parseable, common.XmlObject):
 
     name: str
     parameter_type: parameter_types.ParameterType
-    short_description: Optional[str] = None
-    long_description: Optional[str] = None
+    short_description: str | None = None
+    long_description: str | None = None
 
     def parse(self, packet: spp.SpacePacket) -> None:
         """Parse this parameter from the packet data.
@@ -45,9 +44,9 @@ class Parameter(common.Parseable, common.XmlObject):
         element: ElementTree.Element,
         *,
         parameter_type_lookup: dict[str, parameter_types.ParameterType],
-        tree: Optional[ElementTree.ElementTree] = None,
-        parameter_lookup: Optional[dict[str, any]] = None,
-        container_lookup: Optional[dict[str, any]] = None,
+        tree: ElementTree.ElementTree | None = None,
+        parameter_lookup: dict[str, any] | None = None,
+        container_lookup: dict[str, any] | None = None,
     ) -> "Parameter":
         """Create a Parameter object from an XML element.
 

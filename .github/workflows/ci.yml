@@ -1,0 +1,97 @@
+name: CI
+on:
+  pull_request: # Run on all PR changes
+    types: [opened, synchronize, reopened, labeled]
+  push: # Run on all changes to main (includes PR merges)
+    branches:
+      - main
+  schedule: # Scheduled workflows will only run on the default branch
+    - cron: "50 23 * * *" # 11:50pm daily (to get ahead of all those midnight jobs)
+
+jobs:
+  # Verify that the package builds successfully
+  # Only runs if the cibuild label is applied to the PR
+  build-package:
+    if: |
+      github.event_name == 'pull_request' &&
+      contains(github.event.pull_request.labels.*.name, 'cibuild')
+    name: Build
+    uses: ./.github/workflows/_build.yml
+
+  # Run unit and integration tests
+  run-tests:
+    # Don't run for label additions
+    if: github.event.action != 'labeled'
+    name: Test
+    runs-on: ${{ matrix.os }}
+    permissions:
+      # For codecov OIDC verifications
+      id-token: write
+      contents: read
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # We need the full history to generate the proper version number
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[test,xarray]"
+
+      - name: Testing
+        run: |
+          pytest --color=yes --cov --cov-report=xml
+
+      - uses: codecov/codecov-action@v5
+        with:
+          use_oidc: true
+
+  # Run the example scripts and ensure there are no errors
+  run-examples:
+    # Don't run for label additions
+    if: github.event.action != 'labeled'
+    name: Run Examples
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # Minimal permissions required for checkout
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[examples]"
+
+      - name: Test examples
+        env:
+          MPLBACKEND: Agg # Use non-interactive backend for matplotlib
+        run: |
+          cd examples
+          for example in *.py; do
+            echo "Testing $example..."
+            python "$example" || { echo "Example $example failed"; exit 1; }
+            echo "Example $example passed"
+          done

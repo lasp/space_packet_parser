@@ -1,11 +1,7 @@
 {
   "name": "Space Packet Parser",
   "build": {
-    "dockerfile": "Dockerfile",
-    "args": {
-      "USERNAME": "sppdev"
-    },
-    "platform": "linux/aarch64"
+    "dockerfile": "Dockerfile"
   },
   "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW"],
   "customizations": {
@@ -30,9 +26,7 @@
       "settings": {
         "dev.containers.copyGitConfig": true,
         "python.terminal.activateEnvironment": false,
-        "python-envs.terminal.autoActivationType": "off",
-        "python.defaultInterpreterPath": "python",
-        "python.REPL.enableREPLSmartSend": false,
+        "python-envs.terminal.autoActivationType": "command",
         "python.testing.pytestEnabled": true,
         "python.testing.unittestEnabled": false,
         "python.testing.pytestArgs": ["-s", "."],
@@ -45,11 +39,13 @@
         },
         "[python]": {
           "editor.defaultFormatter": "charliermarsh.ruff"
-        }
+        },
+        "ruff.organizeImports": true,
+        "ruff.fixAll": true
       }
     }
   },
-  "remoteUser": "sppdev",
+  "remoteUser": "root",
   "remoteEnv": {
     "NODE_OPTIONS": "--max-old-space-size=4096",
     "CLAUDE_CONFIG_DIR": "/home/sppdev/.claude",
@@ -57,6 +53,5 @@
     "COMMIT_GPGSIGN": "true",
     "TAG_GPGSIGN": "true"
   },
-  "postCreateCommand": "sudo /usr/local/bin/init-firewall.sh",
-  "postAttachCommand": "/usr/local/bin/setup-dev-environment.sh"
+  "postCreateCommand": "/usr/local/bin/setup-dev-environment.sh"
 }

@@ -2,7 +2,6 @@
 
 import warnings
 from abc import ABCMeta
-from typing import Optional, Union
 
 from lxml import etree as ElementTree
 from lxml.builder import ElementMaker
@@ -15,7 +14,7 @@ from space_packet_parser.xtce import calibrators, encodings
 class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
     """Abstract base class for XTCE parameter types"""
 
-    def __init__(self, name: str, encoding: encodings.DataEncoding, unit: Optional[str] = None):
+    def __init__(self, name: str, encoding: encodings.DataEncoding, unit: str | None = None):
         """Constructor
 
         Parameters
@@ -45,10 +44,10 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         cls,
         element: ElementTree.Element,
         *,
-        tree: Optional[ElementTree.Element] = None,
-        parameter_lookup: Optional[dict] = None,
-        parameter_type_lookup: Optional[dict] = None,
-        container_lookup: Optional[dict[str, any]] = None,
+        tree: ElementTree.Element | None = None,
+        parameter_lookup: dict | None = None,
+        parameter_type_lookup: dict | None = None,
+        container_lookup: dict[str, any] | None = None,
     ) -> "ParameterType":
         """Create a *ParameterType* from an <xtce:ParameterType> XML element.
 
@@ -101,7 +100,7 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         return param_type_element
 
     @staticmethod
-    def get_units(parameter_type_element: ElementTree.Element) -> Union[str, None]:
+    def get_units(parameter_type_element: ElementTree.Element) -> str | None:
         """Finds the units associated with a parameter type element and parsed them to return a unit string.
         We assume only one <xtce:Unit> but this could be extended to support multiple units.
         See section 4.3.2.2.4 of CCSDS 660.1-G-1
@@ -130,7 +129,7 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         return None
 
     @staticmethod
-    def get_data_encoding(parameter_type_element: ElementTree.Element) -> Union[encodings.DataEncoding, None]:
+    def get_data_encoding(parameter_type_element: ElementTree.Element) -> encodings.DataEncoding | None:
         """Finds the data encoding XML element associated with a parameter type XML element and parses
         it, returning an object representation of the data encoding.
 
@@ -180,7 +179,7 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
 class StringParameterType(ParameterType):
     """<xtce:StringParameterType>"""
 
-    def __init__(self, name: str, encoding: encodings.StringDataEncoding, unit: Optional[str] = None):
+    def __init__(self, name: str, encoding: encodings.StringDataEncoding, unit: str | None = None):
         """Constructor
 
         Parameters
@@ -213,7 +212,7 @@ class FloatParameterType(ParameterType):
 class EnumeratedParameterType(ParameterType):
     """<xtce:EnumeratedParameterType>"""
 
-    def __init__(self, name: str, encoding: encodings.DataEncoding, enumeration: dict, unit: Union[str, None] = None):
+    def __init__(self, name: str, encoding: encodings.DataEncoding, enumeration: dict, unit: str | None = None):
         """Constructor
 
         Parameters
@@ -238,10 +237,10 @@ class EnumeratedParameterType(ParameterType):
         cls,
         element: ElementTree.Element,
         *,
-        tree: Optional[ElementTree.Element] = None,
-        parameter_lookup: Optional[dict[str, any]] = None,
-        parameter_type_lookup: Optional[dict[str, any]] = None,
-        container_lookup: Optional[dict[str, any]] = None,
+        tree: ElementTree.Element | None = None,
+        parameter_lookup: dict[str, any] | None = None,
+        parameter_type_lookup: dict[str, any] | None = None,
+        container_lookup: dict[str, any] | None = None,
     ) -> "EnumeratedParameterType":
         """Create an EnumeratedParameterType from an <xtce:EnumeratedParameterType> XML element.
         Overrides ParameterType.from_parameter_type_xml_element
@@ -377,7 +376,7 @@ class EnumeratedParameterType(ParameterType):
 class BinaryParameterType(ParameterType):
     """<xtce:BinaryParameterType>"""
 
-    def __init__(self, name: str, encoding: encodings.BinaryDataEncoding, unit: Optional[str] = None):
+    def __init__(self, name: str, encoding: encodings.BinaryDataEncoding, unit: str | None = None):
         """Constructor
 
         Parameters
@@ -398,7 +397,7 @@ class BinaryParameterType(ParameterType):
 class BooleanParameterType(ParameterType):
     """<xtce:BooleanParameterType>"""
 
-    def __init__(self, name: str, encoding: encodings.DataEncoding, unit: Optional[str] = None):
+    def __init__(self, name: str, encoding: encodings.DataEncoding, unit: str | None = None):
         """Constructor that just issues a warning if the encoding is String or Binary"""
         if isinstance(encoding, (encodings.BinaryDataEncoding, encodings.StringDataEncoding)):
             warnings.warn(
@@ -443,9 +442,9 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
         name: str,
         encoding: encodings.DataEncoding,
         *,
-        unit: Optional[str] = None,
-        epoch: Optional[str] = None,
-        offset_from: Optional[str] = None,
+        unit: str | None = None,
+        epoch: str | None = None,
+        offset_from: str | None = None,
     ):
         """Constructor
 
@@ -479,10 +478,10 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
         cls,
         element: ElementTree.Element,
         *,
-        tree: Optional[ElementTree.ElementTree] = None,
-        parameter_lookup: Optional[dict[str, any]] = None,
-        parameter_type_lookup: Optional[dict[str, any]] = None,
-        container_lookup: Optional[dict[str, any]] = None,
+        tree: ElementTree.ElementTree | None = None,
+        parameter_lookup: dict[str, any] | None = None,
+        parameter_type_lookup: dict[str, any] | None = None,
+        container_lookup: dict[str, any] | None = None,
     ) -> ElementTree.Element:
         """Create a *TimeParameterType* from an <xtce:TimeParameterType> XML element.
 
@@ -565,7 +564,7 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
         return element
 
     @staticmethod
-    def get_units(parameter_type_element: ElementTree.Element) -> Union[str, None]:
+    def get_units(parameter_type_element: ElementTree.Element) -> str | None:
         """Finds the units associated with a parameter type element and parsed them to return a unit string.
         We assume only one <xtce:Unit> but this could be extended to support multiple units.
         See section 4.3.2.2.4 of CCSDS 660.1-G-1
@@ -588,7 +587,7 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
     @staticmethod
     def get_time_unit_linear_scaler(
         parameter_type_element: ElementTree.Element,
-    ) -> Union[calibrators.PolynomialCalibrator, None]:
+    ) -> calibrators.PolynomialCalibrator | None:
         """Finds the linear calibrator associated with the Encoding element for the parameter type element.
         See section 4.3.2.4.8.3 of CCSDS 660.1-G-2
 
@@ -625,7 +624,7 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
         return None
 
     @staticmethod
-    def get_epoch(parameter_type_element: ElementTree.Element) -> Union[str, None]:
+    def get_epoch(parameter_type_element: ElementTree.Element) -> str | None:
         """Finds the epoch associated with a parameter type element and parses them to return an epoch string.
         See section 4.3.2.4.9 of CCSDS 660.1-G-2
 
@@ -646,7 +645,7 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
         return None
 
     @staticmethod
-    def get_offset_from(parameter_type_element: ElementTree.Element) -> Union[str, None]:
+    def get_offset_from(parameter_type_element: ElementTree.Element) -> str | None:
         """Finds the parameter referenced in OffsetFrom in a parameter type element and returns the name of the
         referenced parameter (which must be of type TimeParameterType).
         See section 4.3.2.4.9 of CCSDS 660.1-G-1

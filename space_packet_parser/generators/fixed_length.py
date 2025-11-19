@@ -3,16 +3,16 @@
 import socket
 import time
 from collections.abc import Iterator
-from typing import BinaryIO, Optional, Union
+from typing import BinaryIO
 
 from space_packet_parser.generators.utils import _print_progress, _setup_binary_reader
 
 
 def fixed_length_generator(
-    binary_data: Union[BinaryIO, socket.socket, bytes],
+    binary_data: BinaryIO | socket.socket | bytes,
     *,
     packet_length_bytes: int,
-    buffer_read_size_bytes: Optional[int] = None,
+    buffer_read_size_bytes: int | None = None,
     show_progress: bool = False,
 ) -> Iterator[bytes]:
     """A generator that yields fixed-length chunks from binary_data.

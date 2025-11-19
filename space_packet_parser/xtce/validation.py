@@ -4,12 +4,11 @@ import hashlib
 import logging
 import os
 import platform
-import socket
 import time
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 from urllib.error import URLError
 from urllib.parse import urlparse
 from urllib.request import urlopen
@@ -33,10 +32,10 @@ class ValidationError:
 
     message: str
     error_code: str
-    xpath_location: Optional[str] = None
-    line_number: Optional[int] = None
-    column_number: Optional[int] = None
-    context: Optional[dict[str, Any]] = field(default_factory=dict)
+    xpath_location: str | None = None
+    line_number: int | None = None
+    column_number: int | None = None
+    context: dict[str, Any] | None = field(default_factory=dict)
 
     def __str__(self) -> str:
         """String representation of validation error."""
@@ -59,9 +58,9 @@ class ValidationResult:
     valid: bool
     validation_level: ValidationLevel
     errors: list[ValidationError] = field(default_factory=list)
-    schema_version: Optional[str] = None
-    schema_location: Optional[str] = None
-    validation_time_ms: Optional[float] = None
+    schema_version: str | None = None
+    schema_location: str | None = None
+    validation_time_ms: float | None = None
 
     def __bool__(self):
         return self.valid and not self.errors
@@ -70,9 +69,9 @@ class ValidationResult:
         self,
         message: str,
         error_code: str,
-        xpath_location: Optional[str] = None,
-        line_number: Optional[int] = None,
-        context: Optional[dict[str, Any]] = None,
+        xpath_location: str | None = None,
+        line_number: int | None = None,
+        context: dict[str, Any] | None = None,
     ):
         """Add a validation error."""
         error = ValidationError(
@@ -101,7 +100,7 @@ class ValidationResult:
 class XtceValidationError(Exception):
     """Exception raised during XTCE validation."""
 
-    def __init__(self, message: str, validation_result: Optional[ValidationResult] = None):
+    def __init__(self, message: str, validation_result: ValidationResult | None = None):
         super().__init__(message)
         self.validation_result = validation_result
 
@@ -144,7 +143,7 @@ def _get_cache_path(schema_url: str) -> Path:
     return cache_dir / f"{url_hash}.xsd"
 
 
-def _read_from_cache(cache_path: Path) -> Optional[bytes]:
+def _read_from_cache(cache_path: Path) -> bytes | None:
     """Read cached schema content, return None if not found or unreadable."""
     try:
         if cache_path.exists():
@@ -202,7 +201,7 @@ def _fix_known_schema_issues(schema_content: bytes) -> bytes:
     return content_str.encode("utf-8")
 
 
-def _load_schema(schema_location: Union[str, Path], timeout: int = 30) -> tuple[ElementTree.XMLSchema, str]:
+def _load_schema(schema_location: str | Path, timeout: int = 30) -> tuple[ElementTree.XMLSchema, str]:
     """Load XSD schema from URL or local path
 
     Parameters
@@ -242,7 +241,7 @@ def _load_schema(schema_location: Union[str, Path], timeout: int = 30) -> tuple[
                     schema_content = response.read()
                 # Cache the raw downloaded content before any fixes
                 _write_to_cache(cache_path, schema_content)
-            except (URLError, socket.timeout) as e:
+            except (TimeoutError, URLError) as e:
                 raise XtceValidationError(f"Failed to download schema from {schema_location}: {e}") from e
         else:
             logger.debug(f"Using cached schema from {cache_path}")
@@ -305,7 +304,7 @@ def _find_schema_url(xml_tree: ElementTree.ElementTree) -> str:
 
 def _validate_xtce_schema(
     xml_tree: ElementTree.ElementTree,
-    local_xsd: Optional[Union[str, Path]] = None,
+    local_xsd: str | Path | None = None,
     timeout: int = 30,
 ) -> ValidationResult:
     """Validate XML document against XSD schema.
@@ -494,12 +493,12 @@ def _validate_xtce_structure(xml_tree: ElementTree.ElementTree) -> ValidationRes
 
 
 def validate_xtce(
-    xml_source: Union[str, Path, ElementTree.ElementTree],
+    xml_source: str | Path | ElementTree.ElementTree,
     level: str = "all",
     timeout: int = 30,
     print_results: bool = True,
     raise_on_error: bool = True,
-    local_xsd: Optional[Union[str, Path]] = None,
+    local_xsd: str | Path | None = None,
 ) -> ValidationResult:
     """Validate an XTCE XML document.
 

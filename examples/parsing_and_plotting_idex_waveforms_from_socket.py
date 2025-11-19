@@ -175,7 +175,7 @@ if __name__ == "__main__":
                     scitype: parse_waveform_data(waveform, scitype) for scitype, waveform in data.items()
                 }
                 plot_full_event(parsed_waveform_data)
-    except socket.timeout:
+    except TimeoutError:
         parsed_waveform_data: dict[int, list] = {
             scitype: parse_waveform_data(waveform, scitype) for scitype, waveform in data.items()
         }
