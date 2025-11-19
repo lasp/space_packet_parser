@@ -33,9 +33,6 @@ Space Packet Parser is a Python library for decoding CCSDS (Consultative Committ
 # Install with development dependencies using pip
 pip install ".[test,xarray]"
 
-# Or install with uv for faster dependency resolution
-uv pip install ".[test,xarray]"
-
 # For development with uv (creates and manages virtual environment)
 uv sync --all-extras
 ```

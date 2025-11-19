@@ -125,7 +125,7 @@ jobs:
         shell: bash -l {0}
         run: |
           python --version
-          conda install -y conda-build conda-verify anaconda-client
+          conda install -y conda-build anaconda-client
           conda build .
           conda build --output .
 

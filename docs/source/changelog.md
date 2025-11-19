@@ -7,14 +7,9 @@ list and release milestones.
 
 Release notes for the `space_packet_parser` library
 
-### v6.2.0 (Unreleased)
+### v6.2.0
 
-- **BREAKING**: Migrated from Poetry to uv/hatchling for Python project management
-  - Build system now uses `hatchling` (PEP 517/518 compliant)
-  - Developer environment now uses `uv` for faster dependency resolution
-  - All Poetry-specific configuration removed from `pyproject.toml`
-  - Updated devcontainer, ReadTheDocs, and Conda configurations
-  - **Note**: This is only breaking for developers who were using Poetry directly. End users installing via pip or conda are unaffected.
+- Migrated from Poetry to uv/hatchling for Python project management
 
 ### v6.1.0
 

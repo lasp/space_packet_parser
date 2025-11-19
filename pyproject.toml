@@ -97,6 +97,9 @@ packages = ["space_packet_parser"]
 [tool.hatch.build.targets.sdist]
 include = [
     "/space_packet_parser",
+    "/tests",
+    "/docs",
+    "/examples",
     "/LICENSE.txt",
     "/CITATION.cff",
     "/README.md",

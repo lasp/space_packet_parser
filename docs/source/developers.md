@@ -2,13 +2,7 @@
 
 ## Installing Development Dependencies
 
-Install development dependencies using pip with the test and optional extras:
-
-```bash
-pip install ".[test,xarray]"
-```
-
-Alternatively, for faster dependency resolution and environment management, you can use `uv`:
+Install development dependencies using `uv`` with all the extras groups:
 
 ```bash
 # Install uv if you haven't already
@@ -20,7 +14,7 @@ uv sync --all-extras
 
 Note: `uv` is a fast, Rust-based Python package installer and resolver that is PEP-compliant and fully compatible with pip and PyPI.
 
-Once the development dependencies are installed, you can run
+Once the development dependencies are installed and the uv-generated `.venv` is activated, you can run
 
 ```bash
 pre-commit install
