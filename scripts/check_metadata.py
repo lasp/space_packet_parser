@@ -103,8 +103,8 @@ def verify_maintainers(pyproject_toml, citation_cff, meta_yaml):
     print("Maintainers match")
 
 
-def verify_dependencies(pyproject_toml, citation_cff, meta_yaml):
-    """Verify that dependencies match"""
+def verify_run_dependencies(pyproject_toml, citation_cff, meta_yaml):
+    """Verify that run dependencies match"""
     pyproject_dependencies = set(pyproject_toml["project"]["dependencies"])
     pyproject_dependencies.add(f"python{pyproject_toml['project']['requires-python']}")
     # Conda doesn't have the concept of extras, so we list the xarray extras as explicit deps for conda package
@@ -117,6 +117,17 @@ def verify_dependencies(pyproject_toml, citation_cff, meta_yaml):
         print(f"meta.yaml: {meta_dependencies}")
         raise ValueError("Dependencies do not match")
     print("Dependencies match (does not check extras or test dependencies)")
+
+
+def verify_test_dependencies(pyproject_toml, citation_cff, meta_yaml):
+    """Verify that test dependencies match"""
+    pyproject_test_dependencies = set(pyproject_toml["project"]["optional-dependencies"]["test"])
+    meta_test_dependencies = set(meta_yaml["test"]["requires"])
+    if not pyproject_test_dependencies == meta_test_dependencies:
+        print(f"pyproject.toml: {pyproject_test_dependencies}")
+        print(f"meta.yaml: {meta_test_dependencies}")
+        raise ValueError("Test dependencies do not match")
+    print("Test dependencies match")
 
 
 def main():
@@ -132,7 +143,8 @@ def main():
     verify_maintainers(pyproject_data, citation_data, meta_data)
     verify_version(pyproject_data, citation_data, meta_data)
     verify_license(pyproject_data, citation_data, meta_data)
-    verify_dependencies(pyproject_data, citation_data, meta_data)
+    verify_run_dependencies(pyproject_data, citation_data, meta_data)
+    verify_test_dependencies(pyproject_data, citation_data, meta_data)
 
     print("Metadata is consistent across all files.")
 

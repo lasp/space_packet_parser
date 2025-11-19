@@ -4,7 +4,7 @@ version = "6.1.0"
 description = "A CCSDS telemetry packet decoding library based on the XTCE packet format description standard."
 license = { text = "BSD-3-Clause" }
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     { name = "Gavin Medley", email = "gavin.medley@lasp.colorado.edu" },
     { name = "Greg Lucas", email = "greg.lucas@lasp.colorado.edu" },

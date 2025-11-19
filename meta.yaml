@@ -16,11 +16,11 @@ build:
 
 requirements:
   build:
-    - python>=3.9
+    - python>=3.10
     - pip
     - hatchling
   run:
-    - python>=3.9
+    - python>=3.10
     - lxml>=4.8.0
     - click>=8.0
     - rich>=13.0
