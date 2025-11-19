@@ -1,0 +1,104 @@
+name: Build PyPI and Conda packages (Reusable)
+# This is a reusable workflow that builds both PyPI and Conda distribution artifacts
+# It can be called by other workflows (e.g., CI tests, releases)
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  # Job that builds PyPI style distribution artifacts
+  build-dist-artifacts:
+    # This job uses standard Python tools (pip, build, twine) for PEP 517/518 compliant packaging
+    # The project uses hatchling as the build backend, which is automatically installed by pip
+    name: Build PyPI artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          # TODO: update to 3.13
+
+      - name: Install build dependencies
+        run: python -m pip install build twine
+
+      - name: Build wheel and source distribution
+        run: |
+          python -m build
+
+      - name: Check README rendering for PyPI
+        run: twine check dist/*
+
+      - name: Verify installation of built wheel
+        run: |
+          python -m pip install dist/*.whl
+          python -c "import space_packet_parser"
+          which spp
+          cat $(which spp)
+          spp --version
+
+      # Save ("upload") the distribution artifacts for use by downstream Actions jobs
+      - name: Upload distribution artifacts
+        uses: actions/upload-artifact@v5 # This allows us to persist the dist directory after the job has completed
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+
+  # Job that builds Conda package for distribution
+  build-conda-artifacts:
+    name: Build Conda package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          channels: conda-forge,defaults
+          auto-update-conda: true
+          python-version: "3.11"
+          # TODO: Update to 3.13
+          activate-environment: "test"
+          # TODO: Change to "build"?
+
+      - name: Store conda-bld location
+        # This allows us to use this in multiple other steps
+        run: echo "CONDA_BLD_PATH=/usr/share/miniconda/envs/test/conda-bld" >> $GITHUB_ENV
+
+      - name: Build Conda package
+        shell: bash -l {0}
+        run: |
+          python --version
+          conda install -y conda-build
+          conda build .
+          conda build --output .
+
+      - name: Test installing package from local channel
+        shell: bash -l {0}
+        run: |
+          echo $CONDA_BLD_PATH
+          python --version
+          conda create -n test-env -y -c file://$CONDA_BLD_PATH space_packet_parser
+          conda activate test-env
+          python -c "import space_packet_parser"
+          which spp
+          cat $(which spp)
+          spp --version
+          conda deactivate
+
+      # This makes the artifacts available for downstream jobs
+      - name: Upload Conda build artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: conda-package
+          path: ${{ env.CONDA_BLD_PATH }}/**/space_packet_parser-*

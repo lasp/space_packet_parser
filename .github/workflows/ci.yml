@@ -9,7 +9,14 @@ on:
     - cron: "50 23 * * *" # 11:50pm daily (to get ahead of all those midnight jobs)
 
 jobs:
-  ci-tests:
+  # Verify that the package builds successfully
+  build-package:
+    name: Verify package builds
+    uses: ./.github/workflows/_build.yml
+
+  # Run unit and integration tests
+  run-tests:
+    name: Run tests on multiple OS and Python versions and report coverage
     runs-on: ${{ matrix.os }}
     permissions:
       # For codecov OIDC verifications

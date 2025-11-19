@@ -6,7 +6,8 @@ on:
       - main
 
 jobs:
-  test-examples:
+  # Run the example scripts and ensure there are no errors
+  run-examples:
     runs-on: ubuntu-latest
     permissions:
       contents: read # Minimal permissions required for checkout
