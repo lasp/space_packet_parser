@@ -1,4 +1,4 @@
-name: Run Style Checks and Test
+name: CI
 on:
   pull_request: # Run on all PR changes
     types: [opened, synchronize, reopened] # This is the default, but made explicit
@@ -10,17 +10,28 @@ on:
 
 jobs:
   # Verify that the package builds successfully
+  # Only runs if the cibuild label is applied to the PR
   build-package:
-    name: Verify package builds
+    if: |
+      github.event_name == 'pull_request' && (
+        (
+          github.event.action == 'labeled' &&
+          github.event.label.name == 'cibuild'
+        ) ||
+        contains(github.event.pull_request.labels.*.name,
+                'cibuild')
+      )
+    name: Build
     uses: ./.github/workflows/_build.yml
 
   # Run unit and integration tests
   run-tests:
-    name: Run tests on multiple OS and Python versions and report coverage
+    name: Test
     runs-on: ${{ matrix.os }}
     permissions:
       # For codecov OIDC verifications
       id-token: write
+      contents: read
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
@@ -52,3 +63,37 @@ jobs:
       - uses: codecov/codecov-action@v5
         with:
           use_oidc: true
+
+  # Run the example scripts and ensure there are no errors
+  run-examples:
+    name: Run Examples
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # Minimal permissions required for checkout
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[examples]"
+
+      - name: Test examples
+        env:
+          MPLBACKEND: Agg # Use non-interactive backend for matplotlib
+        run: |
+          cd examples
+          for example in *.py; do
+            echo "Testing $example..."
+            python "$example" || { echo "Example $example failed"; exit 1; }
+            echo "Example $example passed"
+          done

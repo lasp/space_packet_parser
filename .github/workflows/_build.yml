@@ -1,4 +1,4 @@
-name: Build PyPI and Conda packages (Reusable)
+name: Build PyPI and Conda artifacts (reusable)
 # This is a reusable workflow that builds both PyPI and Conda distribution artifacts
 # It can be called by other workflows (e.g., CI tests, releases)
 
@@ -13,7 +13,7 @@ jobs:
   build-dist-artifacts:
     # This job uses standard Python tools (pip, build, twine) for PEP 517/518 compliant packaging
     # The project uses hatchling as the build backend, which is automatically installed by pip
-    name: Build PyPI artifacts
+    name: Build for PyPI
     runs-on: ubuntu-latest
 
     steps:
@@ -54,7 +54,7 @@ jobs:
 
   # Job that builds Conda package for distribution
   build-conda-artifacts:
-    name: Build Conda package
+    name: Build for Anaconda
     runs-on: ubuntu-latest
 
     steps:
