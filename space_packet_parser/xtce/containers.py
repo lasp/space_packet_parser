@@ -1,7 +1,7 @@
 """Module with XTCE models related to SequenceContainers"""
 
 from dataclasses import dataclass, field
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from lxml import etree as ElementTree
 from lxml.builder import ElementMaker
@@ -38,12 +38,12 @@ class SequenceContainer(common.Parseable, common.XmlObject):
 
     name: str
     entry_list: list[Union[parameters.Parameter, "SequenceContainer"]]
-    short_description: Optional[str] = None
-    long_description: Optional[str] = None
-    base_container_name: Optional[str] = None
-    restriction_criteria: Optional[list[comparisons.MatchCriteria]] = field(default_factory=lambda: [])
+    short_description: str | None = None
+    long_description: str | None = None
+    base_container_name: str | None = None
+    restriction_criteria: list[comparisons.MatchCriteria] | None = field(default_factory=lambda: [])
     abstract: bool = False
-    inheritors: Optional[list[str]] = field(default_factory=lambda: [])
+    inheritors: list[str] | None = field(default_factory=lambda: [])
 
     def __post_init__(self):
         # Handle the explicit None passing for default values
@@ -65,8 +65,8 @@ class SequenceContainer(common.Parseable, common.XmlObject):
         *,
         tree: ElementTree.ElementTree,
         parameter_lookup: dict[str, parameters.Parameter],
-        container_lookup: Optional[dict[str, Any]],
-        parameter_type_lookup: Optional[dict[str, parameter_types.ParameterType]] = None,
+        container_lookup: dict[str, Any] | None,
+        parameter_type_lookup: dict[str, parameter_types.ParameterType] | None = None,
     ) -> "SequenceContainer":
         """Parses the list of parameters in a SequenceContainer element, recursively parsing nested SequenceContainers
         to build an entry list of parameters that flattens the nested structure to derive a sequential ordering of

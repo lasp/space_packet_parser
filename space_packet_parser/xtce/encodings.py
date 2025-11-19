@@ -4,7 +4,7 @@ import logging
 import struct
 import warnings
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Union
+from collections.abc import Callable
 
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
@@ -20,7 +20,7 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
     """Abstract base class for XTCE data encodings"""
 
     @staticmethod
-    def get_default_calibrator(data_encoding_element: ElementTree.Element) -> Union[calibrators.Calibrator, None]:
+    def get_default_calibrator(data_encoding_element: ElementTree.Element) -> calibrators.Calibrator | None:
         """Gets the default_calibrator for the data encoding element
 
         Parameters
@@ -46,7 +46,7 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
     @staticmethod
     def get_context_calibrators(
         data_encoding_element: ElementTree.Element,
-    ) -> Union[list[calibrators.ContextCalibrator], None]:
+    ) -> list[calibrators.ContextCalibrator] | None:
         """Get the context default_calibrator(s) for the data encoding element
 
         Parameters
@@ -64,7 +64,7 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         return None
 
     @staticmethod
-    def _get_linear_adjuster(parent_element: ElementTree.Element) -> Union[callable, None]:
+    def _get_linear_adjuster(parent_element: ElementTree.Element) -> Callable | None:
         """Examine a parent (e.g. a <xtce:DynamicValue>) element and find a LinearAdjustment if present,
         creating and returning a function that evaluates the adjustment.
 
@@ -75,7 +75,7 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
 
         Returns
         -------
-        adjuster : Union[callable, None]
+        adjuster : Union[Callable, None]
             Function object that adjusts a SizeInBits value by a linear function or None if no adjuster present
         """
         if (linear_adjustment_element := parent_element.find("LinearAdjustment")) is not None:
@@ -155,14 +155,14 @@ class StringDataEncoding(DataEncoding):
         self,
         *,
         encoding: str = "UTF-8",
-        byte_order: Optional[str] = None,
-        fixed_raw_length: Optional[int] = None,
-        dynamic_length_reference: Optional[str] = None,
-        discrete_lookup_length: Optional[list[comparisons.DiscreteLookup]] = None,
-        use_calibrated_value: Optional[bool] = True,
-        length_linear_adjuster: Optional[callable] = None,
-        termination_character: Optional[str] = None,
-        leading_length_size: Optional[int] = None,
+        byte_order: str | None = None,
+        fixed_raw_length: int | None = None,
+        dynamic_length_reference: str | None = None,
+        discrete_lookup_length: list[comparisons.DiscreteLookup] | None = None,
+        use_calibrated_value: bool | None = True,
+        length_linear_adjuster: Callable | None = None,
+        termination_character: str | None = None,
+        leading_length_size: int | None = None,
     ):
         f"""Constructor
         Only one of termination_character, fixed_length, or leading_length_size should be set. Setting more than one
@@ -193,7 +193,7 @@ class StringDataEncoding(DataEncoding):
             Default is True.
         discrete_lookup_length : Optional[List[DiscreteLookup]]
             List of DiscreteLookup objects with which to determine raw string length from another parameter.
-        length_linear_adjuster : Optional[callable]
+        length_linear_adjuster : Optional[Callable]
             Function that linearly adjusts a size. e.g. if the size reference parameter gives a length in bytes, the
             linear adjuster should multiply by 8 to give the size in bits.
         """
@@ -374,10 +374,10 @@ class StringDataEncoding(DataEncoding):
         cls,
         element: ElementTree.Element,
         *,
-        tree: Optional[ElementTree.Element] = None,
-        parameter_lookup: Optional[dict[str, any]] = None,
-        parameter_type_lookup: Optional[dict[str, any]] = None,
-        container_lookup: Optional[dict[str, any]] = None,
+        tree: ElementTree.Element | None = None,
+        parameter_lookup: dict[str, any] | None = None,
+        parameter_type_lookup: dict[str, any] | None = None,
+        container_lookup: dict[str, any] | None = None,
     ) -> "StringDataEncoding":
         """Create a data encoding object from an <xtce:StringDataEncoding> XML element.
 
@@ -536,8 +536,8 @@ class NumericDataEncoding(DataEncoding, metaclass=ABCMeta):
         encoding: str,
         *,
         byte_order: str = "mostSignificantByteFirst",
-        default_calibrator: Optional[calibrators.Calibrator] = None,
-        context_calibrators: Optional[list[calibrators.ContextCalibrator]] = None,
+        default_calibrator: calibrators.Calibrator | None = None,
+        context_calibrators: list[calibrators.ContextCalibrator] | None = None,
     ):
         """Constructor
 
@@ -569,7 +569,7 @@ class NumericDataEncoding(DataEncoding, metaclass=ABCMeta):
         return self.size_in_bits
 
     @abstractmethod
-    def _get_raw_value(self, packet: spp.SpacePacket) -> Union[int, float]:
+    def _get_raw_value(self, packet: spp.SpacePacket) -> int | float:
         """Read the raw value from the packet data
 
         Parameters
@@ -597,7 +597,7 @@ class NumericDataEncoding(DataEncoding, metaclass=ABCMeta):
     def parse_value(
         self,
         packet: spp.SpacePacket,
-    ) -> Union[common.FloatParameter, common.IntParameter]:
+    ) -> common.FloatParameter | common.IntParameter:
         """Parse a value from packet data, possibly using previously parsed data items to inform parsing.
 
         Parameters
@@ -667,8 +667,8 @@ class IntegerDataEncoding(NumericDataEncoding):
         encoding: str,
         *,
         byte_order: str = "mostSignificantByteFirst",
-        default_calibrator: Optional[calibrators.Calibrator] = None,
-        context_calibrators: Optional[list[calibrators.ContextCalibrator]] = None,
+        default_calibrator: calibrators.Calibrator | None = None,
+        context_calibrators: list[calibrators.ContextCalibrator] | None = None,
     ):
         """Constructor
 
@@ -720,10 +720,10 @@ class IntegerDataEncoding(NumericDataEncoding):
         cls,
         element: ElementTree.Element,
         *,
-        tree: Optional[ElementTree.Element] = None,
-        parameter_lookup: Optional[dict[str, any]] = None,
-        parameter_type_lookup: Optional[dict[str, any]] = None,
-        container_lookup: Optional[dict[str, any]] = None,
+        tree: ElementTree.Element | None = None,
+        parameter_lookup: dict[str, any] | None = None,
+        parameter_type_lookup: dict[str, any] | None = None,
+        container_lookup: dict[str, any] | None = None,
     ) -> "IntegerDataEncoding":
         """Create a data encoding object from an <xtce:IntegerDataEncoding> XML element.
 
@@ -771,8 +771,8 @@ class FloatDataEncoding(NumericDataEncoding):
         *,
         encoding: str = "IEEE754",
         byte_order: str = "mostSignificantByteFirst",
-        default_calibrator: Optional[calibrators.Calibrator] = None,
-        context_calibrators: Optional[list[calibrators.ContextCalibrator]] = None,
+        default_calibrator: calibrators.Calibrator | None = None,
+        context_calibrators: list[calibrators.ContextCalibrator] | None = None,
     ):
         """Constructor
 
@@ -874,7 +874,7 @@ class FloatDataEncoding(NumericDataEncoding):
                 return struct.unpack(self._struct_format, data)[0]
 
             # Set up the parsing function just once, so we can use it repeatedly with _get_raw_value
-            self.parse_func: callable = ieee_parse_func
+            self.parse_func: Callable = ieee_parse_func
 
     def _get_raw_value(self, packet):
         """Read the data in as bytes and return a float representation."""
@@ -887,10 +887,10 @@ class FloatDataEncoding(NumericDataEncoding):
         cls,
         element: ElementTree.Element,
         *,
-        tree: Optional[ElementTree.Element] = None,
-        parameter_lookup: Optional[dict[str, any]] = None,
-        parameter_type_lookup: Optional[dict[str, any]] = None,
-        container_lookup: Optional[dict[str, any]] = None,
+        tree: ElementTree.Element | None = None,
+        parameter_lookup: dict[str, any] | None = None,
+        parameter_type_lookup: dict[str, any] | None = None,
+        container_lookup: dict[str, any] | None = None,
     ) -> "FloatDataEncoding":
         """Create a data encoding object from an <xtce:FloatDataEncoding> XML element.
 
@@ -931,11 +931,11 @@ class BinaryDataEncoding(DataEncoding):
     def __init__(
         self,
         *,
-        fixed_size_in_bits: Optional[int] = None,
-        size_reference_parameter: Optional[str] = None,
+        fixed_size_in_bits: int | None = None,
+        size_reference_parameter: str | None = None,
         use_calibrated_value: bool = True,
-        size_discrete_lookup_list: Optional[list[comparisons.DiscreteLookup]] = None,
-        linear_adjuster: Optional[callable] = None,
+        size_discrete_lookup_list: list[comparisons.DiscreteLookup] | None = None,
+        linear_adjuster: Callable | None = None,
     ):
         """Constructor
 
@@ -952,7 +952,7 @@ class BinaryDataEncoding(DataEncoding):
         size_discrete_lookup_list: Optional[List[DiscreteLookup]]
             List of DiscreteLookup objects by which to determine the length of the binary data field. This suffers from
             the same bit/byte conversion problem as size_reference_parameter.
-        linear_adjuster : Optional[callable]
+        linear_adjuster : Optional[Callable]
             Function that linearly adjusts a size. e.g. if the size reference parameter gives a length in bytes, the
             linear adjuster should multiply by 8 to give the size in bits.
         """
@@ -1025,10 +1025,10 @@ class BinaryDataEncoding(DataEncoding):
         cls,
         element: ElementTree.Element,
         *,
-        tree: Optional[ElementTree.Element] = None,
-        parameter_lookup: Optional[dict[str, any]] = None,
-        parameter_type_lookup: Optional[dict[str, any]] = None,
-        container_lookup: Optional[dict[str, any]] = None,
+        tree: ElementTree.Element | None = None,
+        parameter_lookup: dict[str, any] | None = None,
+        parameter_type_lookup: dict[str, any] | None = None,
+        container_lookup: dict[str, any] | None = None,
     ) -> "BinaryDataEncoding":
         """Create a data encoding object from an <xtce:BinaryDataEncoding> XML element.
 

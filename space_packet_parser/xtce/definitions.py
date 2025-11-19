@@ -6,7 +6,7 @@ from collections.abc import Iterable
 from datetime import datetime
 from os import PathLike
 from pathlib import Path
-from typing import Optional, TextIO, Union
+from typing import TextIO
 
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
@@ -44,15 +44,15 @@ class XtcePacketDefinition(common.AttrComparable):
 
     def __init__(
         self,
-        container_set: Optional[Iterable[containers.SequenceContainer]] = None,
+        container_set: Iterable[containers.SequenceContainer] | None = None,
         *,
         ns: dict = STANDARD_XTCE_NSMAP,
         xtce_ns_prefix: str = STANDARD_XTCE_NS_PREFIX,
         root_container_name: str = DEFAULT_ROOT_CONTAINER,
-        space_system_name: Optional[str] = None,
+        space_system_name: str | None = None,
         validation_status: str = "Unknown",
         xtce_version: str = "1.0",
-        date: Optional[str] = None,
+        date: str | None = None,
     ):
         f"""
 
@@ -139,7 +139,7 @@ class XtcePacketDefinition(common.AttrComparable):
         self.xtce_version = xtce_version
         self.date = date
 
-    def write_xml(self, filepath: Union[str, Path]) -> None:
+    def write_xml(self, filepath: str | Path) -> None:
         """Write out the XTCE XML for this packet definition object to the specified path
 
         Parameters
@@ -202,7 +202,7 @@ class XtcePacketDefinition(common.AttrComparable):
     @classmethod
     def from_xtce(
         cls,
-        xtce_document: Union[str, Path, PathLike, TextIO],
+        xtce_document: str | Path | PathLike | TextIO,
         *,
         root_container_name: str = DEFAULT_ROOT_CONTAINER,
     ) -> "XtcePacketDefinition":
@@ -412,7 +412,7 @@ class XtcePacketDefinition(common.AttrComparable):
 
         return parameter_lookup
 
-    def parse_bytes(self, binary_data: bytes, *, root_container_name: Optional[str] = None) -> spp.SpacePacket:
+    def parse_bytes(self, binary_data: bytes, *, root_container_name: str | None = None) -> spp.SpacePacket:
         """Parse binary packet data according to the self.packet_definition object
 
         Parameters
@@ -471,7 +471,7 @@ class XtcePacketDefinition(common.AttrComparable):
             warnings.warn(message)
         return packet
 
-    def parse_packet(self, packet: spp.SpacePacket, *, root_container_name: Optional[str] = None) -> spp.SpacePacket:
+    def parse_packet(self, packet: spp.SpacePacket, *, root_container_name: str | None = None) -> spp.SpacePacket:
         """Parse binary packet data according to the self.packet_definition object
 
         Parameters
@@ -496,9 +496,7 @@ class XtcePacketDefinition(common.AttrComparable):
         )
         return self.parse_bytes(packet.binary_data, root_container_name=root_container_name)
 
-    def parse_ccsds_packet(
-        self, packet: spp.SpacePacket, *, root_container_name: Optional[str] = None
-    ) -> spp.SpacePacket:
+    def parse_ccsds_packet(self, packet: spp.SpacePacket, *, root_container_name: str | None = None) -> spp.SpacePacket:
         """Parse binary packet data according to the self.packet_definition object
 
         Parameters

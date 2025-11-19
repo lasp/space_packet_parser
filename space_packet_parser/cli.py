@@ -13,7 +13,6 @@ Use
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 import click
 from rich import pretty
@@ -188,7 +187,7 @@ def describe_packets(file_path: Path) -> None:
 def parse(
     packet_file: Path,
     definition_file: Path,
-    packet: Optional[int],
+    packet: int | None,
     max_items: int,
     max_string: int,
     skip_header_bytes: int,

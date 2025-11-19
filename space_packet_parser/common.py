@@ -4,7 +4,7 @@ import inspect
 import logging
 import warnings
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Protocol, Union
+from typing import Protocol
 
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
@@ -16,7 +16,7 @@ class NamespaceAwareElement(ElementTree.ElementBase):
     """Custom element that automatically applies namespace mappings."""
 
     _nsmap: dict[str, str] = {}  # Class level namespace mapping
-    _ns_prefix: Union[str, None] = None  # Class level namespace prefix for adding to Xpaths
+    _ns_prefix: str | None = None  # Class level namespace prefix for adding to Xpaths
 
     @classmethod
     def element_prefix(cls):
@@ -109,7 +109,7 @@ class NamespaceAwareElement(ElementTree.ElementBase):
         return self._nsmap
 
     @classmethod
-    def set_ns_prefix(cls, ns_prefix: Union[str, None]):
+    def set_ns_prefix(cls, ns_prefix: str | None):
         """Store the namespace map for all elements of this type."""
         cls._ns_prefix = ns_prefix
 
@@ -150,10 +150,10 @@ class XmlObject(metaclass=ABCMeta):
         cls,
         element: ElementTree.Element,
         *,
-        tree: Optional[ElementTree.ElementTree],
-        parameter_lookup: Optional[dict[str, any]],
-        parameter_type_lookup: Optional[dict[str, any]],
-        container_lookup: Optional[dict[str, any]],
+        tree: ElementTree.ElementTree | None,
+        parameter_lookup: dict[str, any] | None,
+        parameter_type_lookup: dict[str, any] | None,
+        container_lookup: dict[str, any] | None,
     ) -> "XmlObject":
         """Create an object from an XML element
 
@@ -206,7 +206,7 @@ class Parseable(Protocol):
         """Parse this entry from the packet data and add the necessary items to the packet."""
 
 
-BuiltinDataTypes = Union[bytes, float, int, str]
+BuiltinDataTypes = bytes | float | int | str
 
 
 class _Parameter:
@@ -257,7 +257,7 @@ class StrParameter(_Parameter, str):
     """A class to represent a string data item."""
 
 
-ParameterDataTypes = Union[BinaryParameter, BoolParameter, FloatParameter, IntParameter, StrParameter]
+ParameterDataTypes = BinaryParameter | BoolParameter | FloatParameter | IntParameter | StrParameter
 
 
 class SpacePacket(dict):

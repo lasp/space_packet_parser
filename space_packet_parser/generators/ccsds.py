@@ -14,7 +14,7 @@ import time
 import warnings
 from collections.abc import Iterator
 from enum import IntEnum
-from typing import BinaryIO, Optional, Union
+from typing import BinaryIO
 
 from space_packet_parser.common import SpacePacket
 from space_packet_parser.generators.utils import _print_progress, _setup_binary_reader
@@ -236,9 +236,9 @@ class CCSDSPacket(SpacePacket):
 
 
 def ccsds_generator(
-    binary_data: Union[BinaryIO, socket.socket, bytes],
+    binary_data: BinaryIO | socket.socket | bytes,
     *,
-    buffer_read_size_bytes: Optional[int] = None,
+    buffer_read_size_bytes: int | None = None,
     show_progress: bool = False,
     skip_header_bytes: int = 0,
     combine_segmented_packets: bool = False,

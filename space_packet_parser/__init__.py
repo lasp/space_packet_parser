@@ -1,7 +1,6 @@
 """Space Packet Parser"""
 
 from pathlib import Path
-from typing import Union
 
 from space_packet_parser.common import SpacePacket
 from space_packet_parser.generators import ccsds_generator
@@ -17,7 +16,7 @@ __all__ = [
 ]
 
 
-def load_xtce(filename: Union[str, Path]) -> XtcePacketDefinition:
+def load_xtce(filename: str | Path) -> XtcePacketDefinition:
     """Create an XtcePacketDefinition object from an XTCE XML file
 
     This is a shortcut for calling XtcePacketDefinition.from_xtce().
