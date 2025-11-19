@@ -1,7 +1,7 @@
 name: CI
 on:
   pull_request: # Run on all PR changes
-    types: [opened, synchronize, reopened] # This is the default, but made explicit
+    types: [opened, synchronize, reopened, labeled]
   push: # Run on all changes to main (includes PR merges)
     branches:
       - main
@@ -13,19 +13,15 @@ jobs:
   # Only runs if the cibuild label is applied to the PR
   build-package:
     if: |
-      github.event_name == 'pull_request' && (
-        (
-          github.event.action == 'labeled' &&
-          github.event.label.name == 'cibuild'
-        ) ||
-        contains(github.event.pull_request.labels.*.name,
-                'cibuild')
-      )
+      github.event_name == 'pull_request' &&
+      contains(github.event.pull_request.labels.*.name, 'cibuild')
     name: Build
     uses: ./.github/workflows/_build.yml
 
   # Run unit and integration tests
   run-tests:
+    # Don't run for label additions
+    if: github.event.action != 'labeled'
     name: Test
     runs-on: ${{ matrix.os }}
     permissions:
@@ -66,6 +62,8 @@ jobs:
 
   # Run the example scripts and ensure there are no errors
   run-examples:
+    # Don't run for label additions
+    if: github.event.action != 'labeled'
     name: Run Examples
     runs-on: ubuntu-latest
     permissions:
