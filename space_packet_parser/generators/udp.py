@@ -166,14 +166,17 @@ def create_udp_packet(
         raise ValueError("UDP packet length (header + data) cannot exceed 65535 bytes")
 
     # Pack the header fields (all 16-bit big-endian unsigned integers)
-    header = (
-        source_port.to_bytes(2, "big")
-        + dest_port.to_bytes(2, "big")
-        + length.to_bytes(2, "big")
-        + checksum.to_bytes(2, "big")
-    )
+    try:
+        header = (
+            source_port.to_bytes(2, "big")
+            + dest_port.to_bytes(2, "big")
+            + length.to_bytes(2, "big")
+            + checksum.to_bytes(2, "big")
+        )
+        packet = header + data
+    except (TypeError, AttributeError) as e:
+        raise TypeError("UDP header fields must be integers and data must be bytes.") from e
 
-    packet = header + data
     return UDPPacketBytes(packet)
 
 
