@@ -3,12 +3,13 @@
 from pathlib import Path
 
 from space_packet_parser.common import SpacePacket
-from space_packet_parser.generators import ccsds_generator
+from space_packet_parser.generators import ccsds_generator, udp_generator
 from space_packet_parser.xtce.definitions import XtcePacketDefinition
 from space_packet_parser.xtce.validation import validate_xtce
 
 __all__ = [
     "ccsds_generator",
+    "udp_generator",
     "SpacePacket",
     "XtcePacketDefinition",
     "load_xtce",

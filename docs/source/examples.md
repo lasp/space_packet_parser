@@ -11,5 +11,3 @@ Examples on Github include:
   using realtime packet parsing from a streaming socket
 - [CSV to XTCE](https://github.com/lasp/space_packet_parser/blob/main/examples/csv_to_xtce_conversion.py)
   packet definition conversion and parsing
-- [UDP packet parsing](https://github.com/lasp/space_packet_parser/blob/main/examples/udp_packet_parsing.py)
-  custom generator implementation for parsing UDP packets
