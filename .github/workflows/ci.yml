@@ -10,18 +10,24 @@ on:
 
 jobs:
   # Verify that the package builds successfully
-  # Only runs if the cibuild label is applied to the PR
+  # For PRs: only runs if the cibuild label is present
+  # Also runs on push to main and scheduled runs
   build-package:
     if: |
-      github.event_name == 'pull_request' &&
-      contains(github.event.pull_request.labels.*.name, 'cibuild')
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'cibuild')) ||
+      github.event_name == 'push' ||
+      github.event_name == 'schedule'
     name: Build
     uses: ./.github/workflows/_build.yml
 
   # Run unit and integration tests
   run-tests:
     # Don't run for label additions
-    if: github.event.action != 'labeled'
+    if: |
+      github.event_name != 'pull_request' ||
+      github.event.action == 'opened' ||
+      github.event.action == 'synchronize' ||
+      github.event.action == 'reopened'
     name: Test
     runs-on: ${{ matrix.os }}
     permissions:
@@ -63,7 +69,11 @@ jobs:
   # Run the example scripts and ensure there are no errors
   run-examples:
     # Don't run for label additions
-    if: github.event.action != 'labeled'
+    if: |
+      github.event_name != 'pull_request' ||
+      github.event.action == 'opened' ||
+      github.event.action == 'synchronize' ||
+      github.event.action == 'reopened'
     name: Run Examples
     runs-on: ubuntu-latest
     permissions:
