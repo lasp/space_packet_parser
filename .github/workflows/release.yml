@@ -34,7 +34,7 @@ jobs:
     steps:
       # This downloads the build artifacts from the build job
       - name: Download distribution artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: python-package-distributions
           path: dist/
@@ -59,7 +59,7 @@ jobs:
     steps:
       # This downloads the build artifacts from the build job
       - name: Download distribution artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: python-package-distributions
           path: dist/
@@ -80,7 +80,7 @@ jobs:
 
     steps:
       - name: Download Conda artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: conda-package
           path: conda-package/
