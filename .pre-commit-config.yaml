@@ -16,12 +16,12 @@ repos:
       - id: no-commit-to-branch
         args: [--branch, main, --branch, dev]
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.0.3
+    rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
         types_or: [yaml, json, markdown]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.13.3"
+    rev: "v0.14.10"
     hooks:
       - id: ruff-format
       - id: ruff-check
