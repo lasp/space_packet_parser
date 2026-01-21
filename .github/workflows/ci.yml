@@ -22,12 +22,6 @@ jobs:
 
   # Run unit and integration tests
   run-tests:
-    # Don't run for label additions
-    if: |
-      github.event_name != 'pull_request' ||
-      github.event.action == 'opened' ||
-      github.event.action == 'synchronize' ||
-      github.event.action == 'reopened'
     name: Test
     runs-on: ${{ matrix.os }}
     permissions:
@@ -62,18 +56,12 @@ jobs:
         run: |
           pytest --color=yes --cov --cov-report=xml
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         with:
           use_oidc: true
 
   # Run the example scripts and ensure there are no errors
   run-examples:
-    # Don't run for label additions
-    if: |
-      github.event_name != 'pull_request' ||
-      github.event.action == 'opened' ||
-      github.event.action == 'synchronize' ||
-      github.event.action == 'reopened'
     name: Run Examples
     runs-on: ubuntu-latest
     permissions:
