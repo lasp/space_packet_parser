@@ -146,12 +146,21 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         # Uses the GitHub CLI to generate the Release and auto-generate the release notes. Also generates
         # the Release title based on the annotation on the git tag.
-        run: >-
+        run: |
           RELEASE_NAME=$(basename "${{ github.ref_name }}")
-          gh release create
-          '${{ github.ref_name }}'
-          --repo '${{ github.repository }}'
-          --title "$RELEASE_NAME"
-          ${{ env.PRE_RELEASE_OPTION }}
-          --generate-notes
-          --notes-start-tag '${{ env.LATEST_RELEASE_TAG }}'
+          ARGS=(
+            "${{ github.ref_name }}"
+            --repo "${{ github.repository }}"
+            --title "$RELEASE_NAME"
+          )
+
+          if [ "${{ env.PRE_RELEASE_OPTION }}" = "--prerelease" ]; then
+            ARGS+=(--prerelease)
+          fi
+
+          ARGS+=(
+            --generate-notes
+            --notes-start-tag "${{ env.LATEST_RELEASE_TAG }}"
+          )
+
+          gh release create "${ARGS[@]}"
