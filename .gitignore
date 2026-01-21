@@ -26,6 +26,7 @@ build
 dist
 space_packet_parser/_version.py
 uv.lock
+node_modules
 
 # Packages #
 ############
