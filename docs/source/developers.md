@@ -28,9 +28,14 @@ Once the development dependencies are installed and the uv-generated `.venv` is 
 
 ```bash
 pre-commit install
+
+# Linux / WSL (devcontainer)
+sudo apt-get install -y libatomic1
 ```
 
 to get pre-commit hooks to automatically run the linting and formatting checks for you before each commit.
+
+Authentication with Github is required to push to the repository. We suggest using SSH key authentication.
 
 ## Testing
 
