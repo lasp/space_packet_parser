@@ -1,5 +1,7 @@
 """Common mixins"""
 
+from __future__ import annotations
+
 import inspect
 import logging
 import warnings
@@ -154,7 +156,7 @@ class XmlObject(metaclass=ABCMeta):
         parameter_lookup: dict[str, any] | None,
         parameter_type_lookup: dict[str, any] | None,
         container_lookup: dict[str, any] | None,
-    ) -> "XmlObject":
+    ) -> XmlObject:
         """Create an object from an XML element
 
         Notes
@@ -202,7 +204,7 @@ class XmlObject(metaclass=ABCMeta):
 class Parseable(Protocol):
     """Defines an object that can be parsed from packet data."""
 
-    def parse(self, packet: "SpacePacket") -> None:
+    def parse(self, packet: SpacePacket) -> None:
         """Parse this entry from the packet data and add the necessary items to the packet."""
 
 

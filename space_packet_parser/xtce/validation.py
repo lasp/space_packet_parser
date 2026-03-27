@@ -1,5 +1,7 @@
 """XTCE document validation classes and utilities."""
 
+from __future__ import annotations
+
 import hashlib
 import logging
 import os
@@ -534,7 +536,11 @@ def validate_xtce(
 
     # Parse XML document into a tree object
     try:
-        if isinstance(xml_source, ElementTree.ElementTree):
+        # In lxml >= 5.2.1 (Cython 3.0), ElementTree.ElementTree is a Cython function
+        # rather than a class, which makes isinstance() fail with a TypeError.
+        # ElementTree._ElementTree is the actual underlying class and is available in all
+        # supported lxml versions.
+        if isinstance(xml_source, ElementTree._ElementTree):
             xml_tree = xml_source
         elif isinstance(xml_source, Path):
             xml_tree = ElementTree.parse(str(xml_source))

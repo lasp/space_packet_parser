@@ -1,5 +1,7 @@
 """DataEncoding definitions"""
 
+from __future__ import annotations
+
 import logging
 import struct
 import warnings
@@ -378,7 +380,7 @@ class StringDataEncoding(DataEncoding):
         parameter_lookup: dict[str, any] | None = None,
         parameter_type_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "StringDataEncoding":
+    ) -> StringDataEncoding:
         """Create a data encoding object from an <xtce:StringDataEncoding> XML element.
 
         Notes
@@ -724,7 +726,7 @@ class IntegerDataEncoding(NumericDataEncoding):
         parameter_lookup: dict[str, any] | None = None,
         parameter_type_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "IntegerDataEncoding":
+    ) -> IntegerDataEncoding:
         """Create a data encoding object from an <xtce:IntegerDataEncoding> XML element.
 
         Parameters
@@ -891,7 +893,7 @@ class FloatDataEncoding(NumericDataEncoding):
         parameter_lookup: dict[str, any] | None = None,
         parameter_type_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "FloatDataEncoding":
+    ) -> FloatDataEncoding:
         """Create a data encoding object from an <xtce:FloatDataEncoding> XML element.
 
         Parameters
@@ -1029,7 +1031,7 @@ class BinaryDataEncoding(DataEncoding):
         parameter_lookup: dict[str, any] | None = None,
         parameter_type_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "BinaryDataEncoding":
+    ) -> BinaryDataEncoding:
         """Create a data encoding object from an <xtce:BinaryDataEncoding> XML element.
 
         Parameters
