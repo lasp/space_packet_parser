@@ -62,7 +62,7 @@ jobs:
         run: |
           pytest --color=yes --cov --cov-report=xml
 
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         with:
           use_oidc: true
 
