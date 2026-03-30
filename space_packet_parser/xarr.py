@@ -16,6 +16,7 @@ from os import PathLike
 from pathlib import Path
 from typing import BinaryIO
 
+from space_packet_parser import common
 from space_packet_parser.exceptions import UnrecognizedPacketTypeError
 from space_packet_parser.generators import ccsds_generator
 from space_packet_parser.generators.utils import _read_packet_file
@@ -235,6 +236,10 @@ def create_dataset(
                     val = value.raw_value
                 else:
                     val = value
+
+                # Convert BinaryParameter to plain bytes to prevent numpy truncation
+                if isinstance(val, common.BinaryParameter):
+                    val = bytes(val)
 
                 data_dict[apid][key].append(val)
                 if key not in datatype_mapping[apid]:
