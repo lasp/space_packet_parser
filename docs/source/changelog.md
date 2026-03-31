@@ -7,6 +7,10 @@ list and release milestones.
 
 Release notes for the `space_packet_parser` library
 
+### v6.1.1
+
+- BUGFIX: Support lxml 5.2.1. [#236](https://github.com/lasp/space_packet_parser/issues/236)
+
 ### v6.1.0
 
 - DEVOPS: Migrated from Poetry to uv/hatchling for Python project management
