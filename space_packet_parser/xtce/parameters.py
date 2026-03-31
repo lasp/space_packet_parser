@@ -1,5 +1,7 @@
 """ParameterType definitions"""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 import lxml.etree as ElementTree
@@ -47,7 +49,7 @@ class Parameter(common.Parseable, common.XmlObject):
         tree: ElementTree.ElementTree | None = None,
         parameter_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "Parameter":
+    ) -> Parameter:
         """Create a Parameter object from an XML element.
 
         Parameters

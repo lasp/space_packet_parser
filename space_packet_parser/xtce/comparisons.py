@@ -1,5 +1,7 @@
 """Matching logical objects"""
 
+from __future__ import annotations
+
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from typing import Any
@@ -111,7 +113,7 @@ class Comparison(MatchCriteria):
         parameter_lookup: dict[str, any] | None = None,
         parameter_type_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "Comparison":
+    ) -> Comparison:
         """Create
 
         Parameters
@@ -301,7 +303,7 @@ class Condition(MatchCriteria):
         parameter_lookup: dict[str, any] | None = None,
         parameter_type_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "Condition":
+    ) -> Condition:
         """Classmethod to create a Condition object from an XML element.
 
         Parameters
@@ -448,7 +450,7 @@ class BooleanExpression(MatchCriteria):
         parameter_lookup: dict[str, any] | None = None,
         parameter_type_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "BooleanExpression":
+    ) -> BooleanExpression:
         """Abstract classmethod to create a match criteria object from an XML element.
 
         Parameters
@@ -615,7 +617,7 @@ class DiscreteLookup(common.AttrComparable, common.XmlObject):
         parameter_lookup: dict[str, any] | None = None,
         parameter_type_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "DiscreteLookup":
+    ) -> DiscreteLookup:
         """Create a DiscreteLookup object from an <xtce:DiscreteLookup> XML element
 
         Parameters

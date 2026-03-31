@@ -1,5 +1,7 @@
 """Calibrator definitions"""
 
+from __future__ import annotations
+
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 
@@ -23,7 +25,7 @@ class Calibrator(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         parameter_lookup: dict[str, any] | None = None,
         parameter_type_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "Calibrator":
+    ) -> Calibrator:
         """Abstract classmethod to create a default_calibrator object from an XML element.
 
         Parameters
@@ -100,7 +102,7 @@ class SplineCalibrator(Calibrator):
         parameter_lookup: dict[str, any] | None = None,
         parameter_type_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "SplineCalibrator":
+    ) -> SplineCalibrator:
         """Create a spline default_calibrator object from an <xtce:SplineCalibrator> XML element.
 
         Parameters
@@ -270,7 +272,7 @@ class PolynomialCalibrator(Calibrator):
         parameter_lookup: dict[str, any] | None = None,
         parameter_type_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "PolynomialCalibrator":
+    ) -> PolynomialCalibrator:
         """Create a polynomial default_calibrator object from an <xtce:PolynomialCalibrator> XML element.
 
         Parameters
@@ -352,7 +354,7 @@ class MathOperationCalibrator(Calibrator):
         parameter_lookup: dict[str, any] | None = None,
         parameter_type_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "MathOperationCalibrator":
+    ) -> MathOperationCalibrator:
         """Create a math operation default_calibrator from an <xtce:MathOperationCalibrator> XML element.
 
         Parameters
@@ -456,7 +458,7 @@ class ContextCalibrator(common.AttrComparable, common.XmlObject):
         parameter_lookup: dict[str, any] | None = None,
         parameter_type_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "ContextCalibrator":
+    ) -> ContextCalibrator:
         """Create a ContextCalibrator object from an <xtce:ContextCalibrator> XML element
 
         Parameters
