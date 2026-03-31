@@ -1,5 +1,7 @@
 """Parameter type objects"""
 
+from __future__ import annotations
+
 import warnings
 from abc import ABCMeta
 
@@ -48,7 +50,7 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         parameter_lookup: dict | None = None,
         parameter_type_lookup: dict | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "ParameterType":
+    ) -> ParameterType:
         """Create a *ParameterType* from an <xtce:ParameterType> XML element.
 
         Parameters
@@ -241,7 +243,7 @@ class EnumeratedParameterType(ParameterType):
         parameter_lookup: dict[str, any] | None = None,
         parameter_type_lookup: dict[str, any] | None = None,
         container_lookup: dict[str, any] | None = None,
-    ) -> "EnumeratedParameterType":
+    ) -> EnumeratedParameterType:
         """Create an EnumeratedParameterType from an <xtce:EnumeratedParameterType> XML element.
         Overrides ParameterType.from_parameter_type_xml_element
 
