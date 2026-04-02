@@ -29,7 +29,7 @@
         "python-envs.terminal.autoActivationType": "command",
         "python.testing.pytestEnabled": true,
         "python.testing.unittestEnabled": false,
-        "python.testing.pytestArgs": ["-s", "."],
+        "python.testing.pytestArgs": ["."],
         "debugpy.debugJustMyCode": false,
         "files.associations": {
           "*.xtce": "xml"
@@ -43,6 +43,18 @@
         },
         "ruff.organizeImports": true,
         "ruff.fixAll": true
+      },
+      "launch": {
+        "configurations": [
+          {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false
+          }
+        ]
       }
     }
   },
