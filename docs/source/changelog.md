@@ -203,7 +203,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Changes documented in v3.0 and earlier correspond to development efforts undertaken before this library was
 moved to GitHub (it was previously known as `lasp_packets`).
 None of the git history is available for these versions as the git history was truncated
-in preparation for the move to Github to prevent accidental release of non-public example data which may be
+in preparation for the move to GitHub to prevent accidental release of non-public example data which may be
 (but probably isn't) present in historical commits.
 
 ## [3.0] - Unknown
@@ -212,7 +212,7 @@ in preparation for the move to Github to prevent accidental release of non-publi
 
 - Add a discussion of optimization to the documentation
 - Add support for Python 3.10 and 3.11
-- Add Parser.generator kwargs tdocs/source/index.rsto aid in debugging
+- Add Parser.generator kwargs to aid in debugging
 - Add kwarg to only parse CCSDS headers and skip the user data
 - Add optional progress bar that prints to stdout when parsing a packets file.
 
@@ -286,7 +286,8 @@ in preparation for the move to Github to prevent accidental release of non-publi
 - Add support for variable length binary data fields in utf-8, utf-16-le, and utf-16-be.
 - Add build and release documentation to readme.
 
-[unreleased]: https://github.com/lasp/space_packet_parser/compare/6.1.1...HEAD
+[unreleased]: https://github.com/lasp/space_packet_parser/compare/6.1.2...HEAD
+[6.1.2]: https://github.com/lasp/space_packet_parser/compare/6.1.1...6.1.2
 [6.1.1]: https://github.com/lasp/space_packet_parser/compare/6.1.0...6.1.1
 [6.1.0]: https://github.com/lasp/space_packet_parser/compare/6.0.1...6.1.0
 [6.0.1]: https://github.com/lasp/space_packet_parser/compare/6.0.0...6.0.1
