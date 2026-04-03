@@ -49,11 +49,11 @@ if [ "$SSH_AVAILABLE" = "true" ]; then
     if ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
         echo "Successfully authenticated with GitHub via SSH."
     else
-        echo "SSH agent available but GitHub SSH authentication failed."
+        echo "SSH agent available but GitHub SSH authentication failed. This is probably because either your IDE isn't forwarding your SSH agent or you have forgotten to add your SSH key to your ssh-agent."
     fi
 else
     echo "SSH authentication not available. Using HTTPS authentication."
-    echo "You will need to authenticate either by forwarding your HTTP credentials through (should happen automatically) or by using the gh CLI."
+    echo "You will need to authenticate either by forwarding your HTTP credentials through (may happen automatically) or by using the gh CLI."
 fi
 
 # Configure Git commit signing
@@ -80,8 +80,8 @@ fi
 if { [ "$COMMIT_GPGSIGN" = "true" ] || [ "$TAG_GPGSIGN" = "true" ]; } && [ -n "$(git config --get user.signingkey)" ]; then
     SIGNING_KEY=$(git config --get user.signingkey)
     if ! gpg --list-keys "$SIGNING_KEY" >/dev/null 2>&1; then
-        echo "Warning: The signing key '$SIGNING_KEY' is not available in GPG keyring."
-        echo "Commits/tags may fail to sign."
+        echo "Warning: The signing key '$SIGNING_KEY' is not available in GPG keyring. This probably means your IDE isn't forwarding your GPG agent."
+        echo "Commits/tags may fail to sign. If you don't care about signing, run `git config --unset commit.gpgsign` and `git config --unset tag.gpgsign` to disable signing."
     else
         echo "Configured GPG signing key '$SIGNING_KEY' is available."
     fi

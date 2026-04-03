@@ -1,3 +1,7 @@
+---
+applyTo: "**"
+---
+
 # Space Packet Parser Development Context
 
 ## Project Overview
