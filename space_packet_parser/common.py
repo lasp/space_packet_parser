@@ -6,7 +6,7 @@ import inspect
 import logging
 import warnings
 from abc import ABCMeta, abstractmethod
-from typing import Protocol
+from typing import Any, Protocol
 
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
@@ -150,12 +150,12 @@ class XmlObject(metaclass=ABCMeta):
     @abstractmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.ElementTree | None,
-        parameter_lookup: dict[str, any] | None,
-        parameter_type_lookup: dict[str, any] | None,
-        container_lookup: dict[str, any] | None,
+        tree: ElementTree._ElementTree | None,
+        parameter_lookup: dict[str, Any] | None,
+        parameter_type_lookup: dict[str, Any] | None,
+        container_lookup: dict[str, Any] | None,
     ) -> XmlObject:
         """Create an object from an XML element
 
@@ -167,9 +167,9 @@ class XmlObject(metaclass=ABCMeta):
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             XML element from which to parse the object
-        tree: Optional[ElementTree.ElementTree]
+        tree: Optional[ElementTree._ElementTree]
             Full XML tree for parsing that requires access to other elements
         parameter_lookup: Optional[dict[str, parameters.ParameterType]]
             Parameters dict for parsing that requires knowledge of existing parameters
@@ -185,7 +185,7 @@ class XmlObject(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create an XML element from the object self
 
         Parameters
@@ -195,7 +195,7 @@ class XmlObject(metaclass=ABCMeta):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
             XML Element object
         """
         raise NotImplementedError()

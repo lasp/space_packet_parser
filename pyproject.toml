@@ -77,7 +77,8 @@ test = [
     "ruff",
     "tomli",  # for support of python<3.11 toml parsing in check_metadata.py
     "xarray",  # for testing extra
-    "numpy"  # for testing extra
+    "numpy",  # for testing extra
+    "lxml-stubs"  # for type checking of lxml in tests
 ]
 docs = [
     "pyyaml",
