@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABCMeta
+from typing import Any
 
 from lxml import etree as ElementTree
 from lxml.builder import ElementMaker
@@ -44,26 +45,26 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.Element | None = None,
+        tree: ElementTree._ElementTree | None = None,
         parameter_lookup: dict | None = None,
         parameter_type_lookup: dict | None = None,
-        container_lookup: dict[str, any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> ParameterType:
         """Create a *ParameterType* from an <xtce:ParameterType> XML element.
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             The XML element from which to create the object.
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
         parameter_type_lookup: Optional[dict]
             Ignored
-        container_lookup : Optional[dict[str, any]]
+        container_lookup : Optional[dict[str, Any]]
             Ignored
 
         Returns
@@ -80,7 +81,7 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         encoding = cls.get_data_encoding(element)
         return cls(name, encoding, unit)
 
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a parameter type XML element
 
         Parameters
@@ -90,7 +91,7 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         # This looks funny because it's creating a dynamically named XML element from the ElementMaker API
         param_type_element = getattr(elmaker, self.__class__.__name__)(name=self.name)
@@ -102,14 +103,14 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         return param_type_element
 
     @staticmethod
-    def get_units(parameter_type_element: ElementTree.Element) -> str | None:
+    def get_units(parameter_type_element: ElementTree._Element) -> str | None:
         """Finds the units associated with a parameter type element and parsed them to return a unit string.
         We assume only one <xtce:Unit> but this could be extended to support multiple units.
         See section 4.3.2.2.4 of CCSDS 660.1-G-1
 
         Parameters
         ----------
-        parameter_type_element : ElementTree.Element
+        parameter_type_element : ElementTree._Element
             The parameter type element
 
         Returns
@@ -131,13 +132,13 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         return None
 
     @staticmethod
-    def get_data_encoding(parameter_type_element: ElementTree.Element) -> encodings.DataEncoding | None:
+    def get_data_encoding(parameter_type_element: ElementTree._Element) -> encodings.DataEncoding | None:
         """Finds the data encoding XML element associated with a parameter type XML element and parses
         it, returning an object representation of the data encoding.
 
         Parameters
         ----------
-        parameter_type_element : ElementTree.Element
+        parameter_type_element : ElementTree._Element
             The parameter type element
 
         Returns
@@ -237,27 +238,27 @@ class EnumeratedParameterType(ParameterType):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.Element | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> EnumeratedParameterType:
         """Create an EnumeratedParameterType from an <xtce:EnumeratedParameterType> XML element.
         Overrides ParameterType.from_parameter_type_xml_element
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             The XML element from which to create the object.
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
         parameter_type_lookup: Optional[dict]
             Ignored
-        container_lookup: Optional[dict[str, any]]
+        container_lookup: Optional[dict[str, Any]]
             Ignored
 
         Returns
@@ -270,7 +271,7 @@ class EnumeratedParameterType(ParameterType):
         enumeration = cls.get_enumeration_list_contents(element, encoding)
         return cls(name, encoding, enumeration=enumeration, unit=unit)
 
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a parameter type XML element
 
         Parameters
@@ -280,7 +281,7 @@ class EnumeratedParameterType(ParameterType):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         param_type_element = getattr(elmaker, self.__class__.__name__)(name=self.name)
 
@@ -306,7 +307,7 @@ class EnumeratedParameterType(ParameterType):
         return param_type_element
 
     @staticmethod
-    def get_enumeration_list_contents(element: ElementTree.Element, encoding: encodings.DataEncoding) -> dict:
+    def get_enumeration_list_contents(element: ElementTree._Element, encoding: encodings.DataEncoding) -> dict:
         """Finds the <xtce:EnumerationList> element child of an <xtce:EnumeratedParameterType> and parses it,
         returning a dict. This method is confusingly named as if it might return a list. Sorry, XML and python
         semantics are not always compatible. It's called an enumeration list because the XML element is called
@@ -314,7 +315,7 @@ class EnumeratedParameterType(ParameterType):
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             The XML element from which to search for EnumerationList tags
         encoding: encodings.DataEncoding
             The data encoding informs how to interpret the keys in the enumeration list (int, float, or str).
@@ -478,26 +479,26 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.ElementTree | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
-    ) -> ElementTree.Element:
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
+    ) -> TimeParameterType:
         """Create a *TimeParameterType* from an <xtce:TimeParameterType> XML element.
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             The XML element from which to create the object.
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
         parameter_type_lookup: Optional[dict]
             Ignored
-        container_lookup: Optional[dict[str, any]]
+        container_lookup: Optional[dict[str, Any]]
 
         Returns
         -------
@@ -513,7 +514,7 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
         offset_from = cls.get_offset_from(element)
         return cls(name, encoding, unit=unit, epoch=epoch, offset_from=offset_from)
 
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a TimeParameterType XML element
 
         For some reason, Time types have a really different structure than other parameter types so we
@@ -526,7 +527,7 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         if not isinstance(self.encoding, encodings.NumericDataEncoding):
             raise ValueError("Only NumericDataEncodings are supported for TimeParameterTypes.")
@@ -566,14 +567,14 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
         return element
 
     @staticmethod
-    def get_units(parameter_type_element: ElementTree.Element) -> str | None:
+    def get_units(parameter_type_element: ElementTree._Element) -> str | None:
         """Finds the units associated with a parameter type element and parsed them to return a unit string.
         We assume only one <xtce:Unit> but this could be extended to support multiple units.
         See section 4.3.2.2.4 of CCSDS 660.1-G-1
 
         Parameters
         ----------
-        parameter_type_element : ElementTree.Element
+        parameter_type_element : ElementTree._Element
             The parameter type element
 
         Returns
@@ -588,14 +589,14 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
 
     @staticmethod
     def get_time_unit_linear_scaler(
-        parameter_type_element: ElementTree.Element,
+        parameter_type_element: ElementTree._Element,
     ) -> calibrators.PolynomialCalibrator | None:
         """Finds the linear calibrator associated with the Encoding element for the parameter type element.
         See section 4.3.2.4.8.3 of CCSDS 660.1-G-2
 
         Parameters
         ----------
-        parameter_type_element : ElementTree.Element
+        parameter_type_element : ElementTree._Element
             The parameter type element
 
         Returns
@@ -626,13 +627,13 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
         return None
 
     @staticmethod
-    def get_epoch(parameter_type_element: ElementTree.Element) -> str | None:
+    def get_epoch(parameter_type_element: ElementTree._Element) -> str | None:
         """Finds the epoch associated with a parameter type element and parses them to return an epoch string.
         See section 4.3.2.4.9 of CCSDS 660.1-G-2
 
         Parameters
         ----------
-        parameter_type_element : ElementTree.Element
+        parameter_type_element : ElementTree._Element
             The parameter type element
 
         Returns
@@ -647,14 +648,14 @@ class TimeParameterType(ParameterType, metaclass=ABCMeta):
         return None
 
     @staticmethod
-    def get_offset_from(parameter_type_element: ElementTree.Element) -> str | None:
+    def get_offset_from(parameter_type_element: ElementTree._Element) -> str | None:
         """Finds the parameter referenced in OffsetFrom in a parameter type element and returns the name of the
         referenced parameter (which must be of type TimeParameterType).
         See section 4.3.2.4.9 of CCSDS 660.1-G-1
 
         Parameters
         ----------
-        parameter_type_element : ElementTree.Element
+        parameter_type_element : ElementTree._Element
             The parameter type element
 
         Returns
