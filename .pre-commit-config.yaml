@@ -21,13 +21,13 @@ repos:
       - id: prettier
         types_or: [yaml, json, markdown]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.14.10"
+    rev: "v0.15.9"
     hooks:
       - id: ruff-format
       - id: ruff-check
         args: [--fix]
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
+    rev: v2.4.2
     hooks:
       - id: codespell
         files: ^.*\.(py|md|rst|yml)$
