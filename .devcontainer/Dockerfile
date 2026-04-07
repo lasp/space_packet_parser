@@ -79,6 +79,3 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 # Copy and set up dev environment script
 COPY setup-dev-environment.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/setup-dev-environment.sh
-
-# Copy CLAUDE.md and settings to Claude config directory
-COPY CLAUDE.md /root/.claude/

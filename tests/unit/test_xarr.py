@@ -178,6 +178,43 @@ def test_create_dataset_with_custom_generator(tmp_path, fixed_length_packet_defi
     assert list(dataset["INT32_FIELD"].values) == [12345, 67890, -99999]
 
 
+def test_create_dataset_preserves_binary_parameter_width(tmp_path):
+    """Test that binary parameters keep their full byte width in the resulting dataset."""
+    packet_definition = definitions.XtcePacketDefinition(
+        container_set=[
+            containers.SequenceContainer(
+                "BINARY_CONTAINER",
+                entry_list=[
+                    parameters.Parameter(
+                        "BIN_FIELD",
+                        parameter_type=parameter_types.BinaryParameterType(
+                            "BIN_TYPE", encoding=encodings.BinaryDataEncoding(fixed_size_in_bits=64)
+                        ),
+                    )
+                ],
+            )
+        ]
+    )
+    packet_data = b"ABCDEFGH"
+    test_file = tmp_path / "binary_packets.bin"
+    test_file.write_bytes(packet_data)
+
+    datasets = xarr.create_dataset(
+        test_file,
+        packet_definition,
+        packet_bytes_generator=fixed_length_generator,
+        generator_kwargs={"packet_length_bytes": 8},
+        parse_bytes_kwargs={"root_container_name": "BINARY_CONTAINER"},
+    )
+
+    dataset = list(datasets.values())[0]
+
+    assert dataset["BIN_FIELD"].values.dtype.kind == "S"  # Should be a bytes/string type
+    assert dataset["BIN_FIELD"].values.dtype.itemsize == 8
+    assert dataset["BIN_FIELD"].values.dtype == "|S8"
+    assert dataset["BIN_FIELD"].values.tolist() == [packet_data]
+
+
 def test_create_dataset_with_packet_filter(tmp_path, fixed_length_packet_definition, fixed_length_test_packets):
     """Test filtering packets with packet_filter parameter using raw byte inspection"""
     _, _, _, binary_data = fixed_length_test_packets

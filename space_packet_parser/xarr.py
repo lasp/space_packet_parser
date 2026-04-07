@@ -255,12 +255,17 @@ def create_dataset(
     dataset_by_apid = {}
 
     for apid, data in data_dict.items():
-        ds = xr.Dataset(
-            data_vars={
-                key: (["packet"], np.asarray(list_of_values, dtype=datatype_mapping[apid][key]))
-                for key, list_of_values in data.items()
-            }
-        )
+        data_vars: dict[str, tuple[list[str], np.ndarray]] = {}  # {var_name: ([dims, ...], data_array)}
+        for key, list_of_values in data.items():
+            dtype = np.dtype(datatype_mapping[apid][key])
+            if dtype.kind == "S":
+                # Special case for byte strings. np.asarray doesn't process BinaryParameter objects correctly to
+                # byte strings, so we need to convert them to bytes first before creating the array.
+                # See: https://github.com/lasp/space_packet_parser/issues/246
+                list_of_values = [bytes(val) for val in list_of_values]
+            data_vars[key] = (["packet"], np.asarray(list_of_values, dtype=dtype))
+
+        ds = xr.Dataset(data_vars=data_vars)
 
         dataset_by_apid[apid] = ds
 
