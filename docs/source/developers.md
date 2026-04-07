@@ -4,39 +4,6 @@
 
 This repository is entirely agnostic to how developers set up their development environments. There is a provided devcontainer configuration file and we suggest using a devcontainer to set up and isolate your development environment.
 
-## Installing Development Dependencies
-
-Install development dependencies using `uv`` with all the extras groups:
-
-```bash
-# Install uv if you haven't already
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Load env vars and PATH settings
-source $HOME/.local/bin/env
-
-# Install all dependencies including optional extras
-uv sync --all-extras
-
-# Activate the virtual environment
-source .venv/bin/activate
-```
-
-Note: `uv` is a fast, Rust-based Python package installer and resolver that is PEP-compliant and fully compatible with pip and PyPI.
-
-Once the development dependencies are installed and the uv-generated `.venv` is activated, you can run
-
-```bash
-pre-commit install
-
-# Linux / WSL (devcontainer)
-sudo apt-get install -y libatomic1
-```
-
-to get pre-commit hooks to automatically run the linting and formatting checks for you before each commit.
-
-Authentication with Github is required to push to the repository. We suggest using SSH key authentication.
-
 ## Testing
 
 Testing is run with `pytest` and the order is randomized by `pytest-randomly`.
