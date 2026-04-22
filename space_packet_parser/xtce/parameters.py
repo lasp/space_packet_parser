@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
@@ -43,20 +44,20 @@ class Parameter(common.Parseable, common.XmlObject):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
         parameter_type_lookup: dict[str, parameter_types.ParameterType],
-        tree: ElementTree.ElementTree | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> Parameter:
         """Create a Parameter object from an XML element.
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             XML element
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._Element]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
@@ -90,7 +91,7 @@ class Parameter(common.Parseable, common.XmlObject):
             long_description=parameter_long_description,
         )
 
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a Parameter XML element
 
         Parameters
@@ -100,7 +101,7 @@ class Parameter(common.Parseable, common.XmlObject):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         parameter_attrib = {
             "name": self.name,

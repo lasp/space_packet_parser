@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
+from typing import Any
 
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
@@ -19,20 +20,20 @@ class Calibrator(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
     @abstractmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.Element | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> Calibrator:
         """Abstract classmethod to create a default_calibrator object from an XML element.
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             XML element
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
@@ -96,20 +97,20 @@ class SplineCalibrator(Calibrator):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.Element | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> SplineCalibrator:
         """Create a spline default_calibrator object from an <xtce:SplineCalibrator> XML element.
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             The XML element from which to create the object.
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
@@ -130,7 +131,7 @@ class SplineCalibrator(Calibrator):
         extrapolate = element.attrib["extrapolate"].lower() == "true" if "extrapolate" in element.attrib else False
         return cls(order=order, points=spline_points, extrapolate=extrapolate)
 
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a SplineCalibrator XML element
 
         Parameters
@@ -140,7 +141,7 @@ class SplineCalibrator(Calibrator):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         return elmaker.SplineCalibrator(
             *(elmaker.SplinePoint(raw=str(p.raw), calibrated=str(p.calibrated)) for p in self.points),
@@ -266,20 +267,20 @@ class PolynomialCalibrator(Calibrator):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.Element | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> PolynomialCalibrator:
         """Create a polynomial default_calibrator object from an <xtce:PolynomialCalibrator> XML element.
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             <xtce:PolynomialCalibrator> XML element
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
@@ -298,7 +299,7 @@ class PolynomialCalibrator(Calibrator):
         ]
         return cls(coefficients=coefficients)
 
-    def to_xml(self, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a PolynomialCalibrator XML element
 
         Parameters
@@ -308,7 +309,7 @@ class PolynomialCalibrator(Calibrator):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         return elmaker.PolynomialCalibrator(
             *(
@@ -348,20 +349,20 @@ class MathOperationCalibrator(Calibrator):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.Element | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> MathOperationCalibrator:
         """Create a math operation default_calibrator from an <xtce:MathOperationCalibrator> XML element.
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             The XML element from which to create the object.
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
@@ -376,7 +377,7 @@ class MathOperationCalibrator(Calibrator):
         """
         raise NotImplementedError(cls.err_msg)
 
-    def to_xml(self, elmaker: dict) -> ElementTree.Element:
+    def to_xml(self, elmaker: dict) -> ElementTree._Element:
         """Create a MathOperationsCalibrator XML element
 
         Parameters
@@ -386,7 +387,7 @@ class MathOperationCalibrator(Calibrator):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         raise NotImplementedError(self.err_msg)
 
@@ -423,12 +424,12 @@ class ContextCalibrator(common.AttrComparable, common.XmlObject):
         self.calibrator = calibrator
 
     @staticmethod
-    def get_context_match_criteria(element: ElementTree.Element) -> list[comparisons.MatchCriteria]:
+    def get_context_match_criteria(element: ElementTree._Element) -> list[comparisons.MatchCriteria]:
         """Parse contextual requirements from a Comparison, ComparisonList, or BooleanExpression
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             <xtce:ContextCalibrator> XML element from which to parse the ContextCalibrator object.
 
         Returns
@@ -437,6 +438,10 @@ class ContextCalibrator(common.AttrComparable, common.XmlObject):
             List of Comparisons that can be evaluated to determine whether this calibrator should be used.
         """
         context_match_element = element.find("ContextMatch")
+        if not context_match_element:
+            raise ValueError(
+                f"ContextCalibrator XML element {element.tag} {element.attrib} must contain a ContextMatch element"
+            )
         if (comparison_list_element := context_match_element.find("ComparisonList")) is not None:
             return [comparisons.Comparison.from_xml(el) for el in comparison_list_element.iterfind("Comparison")]
         if (comparison_element := context_match_element.find("Comparison")) is not None:
@@ -452,20 +457,20 @@ class ContextCalibrator(common.AttrComparable, common.XmlObject):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.Element | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> ContextCalibrator:
         """Create a ContextCalibrator object from an <xtce:ContextCalibrator> XML element
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             <xtce:ContextCalibrator> XML element from which to parse the ContextCalibrator object.
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
@@ -481,9 +486,9 @@ class ContextCalibrator(common.AttrComparable, common.XmlObject):
         match_criteria = cls.get_context_match_criteria(element)
 
         if (cal_element := element.find("Calibrator/SplineCalibrator")) is not None:
-            calibrator = SplineCalibrator.from_xml(cal_element)
+            calibrator: Calibrator = SplineCalibrator.from_xml(cal_element)
         elif (cal_element := element.find("Calibrator/PolynomialCalibrator")) is not None:
-            calibrator = PolynomialCalibrator.from_xml(cal_element)
+            calibrator: Calibrator = PolynomialCalibrator.from_xml(cal_element)
         else:
             raise NotImplementedError(
                 "Unsupported default_calibrator type. space_packet_parser only supports Polynomial and Spline"
@@ -492,7 +497,7 @@ class ContextCalibrator(common.AttrComparable, common.XmlObject):
 
         return cls(match_criteria=match_criteria, calibrator=calibrator)
 
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a MathOperationsCalibrator XML element
 
         Parameters
@@ -502,7 +507,7 @@ class ContextCalibrator(common.AttrComparable, common.XmlObject):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         context_match_element = elmaker.ContextMatch()
 

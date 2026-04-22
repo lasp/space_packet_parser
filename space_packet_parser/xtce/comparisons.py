@@ -51,7 +51,7 @@ class MatchCriteria(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         ----------
         packet : space_packet_parser.SpacePacket
             Packet data used to evaluate truthyness of the match criteria.
-        current_parsed_value : any, Optional
+        current_parsed_value : Any, Optional
             Uncalibrated value that is currently being matched (e.g. as a candidate for calibration).
             Used to resolve comparisons that reference their own raw value as a condition.
 
@@ -107,20 +107,20 @@ class Comparison(MatchCriteria):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.Element | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> Comparison:
         """Create
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             XML element
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
@@ -146,7 +146,7 @@ class Comparison(MatchCriteria):
 
         return cls(value, parameter_name, operator=operator, use_calibrated_value=use_calibrated_value)
 
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a Comparison XML element
 
         Parameters
@@ -156,7 +156,7 @@ class Comparison(MatchCriteria):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         return elmaker.Comparison(
             parameterRef=self.referenced_parameter,
@@ -273,12 +273,12 @@ class Condition(MatchCriteria):
             raise ComparisonError(f"Unable to use calibrated form of a fixed value in Condition {self}.")
 
     @staticmethod
-    def _parse_parameter_instance_ref(element: ElementTree.Element):
+    def _parse_parameter_instance_ref(element: ElementTree._Element):
         """Parse an xtce:ParameterInstanceRef element
 
         Parameters
         ----------
-        element: ElementTree.Element
+        element: ElementTree._Element
             xtce:ParameterInstanceRef element
 
         Returns
@@ -297,20 +297,20 @@ class Condition(MatchCriteria):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.Element | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> Condition:
         """Classmethod to create a Condition object from an XML element.
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             XML element
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
@@ -350,7 +350,7 @@ class Condition(MatchCriteria):
             f"Failed to parse a Condition element {element}. See 3.4.3.4.2 of XTCE Green Book CCSDS 660.1-G-2"
         )
 
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a Condition XML element
 
         Parameters
@@ -360,7 +360,7 @@ class Condition(MatchCriteria):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         condition = elmaker.Condition(
             elmaker.ParameterInstanceRef(
@@ -444,20 +444,20 @@ class BooleanExpression(MatchCriteria):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.Element | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> BooleanExpression:
         """Abstract classmethod to create a match criteria object from an XML element.
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
            XML element
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
@@ -471,12 +471,12 @@ class BooleanExpression(MatchCriteria):
         : BooleanExpression
         """
 
-        def _parse_anded(anded_el: ElementTree.Element) -> Anded:
+        def _parse_anded(anded_el: ElementTree._Element) -> Anded:
             """Create an Anded object from an xtce:ANDedConditions element
 
             Parameters
             ----------
-            anded_el: ElementTree.Element
+            anded_el: ElementTree._Element
                 xtce:ANDedConditions element
 
             Returns
@@ -487,12 +487,12 @@ class BooleanExpression(MatchCriteria):
             anded_ors = [_parse_ored(anded_or) for anded_or in anded_el.iterfind("ORedConditions")]
             return Anded(conditions, anded_ors)
 
-        def _parse_ored(ored_el: ElementTree.Element) -> Ored:
+        def _parse_ored(ored_el: ElementTree._Element) -> Ored:
             """Create an Ored object from an xtce:ARedConditions element
 
             Parameters
             ----------
-            ored_el: ElementTree.Element
+            ored_el: ElementTree._Element
                 xtce:ORedConditions element
 
             Returns
@@ -555,7 +555,7 @@ class BooleanExpression(MatchCriteria):
 
         raise ValueError(f"Error evaluating an unknown expression {self.expression}.")
 
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a Condition XML element
 
         Parameters
@@ -565,16 +565,16 @@ class BooleanExpression(MatchCriteria):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
 
-        def _serialize_anded(anded: Anded) -> ElementTree.Element:
+        def _serialize_anded(anded: Anded) -> ElementTree._Element:
             return elmaker.ANDedConditions(
                 *(cond.to_xml(elmaker=elmaker) for cond in anded.conditions),
                 *(_serialize_ored(ored) for ored in anded.ors),
             )
 
-        def _serialize_ored(ored: Ored) -> ElementTree.Element:
+        def _serialize_ored(ored: Ored) -> ElementTree._Element:
             return elmaker.ORedConditions(
                 *(cond.to_xml(elmaker=elmaker) for cond in ored.conditions),
                 *(_serialize_anded(anded) for anded in ored.ands),
@@ -611,20 +611,20 @@ class DiscreteLookup(common.AttrComparable, common.XmlObject):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.ElementTree | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> DiscreteLookup:
         """Create a DiscreteLookup object from an <xtce:DiscreteLookup> XML element
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             <xtce:DiscreteLookup> XML element from which to parse the DiscreteLookup object.
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
@@ -647,7 +647,7 @@ class DiscreteLookup(common.AttrComparable, common.XmlObject):
 
         return cls(match_criteria, lookup_value)
 
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a DiscreteLookup XML element
 
         Parameters
@@ -657,7 +657,7 @@ class DiscreteLookup(common.AttrComparable, common.XmlObject):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         match_criteria = (c.to_xml(elmaker=elmaker) for c in self.match_criteria)
 
@@ -681,7 +681,7 @@ class DiscreteLookup(common.AttrComparable, common.XmlObject):
 
         Returns
         -------
-        : any
+        : Any
             Return the lookup value if the match criteria evaluate true. Return None otherwise.
         """
         if all(criterion.evaluate(packet, current_parsed_value) for criterion in self.match_criteria):
