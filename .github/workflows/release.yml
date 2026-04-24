@@ -86,7 +86,7 @@ jobs:
           path: conda-package/
 
       - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@v4
         with:
           channels: conda-forge,defaults
           auto-update-conda: true
