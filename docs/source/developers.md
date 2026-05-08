@@ -1,26 +1,8 @@
 # Developer Documentation
 
-## Installing Development Dependencies
+## Environment Setup
 
-Install development dependencies using `uv`` with all the extras groups:
-
-```bash
-# Install uv if you haven't already
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install all dependencies including optional extras
-uv sync --all-extras
-```
-
-Note: `uv` is a fast, Rust-based Python package installer and resolver that is PEP-compliant and fully compatible with pip and PyPI.
-
-Once the development dependencies are installed and the uv-generated `.venv` is activated, you can run
-
-```bash
-pre-commit install
-```
-
-to get pre-commit hooks to automatically run the linting and formatting checks for you before each commit.
+This repository is entirely agnostic to how developers set up their development environments. There is a provided devcontainer configuration file and we suggest using a devcontainer to set up and isolate your development environment.
 
 ## Testing
 
@@ -31,12 +13,6 @@ To run all tests, run
 pytest tests
 ```
 
-To run all tests in docker containers (tests against many versions of python), run
-
-```bash
-docker-compose up --build && docker-compose down
-```
-
 ## Building Documentation with Sphinx
 
 Documentation is automatically built on ReadTheDocs in response to every PR and release,
@@ -44,7 +20,14 @@ but you can also build it locally with:
 
 ```bash
 # From docs directory
-make html && open build/html/index.html
+make html
+
+# macOS
+open build/html/index.html
+
+# Linux / WSL (devcontainer)
+sudo apt install wslu
+wslview build/html/index.html
 ```
 
 ## Making a Pull Request
