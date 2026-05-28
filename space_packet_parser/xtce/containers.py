@@ -61,9 +61,9 @@ class SequenceContainer(common.Parseable, common.XmlObject):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.ElementTree,
+        tree: ElementTree._ElementTree,
         parameter_lookup: dict[str, parameters.Parameter],
         container_lookup: dict[str, Any] | None,
         parameter_type_lookup: dict[str, parameter_types.ParameterType] | None = None,
@@ -75,9 +75,9 @@ class SequenceContainer(common.Parseable, common.XmlObject):
 
         Parameters
         ----------
-        tree : ElementTree.ElementTree
+        tree : ElementTree._ElementTree
             Full XTCE tree
-        element : ElementTree.Element
+        element : ElementTree._Element
             The SequenceContainer element to parse.
         parameter_lookup : dict[str, parameters.Parameter]
             Parameters contained in the entry lists of sequence containers
@@ -147,7 +147,7 @@ class SequenceContainer(common.Parseable, common.XmlObject):
             long_description=long_description,
         )
 
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a SequenceContainer XML element
 
         Parameters
@@ -157,7 +157,7 @@ class SequenceContainer(common.Parseable, common.XmlObject):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         em = elmaker
         sc_attrib = {"abstract": str(self.abstract).lower(), "name": self.name}
@@ -201,7 +201,7 @@ class SequenceContainer(common.Parseable, common.XmlObject):
         return sc
 
     @staticmethod
-    def _get_container_element(tree: ElementTree.ElementTree, name: str) -> ElementTree.Element:
+    def _get_container_element(tree: ElementTree._ElementTree, name: str) -> ElementTree._Element:
         """Finds an XTCE container <xtce:SequenceContainer> by name.
 
         Parameters
@@ -211,7 +211,7 @@ class SequenceContainer(common.Parseable, common.XmlObject):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         containers = tree.getroot().find("TelemetryMetaData/ContainerSet").findall(f"SequenceContainer[@name='{name}']")
         if len(containers) != 1:
@@ -223,21 +223,21 @@ class SequenceContainer(common.Parseable, common.XmlObject):
 
     @staticmethod
     def _get_base_container_element(
-        tree: ElementTree.Element, container_element: ElementTree.Element
-    ) -> tuple[ElementTree.Element, list[comparisons.MatchCriteria]]:
+        tree: ElementTree._ElementTree, container_element: ElementTree._Element
+    ) -> tuple[ElementTree._Element, list[comparisons.MatchCriteria]]:
         """Finds the referenced base container of an existing XTCE container element,
         including its inheritance restrictions.
 
         Parameters
         ----------
-        tree : ElementTree.ElementTree
+        tree : ElementTree._ElementTree
             Full XML tree object, for finding additional referenced containers if necessary.
-        container_element : ElementTree.Element
+        container_element : ElementTree._Element
             The container element for which to find its base container.
 
         Returns
         -------
-        : tuple[ElementTree.Element, list[comparisons.MatchCriteria]]
+        : tuple[ElementTree._Element, list[comparisons.MatchCriteria]]
             The base container element of the input container_element.
             The restriction criteria for the inheritance.
         """
@@ -273,12 +273,12 @@ class SequenceContainer(common.Parseable, common.XmlObject):
         )
 
     @staticmethod
-    def _is_abstract_container(container_element: ElementTree.Element) -> bool:
+    def _is_abstract_container(container_element: ElementTree._Element) -> bool:
         """Determine in a SequenceContainer element is abstract
 
         Parameters
         ----------
-        container_element : ElementTree.Element
+        container_element : ElementTree._Element
             SequenceContainer element to examine
 
         Returns

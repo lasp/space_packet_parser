@@ -41,6 +41,7 @@ test:
     - tomli
     - xarray
     - numpy
+    - lxml-stubs
   source_files:
     - tests
   commands:

@@ -277,12 +277,12 @@ def _load_schema(schema_location: str | Path, timeout: int = 30) -> tuple[Elemen
         ) from e
 
 
-def _find_schema_url(xml_tree: ElementTree.ElementTree) -> str:
+def _find_schema_url(xml_tree: ElementTree._ElementTree) -> str:
     """Find the XSD location from the root attributes of the document
 
     Parameters
     ----------
-    xml_tree : ElementTree.ElementTree
+    xml_tree : ElementTree._ElementTree
         XML tree of document being validated
 
     Returns
@@ -305,7 +305,7 @@ def _find_schema_url(xml_tree: ElementTree.ElementTree) -> str:
 
 
 def _validate_xtce_schema(
-    xml_tree: ElementTree.ElementTree,
+    xml_tree: ElementTree._ElementTree,
     local_xsd: str | Path | None = None,
     timeout: int = 30,
 ) -> ValidationResult:
@@ -313,7 +313,7 @@ def _validate_xtce_schema(
 
     Parameters
     ----------
-    xml_tree : ElementTree.ElementTree
+    xml_tree : ElementTree._ElementTree
         XTCE XML tree object
     local_xsd : Optional[Union[str, Path]]
         Optional local schema location. If specified, schema references in root element (or lack thereof) are ignored.
@@ -382,7 +382,7 @@ def _validate_xtce_schema(
     return result
 
 
-def _validate_xtce_structure(xml_tree: ElementTree.ElementTree) -> ValidationResult:
+def _validate_xtce_structure(xml_tree: ElementTree._ElementTree) -> ValidationResult:
     """Validate XTCE document structure and reference integrity.
 
     This performs structural validation beyond XSD schema validation,
@@ -390,7 +390,7 @@ def _validate_xtce_structure(xml_tree: ElementTree.ElementTree) -> ValidationRes
 
     Parameters
     ----------
-    xml_tree: ElementTree.ElementTree
+    xml_tree: ElementTree._ElementTree
         Parsed XML tree of the XTCE document
 
     Returns
@@ -495,7 +495,7 @@ def _validate_xtce_structure(xml_tree: ElementTree.ElementTree) -> ValidationRes
 
 
 def validate_xtce(
-    xml_source: str | Path | ElementTree.ElementTree,
+    xml_source: str | Path | ElementTree._ElementTree,
     level: str = "all",
     timeout: int = 30,
     print_results: bool = True,
@@ -509,7 +509,7 @@ def validate_xtce(
 
     Parameters
     ----------
-    xml_source : Union[str, Path, ElementTree.ElementTree]
+    xml_source : Union[str, Path, ElementTree._ElementTree]
         Path to XML file, XML string content, or ElementTree
     level : str
         Validation level: "schema", "structure", or "all". Default "all".

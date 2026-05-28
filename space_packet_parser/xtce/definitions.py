@@ -149,12 +149,12 @@ class XtcePacketDefinition(common.AttrComparable):
         """
         self.to_xml_tree().write(Path(filepath).absolute(), pretty_print=True, xml_declaration=True, encoding="utf-8")
 
-    def to_xml_tree(self) -> ElementTree.ElementTree:
+    def to_xml_tree(self) -> ElementTree._ElementTree:
         """Initializes and returns an ElementTree object based on parameter type, parameter, and container information
 
         Returns
         -------
-        : ElementTree.ElementTree
+        : ElementTree._ElementTree
         """
         if self.xtce_ns_uri not in self.ns.values():
             warnings.warn(
@@ -288,13 +288,13 @@ class XtcePacketDefinition(common.AttrComparable):
 
     @staticmethod
     def _parse_container_set(
-        tree: ElementTree.Element, parameter_lookup: dict[str, parameters.Parameter]
+        tree: ElementTree._ElementTree, parameter_lookup: dict[str, parameters.Parameter]
     ) -> dict[str, containers.SequenceContainer]:
         """Parse the <xtce:ContainerSet> element into a dictionary of SequenceContainer objects
 
         Parameters
         ----------
-        tree : ElementTree.Element
+        tree : ElementTree._ElementTree
             Full XTCE tree
         parameter_lookup : dict[str, parameters.Parameter]
             Parameters that are contained in container entry lists
@@ -333,12 +333,12 @@ class XtcePacketDefinition(common.AttrComparable):
         return container_lookup
 
     @staticmethod
-    def _parse_parameter_type_set(tree: ElementTree.ElementTree) -> dict[str, parameter_types.ParameterType]:
+    def _parse_parameter_type_set(tree: ElementTree._ElementTree) -> dict[str, parameter_types.ParameterType]:
         """Parse the <xtce:ParameterTypeSet> into a dictionary of ParameterType objects
 
         Parameters
         ----------
-        tree : ElementTree.ElementTree
+        tree : ElementTree._ElementTree
             Full XTCE tree
 
         Returns
@@ -381,13 +381,13 @@ class XtcePacketDefinition(common.AttrComparable):
 
     @staticmethod
     def _parse_parameter_set(
-        tree: ElementTree.ElementTree, parameter_type_lookup: dict[str, parameter_types.ParameterType]
+        tree: ElementTree._ElementTree, parameter_type_lookup: dict[str, parameter_types.ParameterType]
     ) -> dict[str, parameters.Parameter]:
         """Parse an <xtce:ParameterSet> object into a dictionary of Parameter objects
 
         Parameters
         ----------
-        tree : ElementTree.ElementTree
+        tree : ElementTree._ElementTree
             Full XTCE tree
         parameter_type_lookup : dict[str, parameter_types.ParameterType]
             Parameter types referenced by parameters.

@@ -7,6 +7,7 @@ import struct
 import warnings
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable
+from typing import Any
 
 import lxml.etree as ElementTree
 from lxml.builder import ElementMaker
@@ -22,12 +23,12 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
     """Abstract base class for XTCE data encodings"""
 
     @staticmethod
-    def get_default_calibrator(data_encoding_element: ElementTree.Element) -> calibrators.Calibrator | None:
+    def get_default_calibrator(data_encoding_element: ElementTree._Element) -> calibrators.Calibrator | None:
         """Gets the default_calibrator for the data encoding element
 
         Parameters
         ----------
-        data_encoding_element : ElementTree.Element
+        data_encoding_element : ElementTree._Element
             The data encoding element which should contain the default_calibrator
 
         Returns
@@ -47,13 +48,13 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
 
     @staticmethod
     def get_context_calibrators(
-        data_encoding_element: ElementTree.Element,
+        data_encoding_element: ElementTree._Element,
     ) -> list[calibrators.ContextCalibrator] | None:
         """Get the context default_calibrator(s) for the data encoding element
 
         Parameters
         ----------
-        data_encoding_element : ElementTree.Element
+        data_encoding_element : ElementTree._Element
             XML element
 
         Returns
@@ -66,13 +67,13 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         return None
 
     @staticmethod
-    def _get_linear_adjuster(parent_element: ElementTree.Element) -> Callable | None:
+    def _get_linear_adjuster(parent_element: ElementTree._Element) -> Callable | None:
         """Examine a parent (e.g. a <xtce:DynamicValue>) element and find a LinearAdjustment if present,
         creating and returning a function that evaluates the adjustment.
 
         Parameters
         ----------
-        parent_element : ElementTree.Element
+        parent_element : ElementTree._Element
             Parent element which may contain a LinearAdjustment
 
         Returns
@@ -374,12 +375,12 @@ class StringDataEncoding(DataEncoding):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.Element | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> StringDataEncoding:
         """Create a data encoding object from an <xtce:StringDataEncoding> XML element.
 
@@ -402,9 +403,9 @@ class StringDataEncoding(DataEncoding):
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             XML element
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
@@ -470,7 +471,7 @@ class StringDataEncoding(DataEncoding):
 
         return cls(**init_kwargs)
 
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a data encoding XML element
 
         Parameters
@@ -480,7 +481,7 @@ class StringDataEncoding(DataEncoding):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         element = elmaker.StringDataEncoding(encoding=self.encoding)
 
@@ -627,7 +628,7 @@ class NumericDataEncoding(DataEncoding, metaclass=ABCMeta):
         # No calibrations applied, we need to determine if it's an int or a float encoding calling this routine
         return self._data_return_class(parsed_value)
 
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a data encoding XML element
 
         Parameters
@@ -637,7 +638,7 @@ class NumericDataEncoding(DataEncoding, metaclass=ABCMeta):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         element = getattr(elmaker, self.__class__.__name__)(
             sizeInBits=str(self.size_in_bits),
@@ -720,20 +721,20 @@ class IntegerDataEncoding(NumericDataEncoding):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.Element | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> IntegerDataEncoding:
         """Create a data encoding object from an <xtce:IntegerDataEncoding> XML element.
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             XML element
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
@@ -887,20 +888,20 @@ class FloatDataEncoding(NumericDataEncoding):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.Element | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> FloatDataEncoding:
         """Create a data encoding object from an <xtce:FloatDataEncoding> XML element.
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             XML element
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
@@ -1025,20 +1026,20 @@ class BinaryDataEncoding(DataEncoding):
     @classmethod
     def from_xml(
         cls,
-        element: ElementTree.Element,
+        element: ElementTree._Element,
         *,
-        tree: ElementTree.Element | None = None,
-        parameter_lookup: dict[str, any] | None = None,
-        parameter_type_lookup: dict[str, any] | None = None,
-        container_lookup: dict[str, any] | None = None,
+        tree: ElementTree._ElementTree | None = None,
+        parameter_lookup: dict[str, Any] | None = None,
+        parameter_type_lookup: dict[str, Any] | None = None,
+        container_lookup: dict[str, Any] | None = None,
     ) -> BinaryDataEncoding:
         """Create a data encoding object from an <xtce:BinaryDataEncoding> XML element.
 
         Parameters
         ----------
-        element : ElementTree.Element
+        element : ElementTree._Element
             XML element
-        tree: Optional[ElementTree.Element]
+        tree: Optional[ElementTree._ElementTree]
             Ignored
         parameter_lookup: Optional[dict]
             Ignored
@@ -1078,7 +1079,7 @@ class BinaryDataEncoding(DataEncoding):
             "but failed. See 3.4.5 of the XTCE Green Book CCSDS 660.1-G-2."
         )
 
-    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree.Element:
+    def to_xml(self, *, elmaker: ElementMaker) -> ElementTree._Element:
         """Create a data encoding XML element
 
         Parameters
@@ -1088,7 +1089,7 @@ class BinaryDataEncoding(DataEncoding):
 
         Returns
         -------
-        : ElementTree.Element
+        : ElementTree._Element
         """
         if self.fixed_size_in_bits:
             return elmaker.BinaryDataEncoding(elmaker.SizeInBits(elmaker.FixedValue(str(self.fixed_size_in_bits))))
