@@ -16,7 +16,7 @@ from space_packet_parser.xtce import calibrators, encodings
 class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
     """Abstract base class for XTCE parameter types"""
 
-    def __init__(self, name: str, encoding: encodings.DataEncoding, unit: str | None = None):
+    def __init__(self, name: str, encoding: encodings.DataEncoding, unit: str | tuple[str, ...] | None = None):
         """Constructor
 
         Parameters
@@ -25,8 +25,8 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
             Parameter type name. Usually something like 'MSN__PARAM_Type'
         encoding : DataEncoding
             How the data is encoded. e.g. IntegerDataEncoding, StringDataEncoding, etc.
-        unit : Optional[str]
-            String describing the unit for the stored value.
+        unit : Optional[Union[str, tuple[str, ...]]]
+            Unit for stored value. String for a single unit or tuple of strings for compound units.
         """
         if name is None:
             raise ValueError("Parameter Type name attribute is required.")
@@ -96,39 +96,46 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         param_type_element = getattr(elmaker, self.__class__.__name__)(name=self.name)
 
         if self.unit:
-            param_type_element.append(elmaker.UnitSet(elmaker.Unit(self.unit)))
+            if isinstance(self.unit, tuple):
+                unit_elements = [elmaker.Unit(u) for u in self.unit]
+                param_type_element.append(elmaker.UnitSet(*unit_elements))
+            else:
+                param_type_element.append(elmaker.UnitSet(elmaker.Unit(self.unit)))
 
         param_type_element.append(self.encoding.to_xml(elmaker=elmaker))
         return param_type_element
 
     @staticmethod
-    def get_units(parameter_type_element: ElementTree.Element) -> str | None:
-        """Finds the units associated with a parameter type element and parsed them to return a unit string.
-        We assume only one <xtce:Unit> but this could be extended to support multiple units.
-        See section 4.3.2.2.4 of CCSDS 660.1-G-1
+    def get_units(parameter_type_element: ElementTree.Element) -> str | tuple[str, ...] | None:
+        """Finds the units associated with a parameter type element and parses them.
+
+        Supports both single and multiple <xtce:Unit> elements (compound units).
+        See section 4.3.2.2.4 of CCSDS 660.1-G-1.
 
         Parameters
         ----------
         parameter_type_element : ElementTree.Element
-            The parameter type element
+            The parameter type element.
 
         Returns
         -------
-        : Union[str, None]
-            Unit string or None if no units are defined
+        : Union[str, tuple[str, ...], None]
+            - A string if a single unit is defined
+            - A tuple of strings if multiple units are defined
+            - None if no units are defined
         """
         # Assume we are not parsing a Time Parameter Type, which stores units differently
+
         units = parameter_type_element.findall("UnitSet/Unit")
-        # TODO: Implement multiple unit elements for compound unit definitions
-        if len(units) > 1:
-            raise NotImplementedError(
-                f"Found {len(units)} <xtce:Unit> elements in a single <xtce:UnitSet>."
-                f"This is supported in the standard but is not yet supported by this library."
-            )
-        if units:
-            return " ".join([u.text for u in units])
-        # Units are optional so return None if they aren't specified
-        return None
+        units = [u.text for u in units if u.text]
+
+        if not units:
+            # Units are optional so return None if they aren't specified
+            return None
+        elif len(units) == 1:
+            return units[0]
+        else:
+            return tuple(units)
 
     @staticmethod
     def get_data_encoding(parameter_type_element: ElementTree.Element) -> encodings.DataEncoding | None:
@@ -181,7 +188,7 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
 class StringParameterType(ParameterType):
     """<xtce:StringParameterType>"""
 
-    def __init__(self, name: str, encoding: encodings.StringDataEncoding, unit: str | None = None):
+    def __init__(self, name: str, encoding: encodings.StringDataEncoding, unit: str | tuple[str, ...] | None = None):
         """Constructor
 
         Parameters
@@ -190,8 +197,8 @@ class StringParameterType(ParameterType):
             Parameter type name. Usually something like 'MSN__PARAM_Type'
         encoding : StringDataEncoding
             Must be a StringDataEncoding object since strings can't be encoded other ways.
-        unit : Optional[str]
-            String describing the unit for the stored value.
+        unit : Optional[Union[str, tuple[str, ...]]]
+            Unit for stored value. String for a single unit or tuple of strings for compound units.
         """
         if not isinstance(encoding, encodings.StringDataEncoding):
             raise ValueError("StringParameterType may only be instantiated with a StringDataEncoding encoding.")
@@ -214,15 +221,17 @@ class FloatParameterType(ParameterType):
 class EnumeratedParameterType(ParameterType):
     """<xtce:EnumeratedParameterType>"""
 
-    def __init__(self, name: str, encoding: encodings.DataEncoding, enumeration: dict, unit: str | None = None):
+    def __init__(
+        self, name: str, encoding: encodings.DataEncoding, enumeration: dict, unit: str | tuple[str, ...] | None = None
+    ):
         """Constructor
 
         Parameters
         ----------
         name : str
             Parameter type name.
-        unit : str
-            Unit string for stored value.
+        unit : Optional[Union[str, tuple[str, ...]]]
+            Unit for stored value. String for a single unit or tuple of strings for compound units.
         encoding : DataEncoding
             How the data is encoded. e.g. IntegerDataEncoding.
         enumeration : dict
@@ -282,10 +291,15 @@ class EnumeratedParameterType(ParameterType):
         -------
         : ElementTree.Element
         """
+
         param_type_element = getattr(elmaker, self.__class__.__name__)(name=self.name)
 
         if self.unit:
-            param_type_element.append(elmaker.UnitSet(elmaker.Unit(self.unit)))
+            if isinstance(self.unit, tuple):
+                unit_elements = [elmaker.Unit(u) for u in self.unit]
+                param_type_element.append(elmaker.UnitSet(*unit_elements))
+            else:
+                param_type_element.append(elmaker.UnitSet(elmaker.Unit(self.unit)))
 
         param_type_element.append(self.encoding.to_xml(elmaker=elmaker))
 
@@ -378,7 +392,7 @@ class EnumeratedParameterType(ParameterType):
 class BinaryParameterType(ParameterType):
     """<xtce:BinaryParameterType>"""
 
-    def __init__(self, name: str, encoding: encodings.BinaryDataEncoding, unit: str | None = None):
+    def __init__(self, name: str, encoding: encodings.BinaryDataEncoding, unit: str | tuple[str, ...] | None = None):
         """Constructor
 
         Parameters
@@ -387,8 +401,8 @@ class BinaryParameterType(ParameterType):
             Parameter type name. Usually something like 'MSN__PARAM_Type'
         encoding : BinaryDataEncoding
             Must be a BinaryDataEncoding object since binary data can't be encoded other ways.
-        unit : Optional[str]
-            String describing the unit for the stored value.
+        unit : Optional[Union[str, tuple[str, ...]]]
+            Unit for stored value. String for a single unit or tuple of strings for compound units.
         """
         if not isinstance(encoding, encodings.BinaryDataEncoding):
             raise ValueError("BinaryParameterType may only be instantiated with a BinaryDataEncoding encoding.")
@@ -399,7 +413,7 @@ class BinaryParameterType(ParameterType):
 class BooleanParameterType(ParameterType):
     """<xtce:BooleanParameterType>"""
 
-    def __init__(self, name: str, encoding: encodings.DataEncoding, unit: str | None = None):
+    def __init__(self, name: str, encoding: encodings.DataEncoding, unit: str | tuple[str, ...] | None = None):
         """Constructor that just issues a warning if the encoding is String or Binary"""
         if isinstance(encoding, (encodings.BinaryDataEncoding, encodings.StringDataEncoding)):
             warnings.warn(
