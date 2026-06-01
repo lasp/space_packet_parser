@@ -41,7 +41,3 @@ repos:
           - pyyaml
           - tomli
         always_run: true
-  - repo: https://github.com/mashi/codecov-validator
-    rev: 1.0.1
-    hooks:
-      - id: ccv
