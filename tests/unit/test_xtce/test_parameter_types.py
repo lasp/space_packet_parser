@@ -168,6 +168,22 @@ def test_string_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
                 ),
             ),
         ),
+        (
+            f"""
+<xtce:IntegerParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_INT_Type">
+    <xtce:UnitSet>
+        <xtce:Unit>m</xtce:Unit>
+        <xtce:Unit>s</xtce:Unit>
+    </xtce:UnitSet>
+    <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
+</xtce:IntegerParameterType>
+""",
+            parameter_types.IntegerParameterType(
+                name="TEST_INT_Type",
+                unit=("m", "s"),
+                encoding=encodings.IntegerDataEncoding(size_in_bits=16, encoding="unsigned"),
+            ),
+        ),
     ],
 )
 def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
@@ -287,6 +303,22 @@ def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectati
                         ],
                     ),
                 ),
+            ),
+        ),
+        (
+            f"""
+<xtce:FloatParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_INT_Type">
+    <xtce:UnitSet>
+        <xtce:Unit>m</xtce:Unit>
+        <xtce:Unit>s</xtce:Unit>
+    </xtce:UnitSet>
+    <xtce:FloatDataEncoding sizeInBits="16"/>
+</xtce:FloatParameterType>
+""",
+            parameter_types.FloatParameterType(
+                name="TEST_INT_Type",
+                unit=("m", "s"),
+                encoding=encodings.FloatDataEncoding(size_in_bits=16, encoding="IEEE754"),
             ),
         ),
     ],
@@ -420,6 +452,47 @@ def test_float_parameter_type(elmaker, xtce_parser, xml_string: str, expectation
                 },
             ),
         ),
+        (
+            f"""
+<xtce:EnumeratedParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_ENUM_Type">
+    <xtce:UnitSet>
+        <xtce:Unit>m</xtce:Unit>
+        <xtce:Unit>s</xtce:Unit>
+    </xtce:UnitSet>
+    <xtce:IntegerDataEncoding sizeInBits="2" encoding="unsigned"/>
+    <xtce:EnumerationList>
+        <xtce:Enumeration label="BOOT_POR" value="0"/>
+        <xtce:Enumeration label="BOOT_RETURN" value="1"/>
+    </xtce:EnumerationList>
+</xtce:EnumeratedParameterType>
+""",
+            parameter_types.EnumeratedParameterType(
+                name="TEST_ENUM_Type",
+                unit=("m", "s"),
+                encoding=encodings.IntegerDataEncoding(size_in_bits=2, encoding="unsigned"),
+                enumeration={0: "BOOT_POR", 1: "BOOT_RETURN"},
+            ),
+        ),
+        (
+            f"""
+<xtce:EnumeratedParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_ENUM_Type">
+    <xtce:UnitSet>
+        <xtce:Unit>meters</xtce:Unit>
+    </xtce:UnitSet>
+    <xtce:IntegerDataEncoding sizeInBits="2" encoding="unsigned"/>
+    <xtce:EnumerationList>
+        <xtce:Enumeration label="BOOT_POR" value="0"/>
+        <xtce:Enumeration label="BOOT_RETURN" value="1"/>
+    </xtce:EnumerationList>
+</xtce:EnumeratedParameterType>
+""",
+            parameter_types.EnumeratedParameterType(
+                name="TEST_ENUM_Type",
+                unit="meters",
+                encoding=encodings.IntegerDataEncoding(size_in_bits=2, encoding="unsigned"),
+                enumeration={0: "BOOT_POR", 1: "BOOT_RETURN"},
+            ),
+        ),
     ],
 )
 def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
@@ -515,6 +588,26 @@ def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expect
                 name="TEST_PARAM_Type",
                 unit=None,
                 encoding=encodings.BinaryDataEncoding(size_reference_parameter="SizeFromThisParameter"),
+            ),
+        ),
+        (
+            f"""
+<xtce:BinaryParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
+    <xtce:UnitSet>
+        <xtce:Unit>m</xtce:Unit>
+        <xtce:Unit>s</xtce:Unit>
+    </xtce:UnitSet>
+    <xtce:BinaryDataEncoding>
+        <xtce:SizeInBits>
+            <xtce:FixedValue>128</xtce:FixedValue>
+        </xtce:SizeInBits>
+    </xtce:BinaryDataEncoding>
+</xtce:BinaryParameterType>
+""",
+            parameter_types.BinaryParameterType(
+                name="TEST_PARAM_Type",
+                unit=("m", "s"),
+                encoding=encodings.BinaryDataEncoding(fixed_size_in_bits=128),
             ),
         ),
     ],
