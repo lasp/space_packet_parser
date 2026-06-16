@@ -211,14 +211,11 @@ def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectati
     else:
         result = parameter_types.IntegerParameterType.from_xml(element)
         assert result == expectation
-
         # Recover XML and re-parse it to check it's recoverable
         result_string = ElementTree.tostring(result.to_xml(elmaker=elmaker), pretty_print=True).decode()
-
         full_circle = parameter_types.IntegerParameterType.from_xml(
             ElementTree.fromstring(result_string, parser=xtce_parser)
         )
-
         assert full_circle == expectation
 
 

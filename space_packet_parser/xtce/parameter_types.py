@@ -292,15 +292,11 @@ class EnumeratedParameterType(ParameterType):
         """
 
         param_type_element = getattr(elmaker, self.__class__.__name__)(name=self.name)
-        print("HIT PARAMETER TYPE UNIT BLOCK")
         if self.unit:
-            print("Entered PARAMETER TYPE UNIT BLOCK")
             if isinstance(self.unit, tuple):
-                print("Entered IF PARAMETER TYPE UNIT BLOCK")
                 unit_elements = [elmaker.Unit(u) for u in self.unit]
                 param_type_element.append(elmaker.UnitSet(*unit_elements))
             else:
-                print("Entered ELSE PARAMETER TYPE UNIT BLOCK")
                 param_type_element.append(elmaker.UnitSet(elmaker.Unit(self.unit)))
 
         param_type_element.append(self.encoding.to_xml(elmaker=elmaker))
