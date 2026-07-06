@@ -1,7 +1,7 @@
 ci:
   autofix_prs: false
   autoupdate_schedule: "quarterly"
-  skip: [no-commit-to-branch, ccv]
+  skip: [no-commit-to-branch]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -33,6 +33,12 @@ repos:
         files: ^.*\.(py|md|rst|yml)$
   - repo: local
     hooks:
+      - id: codecov-validate
+        name: validate codecov.yml
+        entry: sh -c 'curl --fail --silent --show-error --data-binary @codecov.yml https://codecov.io/validate'
+        language: system
+        files: ^codecov\.yml$
+        pass_filenames: false
       - id: check-space-packet-parser-metadata
         name: check space_packet_parser metadata
         entry: python scripts/check_metadata.py
