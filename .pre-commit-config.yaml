@@ -33,12 +33,6 @@ repos:
         files: ^.*\.(py|md|rst|yml)$
   - repo: local
     hooks:
-      - id: codecov-validate
-        name: validate codecov.yml
-        entry: sh -c 'curl --fail --silent --show-error --data-binary @codecov.yml https://codecov.io/validate'
-        language: system
-        files: ^codecov\.yml$
-        pass_filenames: false
       - id: check-space-packet-parser-metadata
         name: check space_packet_parser metadata
         entry: python scripts/check_metadata.py
