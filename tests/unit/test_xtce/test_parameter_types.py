@@ -172,6 +172,21 @@ def test_string_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
             f"""
 <xtce:IntegerParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_INT_Type">
     <xtce:UnitSet>
+        <xtce:Unit>km</xtce:Unit>
+    </xtce:UnitSet>
+    <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
+</xtce:IntegerParameterType>
+""",
+            parameter_types.IntegerParameterType(
+                name="TEST_INT_Type",
+                unit="km",
+                encoding=encodings.IntegerDataEncoding(size_in_bits=16, encoding="unsigned"),
+            ),
+        ),
+        (
+            f"""
+<xtce:IntegerParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_INT_Type">
+    <xtce:UnitSet>
         <xtce:Unit>m</xtce:Unit>
         <xtce:Unit>s</xtce:Unit>
     </xtce:UnitSet>
@@ -843,3 +858,34 @@ def test_absolute_time_parameter_type(elmaker, xtce_parser, xml_string, expectat
             ElementTree.fromstring(result_string, parser=xtce_parser)
         )
         assert full_circle == expectation
+
+
+def test_parameter_type_to_xml_unit_serialization(elmaker):
+    """Test serialization of UnitSet in ParameterType.to_xml"""
+
+    encoding = encodings.IntegerDataEncoding(size_in_bits=16, encoding="unsigned")
+    ns = {"xtce": XTCE_1_2_XMLNS}
+
+    # Single unit
+    param = parameter_types.IntegerParameterType(
+        name="TEST_PARAM_Type",
+        unit="km",
+        encoding=encoding,
+    )
+    element = param.to_xml(elmaker=elmaker)
+
+    units = element.findall(".//xtce:Unit", namespaces=ns)
+    assert len(units) == 1
+    assert units[0].text == "km"
+
+    # Multiple units
+    param = parameter_types.IntegerParameterType(
+        name="TEST_PARAM_Type",
+        unit=("m", "s"),
+        encoding=encoding,
+    )
+    element = param.to_xml(elmaker=elmaker)
+
+    units = element.findall(".//xtce:Unit", namespaces=ns)
+    assert len(units) == 2
+    assert [u.text for u in units] == ["m", "s"]

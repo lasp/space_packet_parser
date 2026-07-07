@@ -126,8 +126,7 @@ class ParameterType(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
         """
         # Assume we are not parsing a Time Parameter Type, which stores units differently
 
-        units = parameter_type_element.findall("UnitSet/Unit")
-        units = [u.text for u in units if u.text]
+        units = parameter_type_element.xpath('.//*[local-name()="UnitSet"]/*[local-name()="Unit"]/text()')
 
         if not units:
             # Units are optional so return None if they aren't specified
@@ -293,7 +292,6 @@ class EnumeratedParameterType(ParameterType):
         """
 
         param_type_element = getattr(elmaker, self.__class__.__name__)(name=self.name)
-
         if self.unit:
             if isinstance(self.unit, tuple):
                 unit_elements = [elmaker.Unit(u) for u in self.unit]
