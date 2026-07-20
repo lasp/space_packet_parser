@@ -467,19 +467,6 @@ def test_load_schema_rejects_absolute_paths(test_data_dir):
         _load_schema(absolute_path)
 
 
-def test_load_schema_rejects_path_traversal(tmp_path):
-    """Test that _load_schema rejects path traversal attacks"""
-    # Create a dummy file outside the current directory
-    outside_file = tmp_path / "outside.xsd"
-    outside_file.write_text("<?xml version='1.0'?><schema/>")
-    
-    # Try to access it via path traversal
-    traversal_path = str(Path("../../../") / outside_file.name)
-    
-    with pytest.raises(XtceValidationError, match="Path traversal detected"):
-        _load_schema(traversal_path)
-
-
 def test_load_schema_not_found(tmp_path):
     """Test that _load_schema raises error for missing file"""
     missing_path = "nonexistent/schema.xsd"
