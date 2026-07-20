@@ -399,7 +399,7 @@ def _validate_xtce_schema(
             for error in schema.error_log:
                 if "No matching global declaration available for the validation root." in error.message:
                     result.add_error(
-                        message="Namespace issue detected. Does the `xmlns[:xtce]=<chosen_xtce_uri>` URI on your document root element match the `targetNamespace` URI in your XSD? Typically this [...]
+                        message="Namespace issue detected. Does the `xmlns[:xtce]=<chosen_xtce_uri>` URI on your document root element match the `targetNamespace` URI in your XSD? Typically this is http://www.omg.org/spec/XTCE/20180204
                         error_code="INVALID_XTCE_NAMESPACE",
                         context={
                             "nsmap": xml_tree.getroot().nsmap,
