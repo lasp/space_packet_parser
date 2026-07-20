@@ -372,16 +372,15 @@ def _validate_xtce_schema(
 
     try:
         if local_xsd:
-    # Convert to Path object if string, then make relative to current directory if absolute
-    xsd_path = Path(local_xsd) if isinstance(local_xsd, str) else local_xsd
-    if xsd_path.is_absolute():
-        try:
-            xsd_path = xsd_path.relative_to(Path.cwd())
-        except ValueError:
-            # If path is not relative to cwd, try using just the filename
-            xsd_path = Path(xsd_path.name)
-    schema_location = str(xsd_path)
-            schema_location = str(local_xsd)
+            # Convert to Path object if string, then make relative to current directory if absolute
+            xsd_path = Path(local_xsd) if isinstance(local_xsd, str) else local_xsd
+            if xsd_path.is_absolute():
+                try:
+                    xsd_path = xsd_path.relative_to(Path.cwd())
+                except ValueError:
+                    # If path is not relative to cwd, try using just the filename
+                    xsd_path = Path(xsd_path.name)
+            schema_location = str(xsd_path) 
         else:
             try:
                 # Find the URL of the XSD
