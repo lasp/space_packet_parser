@@ -8,7 +8,7 @@ from unittest.mock import patch
 import lxml.etree as ElementTree
 import pytest
 
-from space_packet_parser.xtce.validation import _load_schema, validate_xtce
+from space_packet_parser.xtce.validation import _load_schema, validate_xtce, XtceValidationError, _find_schema_url
 
 
 @pytest.fixture
@@ -487,7 +487,6 @@ def test_find_schema_url_rejects_absolute_paths():
     xml_tree = ElementTree.parse(io.StringIO(xtce_str))
     
     with pytest.raises(XtceValidationError, match="Absolute filesystem paths are not allowed in xsi:schemaLocation"):
-        from space_packet_parser.xtce.validation import _find_schema_url
         _find_schema_url(xml_tree)
 
 
@@ -503,7 +502,6 @@ def test_find_schema_url_rejects_invalid_schemes():
     xml_tree = ElementTree.parse(io.StringIO(xtce_str))
     
     with pytest.raises(XtceValidationError, match="Only http and https URLs are allowed"):
-        from space_packet_parser.xtce.validation import _find_schema_url
         _find_schema_url(xml_tree)
 
 
