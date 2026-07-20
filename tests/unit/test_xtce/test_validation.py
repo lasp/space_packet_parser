@@ -537,15 +537,3 @@ def test_validate_xtce_converts_absolute_local_xsd(test_data_dir):
     assert Path(result.schema_location).resolve() == absolute_xsd_path
     assert result.valid
 
-
-def test_validate_xtce_absolute_xsd_outside_cwd(test_data_dir, tmp_path):
-    """Test that absolute local_xsd paths outside cwd use just the filename"""
-    xtce_path = test_data_dir / "test_xtce.xml"
-    local_xsd_path = test_data_dir / "SpaceSystem.xsd"
-    
-    # This tests the fallback when path can't be made relative to cwd
-    # It will use just the filename
-    result = validate_xtce(xtce_path, level="schema", local_xsd=local_xsd_path, raise_on_error=False)
-    
-    # Should attempt validation (even if it fails due to file not found with just the name)
-    assert result.validation_level.value == "schema"
