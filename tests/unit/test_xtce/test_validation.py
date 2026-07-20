@@ -400,7 +400,7 @@ def test_schema_validation_with_local_xsd(test_data_dir):
 
     # Verify validation was performed
     assert result.validation_level.value == "schema"
-    assert result.schema_location == str(local_xsd_path)
+    assert result.schema_location == str(local_xsd_path.relative_to(Path.cwd()))
     assert result.schema_version is not None
 
     # The document should be valid against the schema
