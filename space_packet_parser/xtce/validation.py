@@ -249,8 +249,30 @@ def _load_schema(schema_location: str | Path, timeout: int = 30) -> tuple[Elemen
             logger.debug(f"Using cached schema from {cache_path}")
     # Otherwise assume a local filepath
     else:
-        with Path(schema_location).open("rb") as sfh:
-            schema_content = sfh.read()
+        schema_path = Path(schema_location)
+        
+        # Reject absolute paths (CWE-73)
+        if schema_path.is_absolute():
+            raise XtceValidationError(
+                f"Absolute filesystem paths are not allowed: {schema_location}. "
+                "Use relative paths or http/https URLs."
+            )
+        
+        # Prevent path traversal (e.g., ../../../etc/passwd)
+        try:
+            resolved = schema_path.resolve()
+            if not str(resolved).startswith(str(Path.cwd().resolve())):
+                raise XtceValidationError(
+                    f"Path traversal detected. Schema path must be within current working directory: {schema_location}"
+                )
+        except Exception as e:
+            raise XtceValidationError(f"Invalid schema path: {schema_location}") from e
+        
+        try:
+            with schema_path.open("rb") as sfh:
+                schema_content = sfh.read()
+        except FileNotFoundError as e:
+            raise XtceValidationError(f"Schema file not found: {schema_location}") from e
 
     # Fix and parse the schema content
     try:
@@ -289,6 +311,11 @@ def _find_schema_url(xml_tree: ElementTree.ElementTree) -> str:
     -------
     schema_location : str
         URL of XSD
+        
+    Raises
+    ------
+    XtceValidationError
+        If schema location is invalid or missing
     """
     # Get root element
     root = xml_tree.getroot() if hasattr(xml_tree, "getroot") else xml_tree
@@ -296,12 +323,27 @@ def _find_schema_url(xml_tree: ElementTree.ElementTree) -> str:
     # Find schema location
     try:
         schema_location_attr = root.attrib.get("{http://www.w3.org/2001/XMLSchema-instance}schemaLocation")
-        return schema_location_attr.split()[-1]
+        schema_location = schema_location_attr.split()[-1]
     except Exception:
         raise XtceValidationError(
             "No 'xsi' namespace found in document. XTCE documents must declare the 'xsi' "
             "namespace for schema validation via the 'xsi:schemaLocation' attribute."
         )
+    
+    # Reject absolute filesystem paths (CWE-73)
+    if schema_location.startswith('/'):
+        raise XtceValidationError(
+            f"Absolute filesystem paths are not allowed in xsi:schemaLocation: {schema_location}"
+        )
+    
+    # Only allow http/https URLs (CWE-918)
+    parsed = urlparse(schema_location)
+    if parsed.scheme and parsed.scheme not in ('http', 'https'):
+        raise XtceValidationError(
+            f"Only http and https URLs are allowed in xsi:schemaLocation. Got: {parsed.scheme}"
+        )
+    
+    return schema_location
 
 
 def _validate_xtce_schema(
@@ -357,7 +399,7 @@ def _validate_xtce_schema(
             for error in schema.error_log:
                 if "No matching global declaration available for the validation root." in error.message:
                     result.add_error(
-                        message="Namespace issue detected. Does the `xmlns[:xtce]=<chosen_xtce_uri>` URI on your document root element match the `targetNamespace` URI in your XSD? Typically this is http://www.omg.org/spec/XTCE/20180204.",
+                        message="Namespace issue detected. Does the `xmlns[:xtce]=<chosen_xtce_uri>` URI on your document root element match the `targetNamespace` URI in your XSD? Typically this [...]
                         error_code="INVALID_XTCE_NAMESPACE",
                         context={
                             "nsmap": xml_tree.getroot().nsmap,
