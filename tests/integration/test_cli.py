@@ -6,6 +6,8 @@ from click.testing import CliRunner
 
 from space_packet_parser import cli
 
+from tests.unit.test_xtce.test_validation import mock_schema_download
+
 
 def test_cli():
     runner = CliRunner()
@@ -77,9 +79,9 @@ def test_log_level():
     print(result.output)
     assert result.exit_code == 0
 
-
-def test_validate_xtce(test_data_dir):
+def test_validate_xtce(test_data_dir, mock_schema_download):
     runner = CliRunner()
+    _ = mock_schema_download
     print()
 
     # Test basic validation
