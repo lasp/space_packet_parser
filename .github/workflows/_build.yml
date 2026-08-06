@@ -79,7 +79,7 @@ jobs:
         shell: bash -l {0}
         run: |
           python --version
-          conda install -y conda-build
+          conda install -n base -y conda-build
           conda build .
           conda build --output .
 
