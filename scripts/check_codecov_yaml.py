@@ -3,38 +3,35 @@
 from __future__ import annotations
 
 import argparse
-import http.client
 import sys
 from pathlib import Path
+from urllib import error, request
 
-CODECOV_VALIDATE_HOST = "codecov.io"
-CODECOV_VALIDATE_PATH = "/validate"
+CODECOV_VALIDATE_URL = "https://codecov.io/validate"
+NETWORK_TIMEOUT_SECONDS = 10
 REPO_ROOT = Path(__file__).parent.parent
 
 
 def validate_codecov_yaml(file_path: Path) -> int:
     """Validate a Codecov YAML file against Codecov's endpoint."""
     try:
-        conn = http.client.HTTPSConnection(CODECOV_VALIDATE_HOST)
-        conn.request(
-            method="POST",
-            url=CODECOV_VALIDATE_PATH,
-            body=file_path.read_bytes(),
-            headers={"Content-Type": "text/yaml"},
-        )
-        response = conn.getresponse()
-        body = response.read().decode("utf-8", errors="replace").strip()
+        request_body = file_path.read_bytes()
     except OSError as exc:
-        print(f"Unable to reach Codecov validation endpoint: {exc}", file=sys.stderr)
+        print(f"Unable to read {file_path}: {exc}", file=sys.stderr)
         return 1
-    finally:
-        if "conn" in locals():
-            conn.close()
 
-    if response.status >= 400:
-        print(f"{file_path} validation failed with HTTP {response.status}.", file=sys.stderr)
+    validate_request = request.Request(CODECOV_VALIDATE_URL, data=request_body, method="POST")
+    try:
+        with request.urlopen(validate_request, timeout=NETWORK_TIMEOUT_SECONDS) as response:  # noqa: S310
+            body = response.read().decode("utf-8", errors="replace").strip()
+    except error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace").strip()
+        print(f"{file_path} validation failed with HTTP {exc.code}.", file=sys.stderr)
         if body:
             print(body, file=sys.stderr)
+        return 1
+    except (error.URLError, TimeoutError, OSError) as exc:
+        print(f"Unable to reach Codecov validation endpoint: {exc}", file=sys.stderr)
         return 1
 
     if body:
