@@ -62,7 +62,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@v4
         with:
           channels: conda-forge,defaults
           auto-update-conda: true
@@ -79,7 +79,7 @@ jobs:
         shell: bash -l {0}
         run: |
           python --version
-          conda install -y conda-build
+          conda install -n base -y conda-build
           conda build .
           conda build --output .
 
