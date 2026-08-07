@@ -8,7 +8,7 @@ from unittest.mock import patch
 import lxml.etree as ElementTree
 import pytest
 
-from space_packet_parser.xtce.validation import _load_schema, validate_xtce, XtceValidationError, _find_schema_url
+from space_packet_parser.xtce.validation import XtceValidationError, _find_schema_url, _load_schema, validate_xtce
 
 
 @pytest.fixture
@@ -462,7 +462,7 @@ def test_load_schema_rejects_absolute_paths(test_data_dir):
     """Test that _load_schema rejects absolute filesystem paths"""
     local_xsd_path = test_data_dir / "SpaceSystem.xsd"
     absolute_path = str(local_xsd_path.resolve())
-    
+
     with pytest.raises(XtceValidationError, match="Absolute filesystem paths are not allowed"):
         _load_schema(absolute_path)
 
@@ -470,7 +470,7 @@ def test_load_schema_rejects_absolute_paths(test_data_dir):
 def test_load_schema_not_found(tmp_path):
     """Test that _load_schema raises error for missing file"""
     missing_path = "nonexistent/schema.xsd"
-    
+
     with pytest.raises(XtceValidationError, match="Schema file not found"):
         _load_schema(missing_path)
 
@@ -483,9 +483,9 @@ def test_find_schema_url_rejects_absolute_paths():
                   xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204
                                       /absolute/path/to/schema.xsd">
     </xtce:SpaceSystem>"""
-    
+
     xml_tree = ElementTree.parse(io.StringIO(xtce_str))
-    
+
     with pytest.raises(XtceValidationError, match="Absolute filesystem paths are not allowed in xsi:schemaLocation"):
         _find_schema_url(xml_tree)
 
@@ -498,9 +498,9 @@ def test_find_schema_url_rejects_invalid_schemes():
                   xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204
                                       ftp://example.com/schema.xsd">
     </xtce:SpaceSystem>"""
-    
+
     xml_tree = ElementTree.parse(io.StringIO(xtce_str))
-    
+
     with pytest.raises(XtceValidationError, match="Only http and https URLs are allowed"):
         _find_schema_url(xml_tree)
 
@@ -509,16 +509,15 @@ def test_validate_xtce_converts_absolute_local_xsd(test_data_dir):
     """Test that absolute local_xsd paths are converted to relative paths"""
     xtce_path = test_data_dir / "test_xtce.xml"
     local_xsd_path = test_data_dir / "SpaceSystem.xsd"
-    
+
     # Get absolute path
     absolute_xsd_path = local_xsd_path.resolve()
-    
+
     # Validate using absolute local XSD
     result = validate_xtce(xtce_path, level="schema", local_xsd=absolute_xsd_path, raise_on_error=False)
-    
+
     # Verify validation was performed
     assert result.validation_level.value == "schema"
     # The schema_location should be relative or resolvable to the same file
     assert Path(result.schema_location).resolve() == absolute_xsd_path
     assert result.valid
-

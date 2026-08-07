@@ -250,14 +250,13 @@ def _load_schema(schema_location: str | Path, timeout: int = 30) -> tuple[Elemen
     # Otherwise assume a local filepath
     else:
         schema_path = Path(schema_location)
-        
+
         # Reject absolute paths (CWE-73)
         if schema_path.is_absolute():
             raise XtceValidationError(
-                f"Absolute filesystem paths are not allowed: {schema_location}. "
-                "Use relative paths or http/https URLs."
+                f"Absolute filesystem paths are not allowed: {schema_location}. Use relative paths or http/https URLs."
             )
-        
+
         # Prevent path traversal (e.g., ../../../etc/passwd)
         try:
             resolved = schema_path.resolve()
@@ -267,7 +266,7 @@ def _load_schema(schema_location: str | Path, timeout: int = 30) -> tuple[Elemen
                 )
         except Exception as e:
             raise XtceValidationError(f"Invalid schema path: {schema_location}") from e
-        
+
         try:
             with schema_path.open("rb") as sfh:
                 schema_content = sfh.read()
@@ -311,7 +310,7 @@ def _find_schema_url(xml_tree: ElementTree.ElementTree) -> str:
     -------
     schema_location : str
         URL of XSD
-        
+
     Raises
     ------
     XtceValidationError
@@ -329,20 +328,16 @@ def _find_schema_url(xml_tree: ElementTree.ElementTree) -> str:
             "No 'xsi' namespace found in document. XTCE documents must declare the 'xsi' "
             "namespace for schema validation via the 'xsi:schemaLocation' attribute."
         )
-    
+
     # Reject absolute filesystem paths (CWE-73)
-    if schema_location.startswith('/'):
-        raise XtceValidationError(
-            f"Absolute filesystem paths are not allowed in xsi:schemaLocation: {schema_location}"
-        )
-    
+    if schema_location.startswith("/"):
+        raise XtceValidationError(f"Absolute filesystem paths are not allowed in xsi:schemaLocation: {schema_location}")
+
     # Only allow http/https URLs (CWE-918)
     parsed = urlparse(schema_location)
-    if parsed.scheme and parsed.scheme not in ('http', 'https'):
-        raise XtceValidationError(
-            f"Only http and https URLs are allowed in xsi:schemaLocation. Got: {parsed.scheme}"
-        )
-    
+    if parsed.scheme and parsed.scheme not in ("http", "https"):
+        raise XtceValidationError(f"Only http and https URLs are allowed in xsi:schemaLocation. Got: {parsed.scheme}")
+
     return schema_location
 
 
@@ -380,7 +375,7 @@ def _validate_xtce_schema(
                 except ValueError:
                     # If path is not relative to cwd, try using just the filename
                     xsd_path = Path(xsd_path.name)
-            schema_location = str(xsd_path) 
+            schema_location = str(xsd_path)
         else:
             try:
                 # Find the URL of the XSD
