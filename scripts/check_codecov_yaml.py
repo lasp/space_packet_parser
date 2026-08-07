@@ -20,9 +20,12 @@ def validate_codecov_yaml(file_path: Path) -> int:
         print(f"Unable to read {file_path}: {exc}", file=sys.stderr)
         return 1
 
-    validate_request = request.Request(CODECOV_VALIDATE_URL, data=request_body, method="POST")
     try:
-        with request.urlopen(validate_request, timeout=NETWORK_TIMEOUT_SECONDS) as response:  # noqa: S310
+        with request.urlopen(  # noqa: S310
+            CODECOV_VALIDATE_URL,
+            data=request_body,
+            timeout=NETWORK_TIMEOUT_SECONDS,
+        ) as response:
             body = response.read().decode("utf-8", errors="replace").strip()
     except error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace").strip()
