@@ -93,6 +93,8 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["space_packet_parser"]
+# Bundled XSD schemas are data files that must ship inside the wheel.
+artifacts = ["*.xsd"]
 
 [tool.hatch.build.targets.sdist]
 include = [

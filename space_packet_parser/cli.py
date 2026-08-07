@@ -220,7 +220,35 @@ def parse(
 )
 @click.option("--timeout", type=int, default=30, help="Timeout in seconds for schema downloads")
 @click.option("--local-xsd", type=click.Path(exists=True, path_type=Path), help="Local XSD file for schema validation")
-def validate(file_path: Path, level: str, timeout: int, local_xsd: Path) -> None:
+@click.option(
+    "--allowed-schema-host",
+    "allowed_schema_hosts",
+    multiple=True,
+    help="Host or exact URL that a document-derived schema download may target. May be given "
+    "multiple times. Defaults to www.omg.org (or the SPP_ALLOWED_SCHEMA_HOSTS environment variable).",
+)
+@click.option(
+    "--allow-insecure-http",
+    is_flag=True,
+    default=False,
+    help="DANGEROUS: permit http (not just https) schema URLs. The host allowlist and internal-address "
+    "guard still apply. Only use for trusted internal mirrors.",
+)
+@click.option(
+    "--no-schema-download",
+    is_flag=True,
+    default=False,
+    help="Never download schemas over the network; use only bundled schemas and --local-xsd.",
+)
+def validate(
+    file_path: Path,
+    level: str,
+    timeout: int,
+    local_xsd: Path,
+    allowed_schema_hosts: tuple[str, ...],
+    allow_insecure_http: bool,
+    no_schema_download: bool,
+) -> None:
     """Validate an XTCE document."""
     logging.info(f"Validating XTCE file: {file_path}")
     logging.info(f"Validation level: {level}")
@@ -234,6 +262,9 @@ def validate(file_path: Path, level: str, timeout: int, local_xsd: Path) -> None
         print_results=False,
         raise_on_error=False,
         local_xsd=local_xsd,
+        allowed_schema_hosts=list(allowed_schema_hosts) or None,
+        allow_insecure_http=allow_insecure_http,
+        allow_schema_download=not no_schema_download,
     )
 
     # Display results in rich format (complementing the print_results from validate_xtce)

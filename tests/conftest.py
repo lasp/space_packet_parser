@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from lxml import etree
@@ -63,3 +64,40 @@ def suda_test_data_dir(test_data_dir):
 def idex_test_data_dir(test_data_dir):
     """IDEX test data directory"""
     return test_data_dir / "idex"
+
+
+@pytest.fixture
+def mock_schema_download(test_data_dir):
+    """Mock urlopen to return local XSD content instead of downloading from the network.
+
+    Shared by unit and integration tests. Note: documents that reference the standard OMG
+    schema URL are now served from the bundled schema without any network call, so this mock
+    is only exercised for non-bundled URLs.
+    """
+    local_xsd_path = test_data_dir / "SpaceSystem.xsd"
+
+    def mock_urlopen(url, timeout=None):
+        """Mock urlopen that returns local XSD content."""
+
+        class MockResponse:
+            def __init__(self, content):
+                self.content = content
+                self.headers = {}
+
+            def read(self, *args):
+                return self.content
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                pass
+
+        # Read the local XSD file
+        with local_xsd_path.open("rb") as f:
+            content = f.read()
+
+        return MockResponse(content)
+
+    with patch("space_packet_parser.xtce.validation.urlopen", side_effect=mock_urlopen):
+        yield

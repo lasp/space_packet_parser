@@ -78,8 +78,9 @@ def test_log_level():
     assert result.exit_code == 0
 
 
-def test_validate_xtce(test_data_dir):
+def test_validate_xtce(test_data_dir, mock_schema_download):
     runner = CliRunner()
+    _ = mock_schema_download
     print()
 
     # Test basic validation
