@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Fix a local file read vulnerability (CWE-73) and a Server-Side Request Forgery vulnerability
+  (CWE-918) in `validate_xtce`. A document-supplied `xsi:schemaLocation` is now treated as
+  untrusted: absolute and relative local filesystem paths are rejected (use `local_xsd` for a
+  local schema), and schema URLs are fetched only over `https` from an allowlisted host (default
+  `www.omg.org`), with requests to internal/link-local addresses (e.g. `169.254.169.254`,
+  `127.0.0.1`) always blocked. Downloaded content is size-capped and is written to the cache only
+  after it validates as an XSD, so a non-schema response can no longer be persisted to disk.
+  [#266](https://github.com/lasp/space_packet_parser/issues/266)
+
+### Added
+
+- Bundle the standard OMG XTCE 1.2 schema with the package so documents referencing it validate
+  offline with no network request.
+- Add `allowed_schema_hosts`, `allow_insecure_http`, and `allow_schema_download` options to
+  `validate_xtce` (and the corresponding `--allowed-schema-host`, `--allow-insecure-http`, and
+  `--no-schema-download` flags to `spp validate`). The allowlist may also be set via the
+  `SPP_ALLOWED_SCHEMA_HOSTS` environment variable, and insecure http via `SPP_ALLOW_INSECURE_HTTP`.
+  The default allowlist is exported as `DEFAULT_ALLOWED_SCHEMA_HOSTS`.
+
+### Fixed
+
+- `validate_xtce(local_xsd=...)` and `spp validate --local-xsd` again accept absolute paths from
+  any working directory (a regression that silently rewrote them to a bare filename in the current
+  directory). Schema-fetch failures are now reported with accurate error codes
+  (`DISALLOWED_SCHEMA_LOCATION` rather than a misleading `MISSING_SCHEMA_LOCATION`).
+
 ## [6.1.2] - 2026-04-02
 
 ### Fixed

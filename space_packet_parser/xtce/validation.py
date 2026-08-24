@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import logging
 import os
 import platform
@@ -18,6 +19,29 @@ from urllib.request import urlopen
 import lxml.etree as ElementTree
 
 logger = logging.getLogger(__name__)
+
+# Directory holding XSD schemas bundled with the package. Bundled schemas are
+# resolved offline (no network request) which is both faster and closes the
+# SSRF/LFI surface for the common case of validating against the standard XTCE schema.
+_BUNDLED_SCHEMA_DIR = Path(__file__).parent / "schemas"
+
+# Maps a scheme-insensitive "host/path" key to a bundled schema filename. Any
+# schemaLocation URL (http or https) whose host+path matches is served from disk.
+_BUNDLED_SCHEMAS: dict[str, str] = {
+    "www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd": "SpaceSystem.xsd",
+}
+
+# Default allowlist of hosts that schema URLs may point at. Exported so callers
+# can extend it explicitly, e.g. allowed_schema_hosts=[*DEFAULT_ALLOWED_SCHEMA_HOSTS, "my-mirror"].
+DEFAULT_ALLOWED_SCHEMA_HOSTS = frozenset({"www.omg.org"})
+
+# Environment-variable overrides for the schema-fetch policy.
+ALLOWED_SCHEMA_HOSTS_ENV_VAR = "SPP_ALLOWED_SCHEMA_HOSTS"
+ALLOW_INSECURE_HTTP_ENV_VAR = "SPP_ALLOW_INSECURE_HTTP"
+
+# Hard cap on downloaded schema size to bound memory use and disk writes from a
+# hostile or misbehaving host. XTCE schemas are a few hundred KB.
+MAX_SCHEMA_BYTES = 10 * 1024 * 1024
 
 
 class ValidationLevel(Enum):
@@ -102,9 +126,17 @@ class ValidationResult:
 class XtceValidationError(Exception):
     """Exception raised during XTCE validation."""
 
-    def __init__(self, message: str, validation_result: ValidationResult | None = None):
+    def __init__(
+        self,
+        message: str,
+        validation_result: ValidationResult | None = None,
+        error_code: str | None = None,
+    ):
         super().__init__(message)
         self.validation_result = validation_result
+        # Optional machine-readable code so callers (e.g. _validate_xtce_schema) can map
+        # the failure onto the correct ValidationResult error_code instead of a generic one.
+        self.error_code = error_code
 
 
 def _get_cache_dir() -> Path:
@@ -156,10 +188,19 @@ def _read_from_cache(cache_path: Path) -> bytes | None:
 
 
 def _write_to_cache(cache_path: Path, content: bytes) -> None:
-    """Write content to cache, creating directories as needed."""
+    """Write content to cache, creating directories as needed.
+
+    The cache directory and file are created with owner-only permissions so cached schemas are
+    not world-readable on shared hosts. The cache filename is a SHA-256 hash of the URL, so no
+    user-controlled component reaches the filesystem path (no traversal is possible).
+    """
     try:
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         cache_path.write_bytes(content)
+        try:
+            cache_path.chmod(0o600)
+        except OSError as e:
+            logger.debug(f"Could not set cache file permissions on {cache_path}: {e}")
         logger.debug(f"Cached schema to {cache_path}")
     except OSError as e:
         logger.warning(f"Failed to write schema to cache {cache_path}: {e}")
@@ -203,78 +244,275 @@ def _fix_known_schema_issues(schema_content: bytes) -> bytes:
     return content_str.encode("utf-8")
 
 
-def _load_schema(schema_location: str | Path, timeout: int = 30) -> tuple[ElementTree.XMLSchema, str]:
-    """Load XSD schema from URL or local path
+def _resolve_schema_policy(
+    allowed_schema_hosts: list[str] | tuple[str, ...] | frozenset[str] | None,
+    allow_insecure_http: bool,
+) -> tuple[frozenset[str], bool]:
+    """Resolve the effective schema-fetch policy from argument, environment, then default.
 
-    Parameters
-    ----------
-    schema_location : Union[str, Path]
-        URL or local path to the XSD schema document
-    timeout : int
-        Timeout in seconds for URL downloads
-
-    Returns
-    -------
-    : tuple[ElementTree.XMLSchema, str]
-        Parsed XMLSchema object and version string
-
-    Raises
-    ------
-    XtceValidationError
-        If schema cannot be loaded or parsed
+    The explicit argument wins; otherwise the environment variable is consulted; otherwise the
+    built-in default is used. Layers replace (do not merge) so the effective allowlist is always
+    whatever the most specific layer specifies.
     """
-
-    def _is_http_url(s):
-        result = urlparse(s)
-        return result if all([result.scheme in ("http", "https"), result.netloc]) else False
-
-    parser = ElementTree.XMLParser(recover=True)
-
-    # If the location is a string that parses as a URL
-    if isinstance(schema_location, str) and (_is_http_url(schema_location)):
-        # Check cache first
-        cache_path = _get_cache_path(schema_location)
-        schema_content = _read_from_cache(cache_path)
-
-        if schema_content is None:
-            # Cache miss - download from URL
-            try:
-                with urlopen(schema_location, timeout=timeout) as response:  # noqa: S310
-                    schema_content = response.read()
-                # Cache the raw downloaded content before any fixes
-                _write_to_cache(cache_path, schema_content)
-            except (TimeoutError, URLError) as e:
-                raise XtceValidationError(f"Failed to download schema from {schema_location}: {e}") from e
-        else:
-            logger.debug(f"Using cached schema from {cache_path}")
-    # Otherwise assume a local filepath
+    if allowed_schema_hosts is not None:
+        allowed = frozenset(str(h).strip() for h in allowed_schema_hosts if str(h).strip())
     else:
-        with Path(schema_location).open("rb") as sfh:
-            schema_content = sfh.read()
+        env_hosts = os.environ.get(ALLOWED_SCHEMA_HOSTS_ENV_VAR)
+        if env_hosts:
+            allowed = frozenset(h.strip() for h in env_hosts.split(",") if h.strip())
+        else:
+            allowed = DEFAULT_ALLOWED_SCHEMA_HOSTS
 
-    # Fix and parse the schema content
+    if not allow_insecure_http:
+        env_http = os.environ.get(ALLOW_INSECURE_HTTP_ENV_VAR, "")
+        allow_insecure_http = env_http.strip().lower() in ("1", "true", "yes", "on")
+
+    return allowed, allow_insecure_http
+
+
+def _bundled_schema_path(schema_location: str) -> Path | None:
+    """Return the on-disk path of a bundled schema matching a URL, or None if there is no match.
+
+    Matching is scheme-insensitive (http and https map to the same bundled file) and keyed on host+path.
+    """
+    parsed = urlparse(schema_location)
+    if parsed.scheme not in ("http", "https"):
+        return None
+    key = f"{parsed.netloc.lower()}{parsed.path}"
+    filename = _BUNDLED_SCHEMAS.get(key)
+    if filename is None:
+        return None
+    return _BUNDLED_SCHEMA_DIR / filename
+
+
+def _reject_internal_host(host: str | None, schema_location: str) -> None:
+    """Reject a schema URL whose host is a non-public IP literal (SSRF hardening, CWE-918).
+
+    Only IP literals are inspected here; hostnames are governed by the allowlist. This
+    deterministically blocks the metadata-endpoint and loopback PoCs (169.254.169.254, 127.0.0.1)
+    which are expressed as literal IPs. A hostname that resolves to an internal address (DNS
+    rebinding) is out of scope for this check and is constrained instead by the host allowlist.
+    """
+    if not host:
+        return
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return  # Not an IP literal; the host allowlist is the control for hostnames.
+    if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
+        raise XtceValidationError(
+            f"Schema URL host {host} is a non-public address and is not allowed: {schema_location}",
+            error_code="DISALLOWED_SCHEMA_LOCATION",
+        )
+
+
+def _normalize_url(url: str) -> str:
+    """Normalize a URL for allowlist comparison (lowercase scheme+host, keep path)."""
+    parsed = urlparse(url)
+    return f"{parsed.scheme.lower()}://{parsed.netloc.lower()}{parsed.path}"
+
+
+def _url_matches_allowlist(schema_location: str, parsed_host: str | None, allowed_hosts: frozenset[str]) -> bool:
+    """Return True if the URL matches an allowlist entry.
+
+    An allowlist entry containing '://' is matched as an exact (normalized) URL; a bare entry is
+    matched against the URL's hostname. Matching is exact — never a suffix/substring test.
+    """
+    host = (parsed_host or "").lower()
+    normalized = _normalize_url(schema_location)
+    for entry in allowed_hosts:
+        entry = entry.strip()
+        if not entry:
+            continue
+        if "://" in entry:
+            if _normalize_url(entry) == normalized:
+                return True
+        elif entry.lower() == host:
+            return True
+    return False
+
+
+def _enforce_schema_url_policy(schema_location: str, allowed_hosts: frozenset[str], allow_insecure_http: bool) -> None:
+    """Enforce scheme, internal-host, and allowlist policy on an outbound schema URL (CWE-918)."""
+    parsed = urlparse(schema_location)
+    allowed_schemes = ("https", "http") if allow_insecure_http else ("https",)
+    if parsed.scheme not in allowed_schemes:
+        allowed_desc = "http or https" if allow_insecure_http else "https"
+        raise XtceValidationError(
+            f"Schema URL scheme '{parsed.scheme}' is not allowed (only {allowed_desc}): {schema_location}",
+            error_code="DISALLOWED_SCHEMA_LOCATION",
+        )
+    _reject_internal_host(parsed.hostname, schema_location)
+    if not _url_matches_allowlist(schema_location, parsed.hostname, allowed_hosts):
+        raise XtceValidationError(
+            f"Schema URL is not in the allowlist {sorted(allowed_hosts)}: {schema_location}. "
+            f"Add the host/URL via allowed_schema_hosts or {ALLOWED_SCHEMA_HOSTS_ENV_VAR}, or pass local_xsd.",
+            error_code="DISALLOWED_SCHEMA_LOCATION",
+        )
+
+
+def _parse_schema_content(schema_content: bytes, source: str) -> tuple[ElementTree.XMLSchema, str]:
+    """Parse raw XSD bytes into an XMLSchema, applying known-issue fixes if the first parse fails.
+
+    Raises XtceValidationError (error_code SCHEMA_LOAD_ERROR) if the content is not a usable XSD.
+    """
+    parser = ElementTree.XMLParser(recover=True)
     try:
         schema_root_element = ElementTree.XML(schema_content, parser)
     except ElementTree.XMLSyntaxError as e:
-        raise XtceValidationError(f"Failed to parse XSD schema from {schema_location}: {e}") from e
+        raise XtceValidationError(
+            f"Failed to parse XSD schema from {source}: {e}", error_code="SCHEMA_LOAD_ERROR"
+        ) from e
 
     try:
         return ElementTree.XMLSchema(schema_root_element), schema_root_element.get("version", "unknown")
     except ElementTree.XMLSchemaError as e:
-        # Try to fix known issues
         logger.debug("Attempting to fix known XTCE schema problems")
         fixed_content = _fix_known_schema_issues(schema_content)
-
         if fixed_content != schema_content:
             try:
-                schema_root_element = ElementTree.XML(fixed_content, parser)
-                return ElementTree.XMLSchema(schema_root_element), schema_root_element.get("version", "unknown")
+                fixed_root = ElementTree.XML(fixed_content, parser)
+                return ElementTree.XMLSchema(fixed_root), fixed_root.get("version", "unknown")
             except ElementTree.XMLSchemaError:
-                pass  # Fall through to raise original error
-
+                pass  # Fall through to raise the original error
         raise XtceValidationError(
-            f"Invalid XSD schema from {schema_location} (attempted to fix known errors): {e}"
+            f"Invalid XSD schema from {source} (attempted to fix known errors): {e}",
+            error_code="SCHEMA_LOAD_ERROR",
         ) from e
+
+
+def _download_schema(schema_location: str, timeout: int) -> tuple[ElementTree.XMLSchema, str]:
+    """Download, size-cap, validate, and cache a schema URL that has already passed policy checks.
+
+    The raw downloaded bytes are written to the cache only after they successfully validate as an
+    XSD, so a non-schema response (e.g. an SSRF probe body or error page) is never persisted.
+    """
+    cache_path = _get_cache_path(schema_location)
+    cached = _read_from_cache(cache_path)
+    if cached is not None:
+        logger.debug(f"Using cached schema from {cache_path}")
+        return _parse_schema_content(cached, schema_location)
+
+    try:
+        with urlopen(schema_location, timeout=timeout) as response:  # noqa: S310
+            declared = response.headers.get("Content-Length")
+            if declared is not None:
+                try:
+                    declared_size = int(declared)
+                except (ValueError, TypeError):
+                    declared_size = None
+                if declared_size is not None and declared_size > MAX_SCHEMA_BYTES:
+                    raise XtceValidationError(
+                        f"Schema at {schema_location} exceeds the maximum allowed size ({MAX_SCHEMA_BYTES} bytes).",
+                        error_code="SCHEMA_LOAD_ERROR",
+                    )
+            # Read one byte past the cap so an oversized body with a missing/incorrect
+            # Content-Length is still detected below.
+            schema_content = response.read(MAX_SCHEMA_BYTES + 1)
+    except (TimeoutError, URLError) as e:
+        raise XtceValidationError(
+            f"Failed to download schema from {schema_location}: {e}", error_code="SCHEMA_LOAD_ERROR"
+        ) from e
+
+    if len(schema_content) > MAX_SCHEMA_BYTES:
+        raise XtceValidationError(
+            f"Schema at {schema_location} exceeds the maximum allowed size ({MAX_SCHEMA_BYTES} bytes).",
+            error_code="SCHEMA_LOAD_ERROR",
+        )
+
+    schema, version = _parse_schema_content(schema_content, schema_location)
+    # Only cache content that validated as an XSD.
+    _write_to_cache(cache_path, schema_content)
+    return schema, version
+
+
+def _load_schema(
+    schema_location: str | Path,
+    timeout: int = 30,
+    *,
+    allowed_schema_hosts: list[str] | tuple[str, ...] | frozenset[str] | None = None,
+    allow_insecure_http: bool = False,
+    allow_schema_download: bool = True,
+    trusted: bool = False,
+) -> tuple[ElementTree.XMLSchema, str]:
+    """Load an XSD schema from a bundled schema, an http(s) URL, or a trusted local path.
+
+    Resolution order:
+      1. If ``schema_location`` matches a schema bundled with the package, it is read from disk
+         with no network request or policy check (it is a trusted, package-owned file).
+      2. If it is an http(s) URL, the SSRF policy (scheme, internal-host, allowlist) is enforced
+         and, unless disabled, the schema is downloaded (size-capped) and cached.
+      3. If it is a local filesystem path, it is opened only when ``trusted=True`` (i.e. an
+         operator-supplied ``local_xsd``); document-derived local paths are refused (CWE-73).
+
+    Parameters
+    ----------
+    schema_location : Union[str, Path]
+        URL or local path to the XSD schema document.
+    timeout : int
+        Timeout in seconds for URL downloads.
+    allowed_schema_hosts : Optional collection of str
+        Hosts and/or exact URLs that schema downloads may target. None resolves via environment,
+        then the built-in default (``www.omg.org``).
+    allow_insecure_http : bool
+        If True, permit ``http`` URLs in addition to ``https``. Dangerous; off by default.
+    allow_schema_download : bool
+        If False, never make a network request (bundled schemas and local paths still work).
+    trusted : bool
+        If True, a local filesystem path may be opened directly (used for operator-supplied local_xsd).
+
+    Returns
+    -------
+    : tuple[ElementTree.XMLSchema, str]
+        Parsed XMLSchema object and version string.
+
+    Raises
+    ------
+    XtceValidationError
+        If the schema cannot be loaded, is disallowed by policy, or cannot be parsed.
+    """
+    location = str(schema_location)
+
+    # 1. Bundled schema (offline, no policy needed — it is our own file).
+    bundled = _bundled_schema_path(location)
+    if bundled is not None:
+        try:
+            content = bundled.read_bytes()
+        except OSError as e:
+            raise XtceValidationError(
+                f"Failed to read bundled schema {bundled}: {e}", error_code="SCHEMA_LOAD_ERROR"
+            ) from e
+        return _parse_schema_content(content, location)
+
+    is_url = urlparse(location).scheme in ("http", "https")
+
+    # 2. Remote URL: enforce SSRF policy, then cache/download.
+    if is_url:
+        if not allow_schema_download:
+            raise XtceValidationError(
+                f"Schema download is disabled and no bundled schema matches: {location}. "
+                "Pass local_xsd, or enable allow_schema_download.",
+                error_code="SCHEMA_LOAD_ERROR",
+            )
+        allowed_hosts, allow_insecure_http = _resolve_schema_policy(allowed_schema_hosts, allow_insecure_http)
+        _enforce_schema_url_policy(location, allowed_hosts, allow_insecure_http)
+        return _download_schema(location, timeout)
+
+    # 3. Local filesystem path: only trusted (operator-supplied) paths may be opened.
+    if not trusted:
+        raise XtceValidationError(
+            f"Refusing to load a schema from an untrusted local path: {location}. "
+            "Document-supplied xsi:schemaLocation must be an allowlisted http(s) URL; "
+            "use local_xsd to validate against a local schema.",
+            error_code="DISALLOWED_SCHEMA_LOCATION",
+        )
+    try:
+        content = Path(location).read_bytes()
+    except OSError as e:
+        raise XtceValidationError(
+            f"Schema file not found or unreadable: {location}", error_code="SCHEMA_LOAD_ERROR"
+        ) from e
+    return _parse_schema_content(content, location)
 
 
 def _find_schema_url(xml_tree: ElementTree.ElementTree) -> str:
@@ -289,6 +527,11 @@ def _find_schema_url(xml_tree: ElementTree.ElementTree) -> str:
     -------
     schema_location : str
         URL of XSD
+
+    Raises
+    ------
+    XtceValidationError
+        If schema location is invalid or missing
     """
     # Get root element
     root = xml_tree.getroot() if hasattr(xml_tree, "getroot") else xml_tree
@@ -296,18 +539,36 @@ def _find_schema_url(xml_tree: ElementTree.ElementTree) -> str:
     # Find schema location
     try:
         schema_location_attr = root.attrib.get("{http://www.w3.org/2001/XMLSchema-instance}schemaLocation")
-        return schema_location_attr.split()[-1]
+        schema_location = schema_location_attr.split()[-1]
     except Exception:
         raise XtceValidationError(
             "No 'xsi' namespace found in document. XTCE documents must declare the 'xsi' "
-            "namespace for schema validation via the 'xsi:schemaLocation' attribute."
+            "namespace for schema validation via the 'xsi:schemaLocation' attribute.",
+            error_code="MISSING_SCHEMA_LOCATION",
         )
+
+    # A document-supplied location is untrusted. Anything that is not an http(s) URL is treated as
+    # a local filesystem reference and rejected to prevent local file disclosure (CWE-73). This
+    # covers absolute POSIX/Windows/UNC paths, relative paths, bare filenames, and non-http schemes
+    # such as file:// and ftp://. Host/scheme allowlist policy is enforced later, at load time,
+    # after bundled-schema resolution.
+    if urlparse(schema_location).scheme not in ("http", "https"):
+        raise XtceValidationError(
+            f"xsi:schemaLocation must be an http(s) URL, got: {schema_location!r}. "
+            "To validate against a local schema, pass local_xsd explicitly.",
+            error_code="DISALLOWED_SCHEMA_LOCATION",
+        )
+
+    return schema_location
 
 
 def _validate_xtce_schema(
     xml_tree: ElementTree.ElementTree,
     local_xsd: str | Path | None = None,
     timeout: int = 30,
+    allowed_schema_hosts: list[str] | tuple[str, ...] | frozenset[str] | None = None,
+    allow_insecure_http: bool = False,
+    allow_schema_download: bool = True,
 ) -> ValidationResult:
     """Validate XML document against XSD schema.
 
@@ -317,8 +578,16 @@ def _validate_xtce_schema(
         XTCE XML tree object
     local_xsd : Optional[Union[str, Path]]
         Optional local schema location. If specified, schema references in root element (or lack thereof) are ignored.
+        This is a trusted, caller-supplied path and is opened directly regardless of location.
     timeout : int
         Timeout in seconds for schema downloads
+    allowed_schema_hosts : Optional collection of str
+        Hosts and/or exact URLs that document-derived schema downloads may target.
+    allow_insecure_http : bool
+        If True, permit ``http`` schema URLs in addition to ``https``. Dangerous; off by default.
+    allow_schema_download : bool
+        If True (default), allowlisted schema URLs may be downloaded. If False, only bundled schemas
+        and ``local_xsd`` are used.
 
     Returns
     -------
@@ -330,25 +599,39 @@ def _validate_xtce_schema(
 
     try:
         if local_xsd:
-            # TODO: Load the XSD from local file
+            # local_xsd is trusted, caller-supplied input: open it directly, at whatever path
+            # (absolute or relative) the caller provided. No confinement is applied because this
+            # is not the attacker-controlled surface (unlike document-derived xsi:schemaLocation).
             schema_location = str(local_xsd)
+            trusted = True
         else:
             try:
-                # Find the URL of the XSD
+                # Find the (untrusted) schema URL declared in the document
                 schema_location = _find_schema_url(xml_tree)
             except XtceValidationError as no_schema_location_err:
-                result.add_error(message=str(no_schema_location_err), error_code="MISSING_SCHEMA_LOCATION")
+                result.add_error(
+                    message=str(no_schema_location_err),
+                    error_code=no_schema_location_err.error_code or "MISSING_SCHEMA_LOCATION",
+                )
                 return result
+            trusted = False
 
         # Store schema location in result
         result.schema_location = schema_location
 
         # Load the schema
         try:
-            schema, version = _load_schema(schema_location, timeout)
+            schema, version = _load_schema(
+                schema_location,
+                timeout,
+                allowed_schema_hosts=allowed_schema_hosts,
+                allow_insecure_http=allow_insecure_http,
+                allow_schema_download=allow_schema_download,
+                trusted=trusted,
+            )
             result.schema_version = version
         except XtceValidationError as e:
-            result.add_error(str(e), "SCHEMA_LOAD_ERROR")
+            result.add_error(str(e), e.error_code or "SCHEMA_LOAD_ERROR")
             return result
 
         # Validate the document
@@ -357,7 +640,7 @@ def _validate_xtce_schema(
             for error in schema.error_log:
                 if "No matching global declaration available for the validation root." in error.message:
                     result.add_error(
-                        message="Namespace issue detected. Does the `xmlns[:xtce]=<chosen_xtce_uri>` URI on your document root element match the `targetNamespace` URI in your XSD? Typically this is http://www.omg.org/spec/XTCE/20180204.",
+                        message="Namespace issue detected. Does the `xmlns[:xtce]=<chosen_xtce_uri>` URI on your document root element match the `targetNamespace` URI in your XSD? Typically this is http://www.omg.org/spec/XTCE/20180204",
                         error_code="INVALID_XTCE_NAMESPACE",
                         context={
                             "nsmap": xml_tree.getroot().nsmap,
@@ -501,6 +784,9 @@ def validate_xtce(
     print_results: bool = True,
     raise_on_error: bool = True,
     local_xsd: str | Path | None = None,
+    allowed_schema_hosts: list[str] | tuple[str, ...] | frozenset[str] | None = None,
+    allow_insecure_http: bool = False,
+    allow_schema_download: bool = True,
 ) -> ValidationResult:
     """Validate an XTCE XML document.
 
@@ -522,7 +808,23 @@ def validate_xtce(
         If True, raises an exception unless the ValidationResult reports valid.
     local_xsd : Optional[str, Path]
         Local path to an XSD for schema validation. If not provided and schema validation is requested,
-        XSD is retrieved from schema reference attribute in document root.
+        XSD is retrieved from schema reference attribute in document root. This is a trusted,
+        caller-supplied path and may point anywhere on the filesystem.
+    allowed_schema_hosts : Optional collection of str
+        Hosts and/or exact URLs that a document-derived ``xsi:schemaLocation`` download may target.
+        Entries may be bare hostnames (matched against the URL host) or full URLs (matched exactly).
+        Defaults to :data:`DEFAULT_ALLOWED_SCHEMA_HOSTS` (``www.omg.org``); the
+        ``SPP_ALLOWED_SCHEMA_HOSTS`` environment variable (comma-separated) is consulted when this
+        argument is not provided. Bundled schemas and ``local_xsd`` are not subject to this allowlist.
+    allow_insecure_http : bool
+        DANGEROUS. If True, permit ``http`` schema URLs in addition to ``https``. This fetches schema
+        content over an unauthenticated, tamperable channel and should only be used for trusted
+        internal mirrors. The host allowlist and internal-address guard still apply. Off by default;
+        may also be enabled via the ``SPP_ALLOW_INSECURE_HTTP`` environment variable.
+    allow_schema_download : bool
+        Default True. If True, allowlisted schema URLs referenced by the document may be downloaded.
+        If False, no network request is made: only schemas bundled with the package or supplied via
+        ``local_xsd`` are used.
 
     Returns
     -------
@@ -552,14 +854,28 @@ def validate_xtce(
         ) from e
 
     if validation_level == ValidationLevel.SCHEMA:
-        result = _validate_xtce_schema(xml_tree, local_xsd=local_xsd, timeout=timeout)
+        result = _validate_xtce_schema(
+            xml_tree,
+            local_xsd=local_xsd,
+            timeout=timeout,
+            allowed_schema_hosts=allowed_schema_hosts,
+            allow_insecure_http=allow_insecure_http,
+            allow_schema_download=allow_schema_download,
+        )
 
     elif validation_level == ValidationLevel.STRUCTURE:
         result = _validate_xtce_structure(xml_tree)
 
     elif validation_level == ValidationLevel.ALL:
         # Perform both validations
-        schema_result = _validate_xtce_schema(xml_tree, local_xsd=local_xsd, timeout=timeout)
+        schema_result = _validate_xtce_schema(
+            xml_tree,
+            local_xsd=local_xsd,
+            timeout=timeout,
+            allowed_schema_hosts=allowed_schema_hosts,
+            allow_insecure_http=allow_insecure_http,
+            allow_schema_download=allow_schema_download,
+        )
 
         # Try structural validation even if schema fails
         structure_result = _validate_xtce_structure(xml_tree)
