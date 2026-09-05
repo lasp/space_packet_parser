@@ -426,7 +426,7 @@ class XtcePacketDefinition(common.AttrComparable):
 
         Returns
         -------
-        SpacePacket
+        space_packet_parser.SpacePacket
             A SpacePacket object containing header and data attributes.
         """
         packet = spp.SpacePacket(binary_data=binary_data)
@@ -485,7 +485,7 @@ class XtcePacketDefinition(common.AttrComparable):
 
         Returns
         -------
-        SpacePacket
+        space_packet_parser.SpacePacket
             A SpacePacket object containing header and data attributes.
         """
         warnings.warn(
@@ -510,7 +510,7 @@ class XtcePacketDefinition(common.AttrComparable):
 
         Returns
         -------
-        SpacePacket
+        space_packet_parser.SpacePacket
             A SpacePacket object containing header and data attributes.
         """
         warnings.warn(

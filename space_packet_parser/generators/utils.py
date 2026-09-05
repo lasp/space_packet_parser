@@ -33,26 +33,26 @@ def _read_packet_file(packet_file) -> bytes | io.BufferedIOBase | io.RawIOBase:
 
 @_read_packet_file.register(io.BufferedIOBase)
 @_read_packet_file.register(io.RawIOBase)
-def _(packet_file: io.BufferedIOBase | io.RawIOBase) -> io.BufferedIOBase | io.RawIOBase:
+def _read_packet_file_filelike(packet_file: io.BufferedIOBase | io.RawIOBase) -> io.BufferedIOBase | io.RawIOBase:
     """File-like object, this can be passed directly to a generator."""
     return packet_file
 
 
 @_read_packet_file.register
-def _(packet_file: bytes) -> bytes:
+def _read_packet_file_bytes(packet_file: bytes) -> bytes:
     """bytes input, return as-is."""
     return packet_file
 
 
 @_read_packet_file.register
-def _(packet_file: str) -> bytes:
+def _read_packet_file_str(packet_file: str) -> bytes:
     """String file path, open and read bytes."""
     with open(packet_file, "rb") as f:
         return f.read()
 
 
 @_read_packet_file.register
-def _(packet_file: Path) -> bytes:
+def _read_packet_file_path(packet_file: Path) -> bytes:
     """Path file path, open and read bytes.
 
     Notes
@@ -64,7 +64,7 @@ def _(packet_file: Path) -> bytes:
 
 
 @_read_packet_file.register
-def _(packet_file: PathLike) -> bytes:
+def _read_packet_file_pathlike(packet_file: PathLike) -> bytes:
     """PathLike file path (e.g. anything supporting the Path interface), open and read bytes.
 
     Notes
@@ -99,7 +99,7 @@ def _setup_binary_reader(binary_data, buffer_read_size_bytes=None) -> tuple:
 
 @_setup_binary_reader.register(io.BufferedIOBase)
 @_setup_binary_reader.register(io.RawIOBase)
-def _(binary_data: io.BufferedIOBase | io.RawIOBase, buffer_read_size_bytes=None) -> tuple:
+def _setup_binary_reader_filelike(binary_data: io.BufferedIOBase | io.RawIOBase, buffer_read_size_bytes=None) -> tuple:
     """Set up a binary reader from a file-like object."""
     read_buffer = b""
     if buffer_read_size_bytes is None:
@@ -115,7 +115,7 @@ def _(binary_data: io.BufferedIOBase | io.RawIOBase, buffer_read_size_bytes=None
 
 
 @_setup_binary_reader.register
-def _(binary_data: socket.socket, buffer_read_size_bytes=None) -> tuple:
+def _setup_binary_reader_socket(binary_data: socket.socket, buffer_read_size_bytes=None) -> tuple:
     """Set up a binary reader from a socket object."""
     read_buffer = b""
     total_length_bytes = None  # We don't know how long it is
@@ -128,7 +128,7 @@ def _(binary_data: socket.socket, buffer_read_size_bytes=None) -> tuple:
 
 
 @_setup_binary_reader.register
-def _(binary_data: bytes, buffer_read_size_bytes=None) -> tuple:
+def _setup_binary_reader_bytes(binary_data: bytes, buffer_read_size_bytes=None) -> tuple:
     """Set up a binary reader from a bytes object."""
     read_buffer = b""
     read_buffer = binary_data
@@ -143,7 +143,7 @@ def _(binary_data: bytes, buffer_read_size_bytes=None) -> tuple:
 
 
 @_setup_binary_reader.register
-def _(binary_data: io.TextIOWrapper, buffer_read_size_bytes=None):
+def _setup_binary_reader_textio(binary_data: io.TextIOWrapper, buffer_read_size_bytes=None):
     """Informative error if someone tries to pass a text file."""
     raise OSError("Packet data file opened in TextIO mode. You must open packet data in binary mode.")
 
