@@ -15,7 +15,6 @@
 coverage_report
 coverage.xml
 corbertura_report.xml
-tests/test_data/hidden
 */.benchmarks
 
 # Local Installation Artifacts #
@@ -76,3 +75,9 @@ venv
 .python-version
 pytest.ini
 .claude/settings.local.json
+.claude/CLAUDE.local.json
+.mcp.json
+
+# Hidden Content #
+##################
+**/_hidden

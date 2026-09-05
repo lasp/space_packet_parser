@@ -8,7 +8,7 @@
 
 project = "space_packet_parser"
 copyright = "2023 University of Colorado"
-author = "Gavin Medley, Michael Chambliss"
+author = "Gavin Medley, Michael Chambliss, Greg Lucas"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
