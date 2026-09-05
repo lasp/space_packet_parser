@@ -105,6 +105,7 @@ include = [
     "/LICENSE.txt",
     "/CITATION.cff",
     "/README.md",
+    "/CHANGELOG.md",
     "/pyproject.toml"
 ]
 

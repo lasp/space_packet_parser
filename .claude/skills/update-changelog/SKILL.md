@@ -1,4 +1,4 @@
-Update `docs/source/changelog.md` based on recent git history. Follow these steps exactly.
+Update `CHANGELOG.md` based on recent git history. Follow these steps exactly.
 
 ## Step 1 — Gather context
 
@@ -17,7 +17,7 @@ git log <LATEST_TAG>..HEAD --oneline --merges
 
 Read these files in full:
 
-- `docs/source/changelog.md`
+- `CHANGELOG.md`
 - `pyproject.toml` (find `version =` under `[project]`)
 - `meta.yaml` (find `version:` field)
 - `CITATION.cff` (find `version:` field)
