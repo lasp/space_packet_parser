@@ -6,5 +6,8 @@
   "fallbackAvailableWarningThreshold": 0.5,
   "tipsHistory": {
     "new-user-warmup": 1
+  },
+  "permissions": {
+    "allow": ["Read(*)", "WebSearch(*)"]
   }
 }

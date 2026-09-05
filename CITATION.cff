@@ -29,8 +29,5 @@ maintainers:
 - email: gavin.medley@lasp.colorado.edu
   name: Gavin Medley
   orcid: "0000-0002-3520-9715"
-- email: greg.lucas@lasp.colorado.edu
-  name: Greg Lucas
-  orcid: "0000-0003-1331-1863"
 repository-code: "https://github.com/lasp/space_packet_parser"
 url: "https://space-packet-parser.readthedocs.io"

@@ -8,7 +8,7 @@
     "vscode": {
       "extensions": [
         "ms-python.python",
-        "ms-python.vscode-pylance",
+        "astral-sh.ty",
         "ms-python.debugpy",
         "ms-python.vscode-python-envs",
         "ms-python.mypy-type-checker",
@@ -42,7 +42,9 @@
           "editor.defaultFormatter": "charliermarsh.ruff"
         },
         "ruff.organizeImports": true,
-        "ruff.fixAll": true
+        "ruff.fixAll": true,
+        "python.languageServer": "None",
+        "ty.disableLanguageServices": false
       },
       "launch": {
         "configurations": [
