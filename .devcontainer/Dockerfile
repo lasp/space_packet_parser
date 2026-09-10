@@ -15,6 +15,7 @@ RUN apt update && apt install -y less \
   unzip \
   gnupg2 \
   gh \
+  make \
   iptables \
   ipset \
   iproute2 \
@@ -79,3 +80,7 @@ RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/
 # Copy and set up dev environment script
 COPY setup-dev-environment.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/setup-dev-environment.sh
+
+# Copy and set up post-start script (fixes /etc/hosts on every container start)
+COPY post-start.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/post-start.sh
