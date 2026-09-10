@@ -4,7 +4,7 @@
 [![PyPI](https://img.shields.io/pypi/v/space_packet_parser?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/space-packet-parser/)
 [![DOI](https://zenodo.org/badge/612253190.svg)](https://doi.org/10.5281/zenodo.7735001)
 
-[![Test Status](https://github.com/lasp/space_packet_parser/actions/workflows/tests.yml/badge.svg)](https://github.com/lasp/space_packet_parser/actions/workflows/tests.yml)
+[![CI](https://github.com/lasp/space_packet_parser/actions/workflows/ci.yml/badge.svg)](https://github.com/lasp/space_packet_parser/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/lasp/space_packet_parser/graph/badge.svg?token=VUFIN94O05)](https://codecov.io/gh/lasp/space_packet_parser)
 
 **Documentation:** [https://space-packet-parser.readthedocs.io/en/latest/](https://space-packet-parser.readthedocs.io/en/latest/)
