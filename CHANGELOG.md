@@ -37,6 +37,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   troubleshooting, socket parsing, and performance tuning. The Sphinx toctree is now defined in
   MyST Markdown rather than reStructuredText, and pages cross-link to one another.
   [#192](https://github.com/lasp/space_packet_parser/issues/192)
+- Refresh the benchmarking documentation against the current benchmark suite. All nine benchmarks
+  are now covered, including complex (IDEX) packet parsing and XTCE definition load times, which
+  were previously unreported. Removes a progress-printing comparison that was not reproducible from
+  the committed test suite, and fixes a GitHub-style `[!NOTE]` callout that rendered as literal text
+  in the built documentation.
 
 ### Fixed
 
