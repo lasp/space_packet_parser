@@ -35,12 +35,11 @@ def test_cli():
     assert expected_version in result.output
 
 
-def test_cli_main(monkeypatch, capsys):
+def test_cli_main(capsys):
     expected_version = importlib.metadata.version("space_packet_parser")
-    monkeypatch.setattr(sys, "argv", ["spp", "--version"])
 
     with pytest.raises(SystemExit) as excinfo:
-        cli.main()
+        cli.main(args=["--version"], prog_name="spp")
 
     assert excinfo.value.code == 0
     captured = capsys.readouterr()
