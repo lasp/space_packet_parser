@@ -9,12 +9,23 @@ Throughout the Space Packet Parser repo and documentation space, B/kB means byte
 b/kb means bits/kilobits.
 ```
 
-Common factors affecting performance:
+The dominant cost is **dynamic evaluation** — work the parser can only do by inspecting the data
+it is currently parsing. Common sources:
 
-- Presence of calibrators and context calibrators
-- Complexity of container inheritance structure
-- Number and size of fields in a packet
-- Presence of large binary blobs (=high kbps, faster parsing)
+- Calibrators and context calibrators
+- Enumerated lookups
+- Dynamically sized fields (variable length strings, binary blobs sized by another parameter, or
+  fields that consume the remaining packet length)
+- Polymorphic packet structures, where which container applies is decided by values inside the
+  packet
+- Deep container inheritance, since each level adds a `RestrictionCriteria` evaluation per packet
+
+Secondary factors:
+
+- Number of fields in a packet (a better predictor of cost than packet size, but not a law — see
+  below)
+- Presence of large binary blobs (=high kbps, faster parsing, because many bytes are extracted in
+  one operation)
 
 For practical advice on making your own parsing faster, see
 [Optimizing for Performance](user_guide/performance.md).
@@ -78,20 +89,92 @@ test_benchmark_simple_packet_parsing      217.8480 (80.12)    331.9612 (104.48) 
 ### Why the Two Metrics Diverge
 
 The two datasets above parse at **roughly the same packets per second** (~28k) but differ by a
-factor of **38x in kilobits per second**. This is the single most important thing to understand
-about these numbers.
+factor of **38x in kilobits per second**, despite IDEX packets being 40x larger. Bytes per second is
+therefore a poor description of what the parser is actually doing.
 
-The parser's cost is driven by the number of _fields_ it has to locate, extract, and convert — not
-by the number of bytes it moves. A 71 B JPSS packet and a 2825 B IDEX packet cost about the same to
-parse, because the IDEX packet spends most of its length on a single large binary blob that is
-extracted in one operation. The bytes come nearly free; the fields do not.
+Adding a third, much more expensive dataset makes the pattern clearer. CTIM APID 41 packets are
+_smaller_ than IDEX packets but take **31x longer** to parse:
+
+| Dataset            | B/packet | Fields/packet | us/packet | us/field |
+| ------------------ | -------: | ------------: | --------: | -------: |
+| JPSS-1 geolocation |       71 |            27 |        35 |     1.29 |
+| IDEX science       |     2825 |           107 |        36 |     0.34 |
+| CTIM APID 41       |     1018 |          1003 |      1133 |     1.13 |
+
+Packet size predicts almost nothing: JPSS-1 and IDEX differ 40x in bytes and parse in the same
+time. Field count is a much better predictor, but it is not a law either — per-field cost still
+varies about 4x across these three datasets.
+
+What actually drives the remaining variation is **how much dynamic evaluation each field requires**.
+A field with a static encoding and no calibrator is cheap. A field whose length depends on another
+parameter's value, whose raw value must be run through a calibrator or an enumerated lookup, or
+whose very presence depends on which container matched, is expensive — and the parser cannot know
+any of that until it is looking at the data. IDEX gets its low per-field cost because most of its
+bytes sit in one large binary blob extracted in a single operation; CTIM pays full price on all
+1003 of its fields.
 
 So when sizing a processing system:
 
-- Use **packets per second** when your packets are field-dense.
-- Use **kilobits per second** only alongside a representative packet structure. Quoting a kb/s
-  figure derived from blob-heavy packets will badly overestimate throughput on field-dense ones,
-  and vice versa.
+- Benchmark **your own XTCE definition against your own packets**. Numbers quoted for someone
+  else's packet structure will not transfer.
+- Use **packets per second**, not kb/s, unless you also state the packet structure it came from. A
+  kb/s figure derived from blob-heavy packets will badly overestimate throughput on field-dense
+  ones, and vice versa.
+- See [Optimizing for Performance](user_guide/performance.md) for concrete ways to reduce this
+  cost.
+
+## Filtering Muxed Packet Streams
+
+Ground testing commonly produces multiplexed streams containing many APIDs. If you hand every
+packet in such a stream to `parse_bytes()`, the parser will attempt to parse each one against the
+XTCE definition — including the packets you do not want, which may also fail to parse or emit
+warnings. Filtering on the CCSDS header first lets the parser skip those bytes entirely.
+
+The difference is not marginal. Reading a packet's header and deciding whether to keep it costs
+about **0.45 us**; parsing that packet against the XTCE definition costs about **989 us** — roughly
+a **2000x** difference per packet.
+
+Benchmarked against the CTIM muxed test stream (1499 packets across 9 APIDs, 1.3 MB):
+
+| Approach                           | Packets parsed | Median time | Speedup |
+| ---------------------------------- | -------------: | ----------: | ------: |
+| No filter (parse everything)       |           1499 |     1483 ms |      1x |
+| Filter to APID 41 (1147 of 1499)   |           1147 |     1300 ms |    1.1x |
+| Filter to APID 20 (6 of 1499)      |              6 |      1.0 ms |   1447x |
+| Header read and filter, no parsing |              0 |      0.7 ms |   2188x |
+
+The saving is proportional to the fraction of the stream you can discard. APID 41 is 77% of this
+particular stream, so filtering to it saves little. APID 20 is 0.4% of it, and filtering to it is
+three orders of magnitude faster than parsing the whole stream.
+
+Filter at the generator, before `parse_bytes()` is called:
+
+```python
+import space_packet_parser as spp
+
+definition = spp.load_xtce("ctim_xtce_v1.xml")
+
+with open("muxed_stream.bin", "rb") as binary_data:
+    for packet_bytes in spp.ccsds_generator(binary_data):
+        if packet_bytes.apid != 41:
+            continue  # Skipped without ever touching the XTCE definition
+        packet = definition.parse_bytes(packet_bytes)
+```
+
+{py:func}`~space_packet_parser.xarr.create_dataset` takes a `packet_filter` callable that does the
+same thing:
+
+```python
+from space_packet_parser.xarr import create_dataset
+
+datasets = create_dataset(
+    packet_files=[packet_file],
+    xtce_packet_definition=definition,
+    packet_filter=lambda pkt: pkt.apid == 41,
+)
+```
+
+See [Filtering Packets](user_guide/generators.md#filtering-packets) for more detail.
 
 ## XTCE Definition Parsing Performance
 
