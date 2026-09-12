@@ -41,10 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   are now covered, including complex (IDEX) packet parsing and XTCE definition load times, which
   were previously unreported. Removes a progress-printing comparison that was not reproducible from
   the committed test suite, and fixes a GitHub-style `[!NOTE]` callout that rendered as literal text
-  in the built documentation. Documents packet filtering on muxed streams as a performance lever
-  (roughly 2000x cheaper per discarded packet than parsing it), and corrects the explanation of
-  what drives parsing cost: dynamic evaluation work, not packet size or definition-wide parameter
-  count.
+  in the built documentation. Documents packet filtering on muxed streams as a performance lever,
+  and corrects the explanation of what drives parsing cost: dynamic evaluation work, not packet
+  size or definition-wide parameter count.
 
 ### Fixed
 

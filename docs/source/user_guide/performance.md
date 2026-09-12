@@ -6,18 +6,22 @@ during parsing.
 
 ## Don't Parse Packets You Don't Need
 
-This is usually the single largest win, and it costs nothing in XTCE complexity.
+This is often the largest available win, and it costs nothing in XTCE complexity.
 
 Ground testing commonly produces multiplexed streams containing many APIDs. If you pass every
 packet to `parse_bytes()`, each one is parsed against the XTCE definition — including packets you
 have no interest in, which may also fail to parse or emit warnings. Filtering on the CCSDS header
 first lets the parser skip those bytes entirely.
 
-Reading a packet header and deciding whether to keep it is roughly **2000x cheaper** than parsing
-that packet against an XTCE definition, so the saving scales directly with the fraction of the
-stream you can discard. Filtering a stream down to an APID that makes up 0.4% of it measures
-[about 1400x faster](../benchmarking.md#filtering-muxed-packet-streams) than parsing the whole
-thing.
+Reading a header to decide whether to keep a packet is a fixed, very small cost; parsing that
+packet is not. How much filtering saves you depends on what fraction of the stream you can discard
+_and_ on how expensive the discarded packets would have been to parse. Skipping short fixed-length
+packets that hold a single binary blob saves little, because those were cheap anyway. Skipping
+large packets full of calibrated, conditionally evaluated fields saves a lot. Filtering is never
+slower, so it is worth doing regardless — but measure your own stream rather than assuming a
+speedup. See
+[Filtering Muxed Packet Streams](../benchmarking.md#filtering-muxed-packet-streams) for a worked
+example.
 
 ```python
 import space_packet_parser as spp

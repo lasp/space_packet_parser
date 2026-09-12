@@ -130,22 +130,33 @@ packet in such a stream to `parse_bytes()`, the parser will attempt to parse eac
 XTCE definition — including the packets you do not want, which may also fail to parse or emit
 warnings. Filtering on the CCSDS header first lets the parser skip those bytes entirely.
 
-The difference is not marginal. Reading a packet's header and deciding whether to keep it costs
-about **0.45 us**; parsing that packet against the XTCE definition costs about **989 us** — roughly
-a **2000x** difference per packet.
+Reading a packet's CCSDS header to decide whether to keep it is a fixed, very small cost. Parsing
+that same packet against the XTCE definition is not — it is exactly the dynamic evaluation work
+described above. Filtering replaces the second cost with the first for every packet you discard.
 
-Benchmarked against the CTIM muxed test stream (1499 packets across 9 APIDs, 1.3 MB):
+How much that saves depends on two things, and neither is a property of Space Packet Parser:
 
-| Approach                           | Packets parsed | Median time | Speedup |
-| ---------------------------------- | -------------: | ----------: | ------: |
-| No filter (parse everything)       |           1499 |     1483 ms |      1x |
-| Filter to APID 41 (1147 of 1499)   |           1147 |     1300 ms |    1.1x |
-| Filter to APID 20 (6 of 1499)      |              6 |      1.0 ms |   1447x |
-| Header read and filter, no parsing |              0 |      0.7 ms |   2188x |
+- **What fraction of the stream you can discard.** Filtering to an APID that makes up most of the
+  stream saves little. Filtering to a rare one can save nearly everything.
+- **How expensive the discarded packets would have been to parse.** Skipping a short, fixed-length
+  packet that is a single binary blob saves almost nothing — that packet was cheap to parse anyway.
+  Skipping a large packet with many fields, calibrators, and conditional evaluation saves a great
+  deal.
 
-The saving is proportional to the fraction of the stream you can discard. APID 41 is 77% of this
-particular stream, so filtering to it saves little. APID 20 is 0.4% of it, and filtering to it is
-three orders of magnitude faster than parsing the whole stream.
+Filtering is never slower, but the payoff ranges from negligible to enormous depending on those two
+factors. As one illustration, here is the CTIM muxed test stream (1499 packets across 9 APIDs,
+1.3 MB), whose packets are field-dense and expensive to parse:
+
+| Approach                           | Packets parsed | Median time |
+| ---------------------------------- | -------------: | ----------: |
+| No filter (parse everything)       |           1499 |     1483 ms |
+| Filter to APID 41 (1147 of 1499)   |           1147 |     1300 ms |
+| Filter to APID 20 (6 of 1499)      |              6 |      1.0 ms |
+| Header read and filter, no parsing |              0 |      0.7 ms |
+
+APID 41 is 77% of this stream, so filtering to it changes little. APID 20 is 0.4% of it, and the
+packets skipped to get there are expensive ones — so the saving is dramatic. Do not carry these
+particular ratios over to your own stream; measure it.
 
 Filter at the generator, before `parse_bytes()` is called:
 
