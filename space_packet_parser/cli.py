@@ -26,11 +26,13 @@ def _load_cli_module():
         raise
 
 
-def main(args=None, prog_name=None) -> None:
+def main(args=None, prog_name=None, standalone_mode=True) -> None:
     """Console-script entry point for ``spp``."""
     try:
-        _load_cli_module().spp.main(args=args, prog_name=prog_name, standalone_mode=True)
+        _load_cli_module().spp.main(args=args, prog_name=prog_name, standalone_mode=standalone_mode)
     except MissingCliExtraError as exc:
+        if not standalone_mode:
+            raise
         print(exc, file=sys.stderr)
         raise SystemExit(1) from exc
 
