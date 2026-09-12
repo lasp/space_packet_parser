@@ -8,9 +8,10 @@ socket in
 [`parsing_and_plotting_idex_waveforms_from_socket.py`](https://github.com/lasp/space_packet_parser/blob/main/examples/parsing_and_plotting_idex_waveforms_from_socket.py).
 
 The example mocks the behavior of an instrument sending packet data asynchronously through a
-socket in chunks of inconsistent size. The packet parser reads bytes from the receiver side of the
+socket in chunks of inconsistent size. The generator reads bytes from the receiver side of the
 socket and reads data repeatedly until there is sufficient data for a full packet. Once it has a
-full packet (as determined by the packet length in the CCSDS header), it yields a parsed packet.
+full packet (as determined by the packet length in the CCSDS header), it yields a
+`CCSDSPacketBytes` object, which you then pass to `parse_bytes()` to get a parsed packet.
 
 You'll notice that the example ends with a timeout error. This timeout can be controlled when
 creating the socket connection with `receiver.settimeout(timeout_seconds)`.

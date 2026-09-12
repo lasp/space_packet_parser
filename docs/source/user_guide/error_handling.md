@@ -46,10 +46,11 @@ these exports usually require some fine-tuning.
 - no child containers are valid inheritors of the current sequence container based on restriction
   criteria evaluated against the data parsed so far, and the current container is abstract.
 
-### Parser Generator Completes without Yielding a Packet
+### No Packets Parse Successfully
 
 This can occur if your data file contains only packets that do not match any packet definitions in
-your XTCE document and `yield_unrecognized_packet_errors=False` (the default). This could mean that
+your XTCE document. Every `parse_bytes()` call then raises `UnrecognizedPacketTypeError`, so a loop
+using the `try`/`except` shown above skips every packet and produces nothing. This could mean that
 your data file actually contains only APIDs that are not covered in your packet definition, but
 usually it means you have incorrectly defined restriction criteria for `SequenceContainer`
 inheritance.

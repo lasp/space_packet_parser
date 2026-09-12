@@ -56,7 +56,8 @@ length field from each packet header to determine packet boundaries. The generat
 checksum) as properties.
 
 ```python
-from space_packet_parser import udp_generator, load_xtce
+from space_packet_parser import load_xtce
+from space_packet_parser.generators import udp_generator
 
 packet_definition = load_xtce("my_udp_packets.xml")
 for udp_packet in udp_generator(binary_data):

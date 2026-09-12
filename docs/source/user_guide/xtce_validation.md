@@ -75,11 +75,17 @@ spp validate my_xtce.xml --no-schema-download --local-xsd my_xsd.xsd
 
 ## Programmatic Validation
 
+```{note}
+`validate_xtce` defaults to `raise_on_error=True`, which raises as soon as the document is invalid.
+To inspect errors yourself instead of letting them propagate, pass `raise_on_error=False` and read
+them off the returned `ValidationResult`, as below.
+```
+
 ```python
 from space_packet_parser import validate_xtce
 
 # Validate an XTCE file against the referenced schema
-result = validate_xtce("my_xtce.xml", level="schema")
+result = validate_xtce("my_xtce.xml", level="schema", raise_on_error=False)
 if result.errors:
     for error in result.errors:
         print(f"Error: {error}")
@@ -88,7 +94,7 @@ else:
 
 # Validate an XTCE document structure to check for
 # unused Parameters, ParameterTypes, and nonexistent references
-result = validate_xtce("my_xtce.xml", level="structure")
+result = validate_xtce("my_xtce.xml", level="structure", raise_on_error=False)
 if result.errors:
     for error in result.errors:
         print(f"Error: {error}")
@@ -96,7 +102,7 @@ else:
     print("Document is valid")
 
 # Comprehensive validation (both schema and structure)
-result = validate_xtce("my_xtce.xml", level="all")
+result = validate_xtce("my_xtce.xml", level="all", raise_on_error=False)
 print(f"Validation completed in {result.validation_time_ms:.1f}ms")
 if result.errors:
     for error in result.errors:

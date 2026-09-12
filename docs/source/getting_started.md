@@ -22,6 +22,8 @@ The typical workflow for parsing packets is to
    how to parse binary data into Python variables.
 
    ```python
+   import space_packet_parser as spp
+
    definition = spp.load_xtce("/path/to/xtce_definition.xml")
    ```
 
@@ -32,8 +34,9 @@ The typical workflow for parsing packets is to
    CCSDS (see [Packet Bytes Generators](user_guide/generators.md)).
 
    ```python
-   for binary_packet in spp.ccsds_generator("/path/to/packet_file.ccsds"):
-       print(binary_packet)
+   with open("/path/to/packet_file.ccsds", "rb") as binary_data:
+       for binary_packet in spp.ccsds_generator(binary_data):
+           print(binary_packet)
    ```
 
 3. **Parse the binary packet data into a dictionary of parsed items.** With a definition (1) and a

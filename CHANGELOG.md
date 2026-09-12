@@ -47,6 +47,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Correct several longstanding inaccuracies in the user documentation, surfaced while
+  reorganizing it. The Getting Started workflow now imports `space_packet_parser` and opens the
+  packet file in binary mode (`ccsds_generator` takes a file-like object, not a path, and raised
+  `OSError` as previously written); `udp_generator` is imported from `space_packet_parser.generators`
+  rather than the package root, which does not export it; the removed
+  `yield_unrecognized_packet_errors` option is no longer referenced; the socket page no longer
+  claims `ccsds_generator` yields parsed packets rather than `CCSDSPacketBytes`; `BoolParameter` is
+  documented as subclassing `int` rather than `bool` (Python forbids subclassing `bool`, so
+  `isinstance(param, bool)` is `False`); and the `validate_xtce` examples pass
+  `raise_on_error=False`, without which the documented `result.errors` inspection was unreachable.
 - Fix `CLAUDE_CONFIG_DIR` and persist the IPv6 localhost workaround for MCP OAuth in the
   devcontainer configuration.
 - `validate_xtce(local_xsd=...)` and `spp validate --local-xsd` again accept absolute paths from
