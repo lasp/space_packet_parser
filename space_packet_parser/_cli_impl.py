@@ -201,7 +201,7 @@ def parse(
         packets = [packet_definition.parse_bytes(binary_data) for binary_data in ccsds_generator]
 
     if packet is not None:
-        if packet > len(packets):
+        if packet >= len(packets):
             console.print(f"Packet index {packet} out of range with only {len(packets)} packets in the file")
             return
         packets = packets[packet]

@@ -46,6 +46,17 @@ def test_cli_main(monkeypatch, capsys):
     assert expected_version in captured.out
 
 
+def test_cli_main_subcommand(monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", ["spp", "describe-packets", "--help"])
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main()
+
+    assert excinfo.value.code == 0
+    captured = capsys.readouterr()
+    assert "Describe the header contents of a packet file" in captured.out
+
+
 def test_describe_xtce_jpss(jpss_test_data_dir):
     runner = CliRunner()
     print()
