@@ -8,6 +8,12 @@ From PyPI:
 pip install space_packet_parser
 ```
 
+To install the optional `spp` CLI as well:
+
+```bash
+pip install "space_packet_parser[cli]"
+```
+
 From Anaconda:
 
 ```bash
