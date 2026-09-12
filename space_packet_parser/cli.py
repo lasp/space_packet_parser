@@ -37,6 +37,19 @@ def main(args=None, prog_name=None, standalone_mode=True) -> None:
         raise SystemExit(1) from exc
 
 
+class _SppCommandProxy:
+    """Compatibility proxy for the published ``spp`` entry-point symbol."""
+
+    def __call__(self, *args, **kwargs):
+        return main(*args, **kwargs)
+
+    def __getattr__(self, name: str):
+        return getattr(_load_cli_module().spp, name)
+
+
+spp = _SppCommandProxy()
+
+
 def __getattr__(name: str):
     """Lazily expose CLI commands while preserving friendly import failures."""
     if name in _CLI_EXPORTS:

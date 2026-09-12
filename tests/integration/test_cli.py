@@ -226,7 +226,7 @@ def test_cli_attribute_error_message_without_cli_extra(monkeypatch):
     _block_cli_dependency_imports(monkeypatch)
 
     with pytest.raises(cli.MissingCliExtraError, match="requires the `cli` extra"):
-        _ = cli.spp
+        cli.spp(standalone_mode=False)
 
 
 def test_cli_main_exits_cleanly_without_cli_extra(monkeypatch, capsys):
