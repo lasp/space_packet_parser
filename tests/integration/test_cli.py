@@ -5,6 +5,7 @@ import importlib.metadata
 import sys
 
 import pytest
+from click import UsageError
 from click.testing import CliRunner
 
 from space_packet_parser import cli
@@ -66,6 +67,11 @@ def test_cli_main_invalid_subcommand(monkeypatch, capsys):
     assert excinfo.value.code == 2
     captured = capsys.readouterr()
     assert "No such command 'not-a-command'" in f"{captured.out}{captured.err}"
+
+
+def test_cli_main_invalid_subcommand_nonstandalone():
+    with pytest.raises(UsageError, match="No such command 'not-a-command'"):
+        cli.main(args=["not-a-command"], prog_name="spp", standalone_mode=False)
 
 
 def test_describe_xtce_jpss(jpss_test_data_dir):
