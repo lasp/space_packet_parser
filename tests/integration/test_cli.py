@@ -8,6 +8,7 @@ import pytest
 from click.testing import CliRunner
 
 from space_packet_parser import cli
+from space_packet_parser.generators import ccsds_generator
 
 
 def _block_cli_dependency_imports(monkeypatch):
@@ -95,6 +96,21 @@ def test_parse_jpss(jpss_test_data_dir):
     result = runner.invoke(cli.parse, [packet_file, definition_file])
     print(result.output)
     assert result.exit_code == 0
+
+
+def test_parse_jpss_out_of_range_packet(jpss_test_data_dir):
+    runner = CliRunner()
+    print()
+    packet_file = jpss_test_data_dir / "J01_G011_LZ_2021-04-09T00-00-00Z_V01.DAT1"
+    definition_file = jpss_test_data_dir / "jpss1_geolocation_xtce_v1.xml"
+
+    with packet_file.open("rb") as binary_data:
+        packet_count = sum(1 for _ in ccsds_generator(binary_data))
+
+    result = runner.invoke(cli.parse, [str(packet_file), str(definition_file), f"--packet={packet_count}"])
+    print(result.output)
+    assert result.exit_code == 0
+    assert f"Packet index {packet_count} out of range" in result.output
 
 
 def test_parse_suda(suda_test_data_dir):
