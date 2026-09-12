@@ -58,6 +58,17 @@ def test_cli_main_subcommand(monkeypatch, capsys):
     assert "Describe the header contents of a packet file" in captured.out
 
 
+def test_cli_main_invalid_subcommand(monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", ["spp", "not-a-command"])
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main()
+
+    assert excinfo.value.code == 2
+    captured = capsys.readouterr()
+    assert "No such command 'not-a-command'" in f"{captured.out}{captured.err}"
+
+
 def test_describe_xtce_jpss(jpss_test_data_dir):
     runner = CliRunner()
     print()
