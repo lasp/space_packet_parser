@@ -34,6 +34,18 @@ def test_cli():
     assert expected_version in result.output
 
 
+def test_cli_main(monkeypatch, capsys):
+    expected_version = importlib.metadata.version("space_packet_parser")
+    monkeypatch.setattr(sys, "argv", ["spp", "--version"])
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main()
+
+    assert excinfo.value.code == 0
+    captured = capsys.readouterr()
+    assert expected_version in captured.out
+
+
 def test_describe_xtce_jpss(jpss_test_data_dir):
     runner = CliRunner()
     print()
