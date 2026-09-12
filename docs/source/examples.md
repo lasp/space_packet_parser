@@ -1,8 +1,11 @@
 # Examples
 
-[Examples folder on Github](https://github.com/lasp/space_packet_parser/tree/main/examples)
+For a minimal, self-contained script you can copy and run immediately, see the
+[Quickstart Example](getting_started.md#quickstart-example) in Getting Started.
 
-Examples on Github include:
+For more involved, real-world usage patterns, see the
+[examples folder on GitHub](https://github.com/lasp/space_packet_parser/tree/main/examples).
+Examples on GitHub include:
 
 - [Parsing to Xarray Datasets](https://github.com/lasp/space_packet_parser/blob/main/examples/parsing_to_xarray_dataset.py)
   demonstrating how to parse packets directly to Xarray Datasets for analysis workflows

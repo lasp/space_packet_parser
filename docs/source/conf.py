@@ -35,6 +35,7 @@ intersphinx_mapping = {
 }
 
 myst_enable_extensions = ["html_image", "dollarmath"]
+myst_heading_anchors = 3
 
 autoapi_type = "python"
 autoapi_dirs = ["../../space_packet_parser"]

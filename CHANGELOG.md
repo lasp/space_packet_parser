@@ -28,8 +28,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `SPP_ALLOWED_SCHEMA_HOSTS` environment variable, and insecure http via `SPP_ALLOW_INSECURE_HTTP`.
   The default allowlist is exported as `DEFAULT_ALLOWED_SCHEMA_HOSTS`.
 
+### Changed
+
+- Reorganize the user documentation. The single `users.md` page is split into a `Getting Started`
+  page (installation, the parsing workflow, and a self-contained runnable quickstart) and a
+  `User Guide` section with one page per topic: packet bytes generators, packet and parameter
+  objects, xarray datasets, variable length fields, XTCE validation, error handling and
+  troubleshooting, socket parsing, and performance tuning. The Sphinx toctree is now defined in
+  MyST Markdown rather than reStructuredText, and pages cross-link to one another.
+  [#192](https://github.com/lasp/space_packet_parser/issues/192)
+
 ### Fixed
 
+- Fix `CLAUDE_CONFIG_DIR` and persist the IPv6 localhost workaround for MCP OAuth in the
+  devcontainer configuration.
 - `validate_xtce(local_xsd=...)` and `spp validate --local-xsd` again accept absolute paths from
   any working directory (a regression that silently rewrote them to a bare filename in the current
   directory). Schema-fetch failures are now reported with accurate error codes
