@@ -1,10 +1,25 @@
 """Unit tests for the Space Packet Parser `spp` CLI"""
 
+import builtins
 import importlib.metadata
+import sys
 
+import pytest
 from click.testing import CliRunner
 
 from space_packet_parser import cli
+
+
+def _block_cli_dependency_imports(monkeypatch):
+    real_import = builtins.__import__
+
+    def blocked_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "click" or name.startswith("click.") or name == "rich" or name.startswith("rich."):
+            raise ModuleNotFoundError(f"No module named '{name}'", name=name)
+        return real_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", blocked_import)
+    sys.modules.pop("space_packet_parser._cli_impl", None)
 
 
 def test_cli():
@@ -150,3 +165,21 @@ def test_validate_xtce_failure(test_data_dir):
     assert "INVALID_XTCE_NAMESPACE" in result.output
     assert "SCHEMA_VALIDATION_ERROR" in result.output
     assert result.exit_code == 1
+
+
+def test_cli_attribute_error_message_without_cli_extra(monkeypatch):
+    _block_cli_dependency_imports(monkeypatch)
+
+    with pytest.raises(cli.MissingCliExtraError, match="requires the `cli` extra"):
+        _ = cli.spp
+
+
+def test_cli_main_exits_cleanly_without_cli_extra(monkeypatch, capsys):
+    _block_cli_dependency_imports(monkeypatch)
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main()
+
+    captured = capsys.readouterr()
+    assert excinfo.value.code == 1
+    assert cli.CLI_EXTRA_INSTALL_MESSAGE in captured.err
