@@ -8,6 +8,12 @@ From PyPI
 pip install space_packet_parser
 ```
 
+To install the optional `spp` CLI as well:
+
+```bash
+pip install "space_packet_parser[cli]"
+```
+
 From Anaconda
 
 ```bash
@@ -583,6 +589,12 @@ result = validate_xtce(
 ```
 
 ### CLI Validation
+
+Install the CLI extra before using `spp`:
+
+```shell
+pip install "space_packet_parser[cli]"
+```
 
 ```shell
 # Validate against the schema referenced in the document (bundled/allowlisted)

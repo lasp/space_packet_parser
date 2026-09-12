@@ -43,9 +43,7 @@ classifiers = [
 ]
 # These are the dependencies used for metadata when building the project
 dependencies = [
-    "lxml>=4.8.0",
-    "click>=8.0",
-    "rich>=13.0"
+    "lxml>=4.8.0"
 ]
 
 [project.urls]
@@ -54,10 +52,16 @@ homepage = "https://github.com/lasp/space_packet_parser"
 documentation = "https://space-packet-parser.readthedocs.io"
 
 [project.scripts]
+# Entry points cannot be conditioned on extras in PEP 621 metadata, so `spp`
+# is always installed and fails with a friendly message if `cli` extras are missing.
 spp = "space_packet_parser.cli:spp"
 
 # These are the project extras used for metadata when building the project
 [project.optional-dependencies]
+cli = [
+    "click>=8.0",
+    "rich>=13.0"
+]
 xarray = [
     "xarray>2024.0.0",
     "numpy>=1.26.0"
@@ -67,12 +71,14 @@ examples = [
     "xarray>2024.0.0"
 ]
 test = [
+    "click>=8.0",
     "pre-commit",
     "pytest",
     "pytest-benchmark",
     "pytest-randomly",
     "pytest-cov",
     "pyyaml",  # needed by check_metadata.py
+    "rich>=13.0",
     "ruff",
     "tomli",  # for support of python<3.11 toml parsing in check_metadata.py
     "xarray",  # for testing extra

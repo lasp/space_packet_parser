@@ -1,10 +1,27 @@
 """Unit tests for the Space Packet Parser `spp` CLI"""
 
+import builtins
 import importlib.metadata
+import sys
 
+import pytest
+from click import UsageError
 from click.testing import CliRunner
 
 from space_packet_parser import cli
+from space_packet_parser.generators import ccsds_generator
+
+
+def _block_cli_dependency_imports(monkeypatch):
+    real_import = builtins.__import__
+
+    def blocked_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "click" or name.startswith("click.") or name == "rich" or name.startswith("rich."):
+            raise ModuleNotFoundError(f"No module named '{name}'", name=name)
+        return real_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", blocked_import)
+    sys.modules.pop("space_packet_parser._cli_impl", None)
 
 
 def test_cli():
@@ -17,6 +34,44 @@ def test_cli():
     # Check that the version output contains the actual package version
     expected_version = importlib.metadata.version("space_packet_parser")
     assert expected_version in result.output
+
+
+def test_cli_main(capsys):
+    expected_version = importlib.metadata.version("space_packet_parser")
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main(args=["--version"], prog_name="spp")
+
+    assert excinfo.value.code == 0
+    captured = capsys.readouterr()
+    assert expected_version in captured.out
+
+
+def test_cli_main_subcommand(monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", ["spp", "describe-packets", "--help"])
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main()
+
+    assert excinfo.value.code == 0
+    captured = capsys.readouterr()
+    assert "Describe the header contents of a packet file" in captured.out
+
+
+def test_cli_main_invalid_subcommand(monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", ["spp", "not-a-command"])
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main()
+
+    assert excinfo.value.code == 2
+    captured = capsys.readouterr()
+    assert "No such command 'not-a-command'" in f"{captured.out}{captured.err}"
+
+
+def test_cli_main_invalid_subcommand_nonstandalone():
+    with pytest.raises(UsageError, match="No such command 'not-a-command'"):
+        cli.main(args=["not-a-command"], prog_name="spp", standalone_mode=False)
 
 
 def test_describe_xtce_jpss(jpss_test_data_dir):
@@ -57,6 +112,21 @@ def test_parse_jpss(jpss_test_data_dir):
     result = runner.invoke(cli.parse, [packet_file, definition_file])
     print(result.output)
     assert result.exit_code == 0
+
+
+def test_parse_jpss_out_of_range_packet(jpss_test_data_dir):
+    runner = CliRunner()
+    print()
+    packet_file = jpss_test_data_dir / "J01_G011_LZ_2021-04-09T00-00-00Z_V01.DAT1"
+    definition_file = jpss_test_data_dir / "jpss1_geolocation_xtce_v1.xml"
+
+    with packet_file.open("rb") as binary_data:
+        packet_count = sum(1 for _ in ccsds_generator(binary_data))
+
+    result = runner.invoke(cli.parse, [str(packet_file), str(definition_file), f"--packet={packet_count}"])
+    print(result.output)
+    assert result.exit_code == 0
+    assert f"Packet index {packet_count} out of range" in result.output
 
 
 def test_parse_suda(suda_test_data_dir):
@@ -150,3 +220,21 @@ def test_validate_xtce_failure(test_data_dir):
     assert "INVALID_XTCE_NAMESPACE" in result.output
     assert "SCHEMA_VALIDATION_ERROR" in result.output
     assert result.exit_code == 1
+
+
+def test_cli_attribute_error_message_without_cli_extra(monkeypatch):
+    _block_cli_dependency_imports(monkeypatch)
+
+    with pytest.raises(cli.MissingCliExtraError, match="requires the `cli` extra"):
+        cli.spp(standalone_mode=False)
+
+
+def test_cli_main_exits_cleanly_without_cli_extra(monkeypatch, capsys):
+    _block_cli_dependency_imports(monkeypatch)
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli.main()
+
+    captured = capsys.readouterr()
+    assert excinfo.value.code == 1
+    assert cli.CLI_EXTRA_INSTALL_MESSAGE in captured.err

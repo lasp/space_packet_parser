@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- _BREAKING_: Move the `click` and `rich` dependencies behind a new `cli` extra. Install
+  `space_packet_parser[cli]` to use the `spp` command-line interface. Because Python package
+  metadata does not support extra-conditional console scripts, the `spp` entry point is still
+  installed but now exits with a friendly install hint when the `cli` extra is missing.
+
 ### Security
 
 - Fix a local file read vulnerability (CWE-73) and a Server-Side Request Forgery vulnerability
