@@ -808,3 +808,137 @@ def test_convert_definition_to_unknown_version_raises(test_data_dir):
     xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
     with pytest.raises(ValueError, match="Unrecognized XTCE version"):
         xdef.xtce_standard_version = "9.9"
+
+
+def test_xtce_1_3_variable_length_strings_parse_and_decode(test_data_dir):
+    """XTCE 1.3 lets a variable-length string derive its buffer length from its own delimiter
+
+    XTCE 1.2 requires a `DynamicValue` or `DiscreteLookupList` to declare the raw buffer length, and
+    treats `LeadingSize`/`TerminationChar` as optional. XTCE 1.3 inverts that: the declared length is
+    optional and one of the delimiters is required. A 1.3 document using the delimiter-only form must
+    parse, and the buffer length must be derived from the delimiter itself.
+    """
+    xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce_1_3_only_features.xml")
+
+    pascal = xdef.parameter_types["PASCAL_STR_Type"].encoding
+    assert pascal.leading_length_size == 8
+    assert pascal.max_size_in_bits == 256
+    # No declared buffer length at all: that is the point of the 1.3 form.
+    assert pascal.dynamic_length_reference is None
+    assert pascal.discrete_lookup_length is None
+    assert pascal.fixed_length is None
+
+    c_string = xdef.parameter_types["C_STR_Type"].encoding
+    assert c_string.termination_character == b"\x00"
+    assert c_string.max_size_in_bits == 256
+
+    # A CCSDS header, then "HELLO" as a Pascal string (5 bytes = 40 bits), then "BYE\0".
+    header = space_packet_parser.generators.ccsds.create_ccsds_packet(data=bytes([40]) + b"HELLO" + b"BYE\x00", apid=11)
+    packet = xdef.parse_bytes(header)
+    assert packet["PASCAL_STR"] == "HELLO"
+    assert packet["C_STR"] == "BYE"
+
+
+def test_xtce_1_3_variable_length_string_round_trips(test_data_dir):
+    """The 1.3 delimiter-only string form survives serialization, including maxSizeInBits"""
+    xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce_1_3_only_features.xml")
+    tree = xdef.to_xml_tree()
+
+    variable_elements = tree.getroot().findall(f".//{{{xtce.XTCE_1_3_XMLNS}}}Variable")
+    assert len(variable_elements) == 2
+    for variable in variable_elements:
+        # maxSizeInBits is required on Variable by the XTCE schema in both versions, so it must be
+        # written back out or the document will not validate.
+        assert variable.attrib["maxSizeInBits"] == "256"
+        # The delimiter is the only child: no DynamicValue was invented on the way out.
+        assert [ElementTree.QName(child).localname for child in variable] in (
+            ["LeadingSize"],
+            ["TerminationChar"],
+        )
+
+
+def test_string_encoding_requires_some_length_specifier():
+    """An encoding with neither a declared buffer length nor a delimiter is still rejected"""
+    with pytest.raises(ValueError, match="Expected one of dynamic length reference"):
+        encodings.StringDataEncoding()
+
+
+def test_serializing_1_2_only_string_as_xtce_1_3_warns(test_data_dir):
+    """Writing a 1.2-style variable-length string as XTCE 1.3 warns that it will not validate
+
+    The 1.2 form (a declared buffer length and no delimiter) is invalid in 1.3, so converting a
+    definition that uses it must not silently produce a broken document.
+    """
+    xdef = definitions.XtcePacketDefinition(
+        container_set=[
+            containers.SequenceContainer(
+                name="CCSDSPacket",
+                entry_list=[
+                    parameters.Parameter(
+                        name="LEN",
+                        parameter_type=space_packet_parser.xtce.parameter_types.IntegerParameterType(
+                            name="LEN_Type", encoding=encodings.IntegerDataEncoding(size_in_bits=8, encoding="unsigned")
+                        ),
+                    ),
+                    parameters.Parameter(
+                        name="MSG",
+                        parameter_type=space_packet_parser.xtce.parameter_types.StringParameterType(
+                            name="MSG_Type",
+                            encoding=encodings.StringDataEncoding(dynamic_length_reference="LEN", max_size_in_bits=256),
+                        ),
+                    ),
+                ],
+            )
+        ],
+        xtce_standard_version="1.3",
+    )
+
+    with pytest.warns(UserWarning, match="XTCE 1.3 requires a LeadingSize or TerminationChar"):
+        xdef.to_xml_tree()
+
+    # The same definition is fine as 1.2.
+    xdef.xtce_standard_version = "1.2"
+    xdef.to_xml_tree()
+
+
+def test_serializing_1_3_only_string_as_xtce_1_2_warns(test_data_dir):
+    """Converting the 1.3 delimiter-only string form back to 1.2 warns for the same reason"""
+    xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce_1_3_only_features.xml")
+    xdef.to_xml_tree()  # fine as 1.3
+
+    xdef.xtce_standard_version = "1.2"
+    with pytest.warns(UserWarning, match="XTCE 1.2 requires a DynamicValue or DiscreteLookupList"):
+        xdef.to_xml_tree()
+
+
+def test_legacy_https_1_2_namespace_is_recognized_and_normalized():
+    """Documents written by space_packet_parser <= 6.2 carry a namespace URI no schema declares
+
+    Those documents must still be recognized as XTCE 1.2, and writing them back out must repair the
+    URI rather than propagating an unvalidatable document.
+    """
+    legacy_uri = "https://www.omg.org/spec/XTCE/20180204"
+    xdef = definitions.XtcePacketDefinition.from_xtce(
+        io.BytesIO(
+            f'<xtce:SpaceSystem xmlns:xtce="{legacy_uri}" name="legacy">'
+            '<xtce:Header date="2024-03-05T13:36:00MST" version="1.0"/>'
+            "<xtce:TelemetryMetaData><xtce:ParameterTypeSet/><xtce:ParameterSet/><xtce:ContainerSet/>"
+            "</xtce:TelemetryMetaData></xtce:SpaceSystem>".encode()
+        )
+    )
+    assert xdef.xtce_ns_uri == legacy_uri
+    assert xdef.xtce_standard_version == "1.2"
+
+    with pytest.warns(UserWarning, match="is not the targetNamespace of any XTCE schema"):
+        root = xdef.to_xml_tree().getroot()
+
+    assert ElementTree.QName(root).namespace == xtce.XTCE_1_2_XMLNS
+    assert root.attrib[f"{{{xtce.XSI_XMLNS}}}schemaLocation"] == f"{xtce.XTCE_1_2_XMLNS} {xtce.XTCE_1_2_XSD_URL}"
+
+
+def test_convert_definition_with_inconsistent_namespace_mapping_raises():
+    """Retargeting a definition whose namespace mapping does not bind its XTCE URI is an error"""
+    xdef = definitions.XtcePacketDefinition()
+    xdef.xtce_ns_uri = "http://www.fake-test.org/space/xtce"  # not bound by xdef.ns
+    with pytest.raises(ValueError, match="is not bound by its namespace mapping"):
+        xdef.xtce_standard_version = "1.3"

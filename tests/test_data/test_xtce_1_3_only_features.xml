@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+    An XTCE document that uses constructs which exist ONLY in XTCE 1.3, so that it is invalid
+    against the XTCE 1.2 schema for reasons other than its namespace:
+
+      * SpaceSystem/@systemType, added in 1.3.
+      * A variable-length string whose raw buffer length is not declared, and is instead derived
+        from a LeadingSize element. 1.2 requires a DynamicValue or DiscreteLookupList here.
+      * The same, derived from a TerminationChar element.
+-->
+<xtce:SpaceSystem name="Xtce13OnlyFeatures" systemType="asset"
+                  xmlns:xtce="http://www.omg.org/spec/XTCE/20250214"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.omg.org/spec/XTCE/20250214
+                                      https://www.omg.org/spec/XTCE/20250214/SpaceSystem.xsd">
+    <xtce:Header date="2026-09-13T00:00:00Z" version="1.0" validationStatus="Working"/>
+    <xtce:TelemetryMetaData>
+        <xtce:ParameterTypeSet>
+            <xtce:IntegerParameterType name="VERSION_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="3" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="TYPE_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="1" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="SEC_HDR_FLG_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="1" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="PKT_APID_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="11" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="SEQ_FLGS_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="2" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="SRC_SEQ_CTR_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="14" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="PKT_LEN_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <!-- Pascal string: the leading size tag delimits the buffer. No DynamicValue, which
+                 the XTCE 1.2 schema requires and the 1.3 schema does not. -->
+            <xtce:StringParameterType name="PASCAL_STR_Type">
+                <xtce:UnitSet/>
+                <xtce:StringDataEncoding encoding="UTF-8">
+                    <xtce:Variable maxSizeInBits="256">
+                        <xtce:LeadingSize sizeInBitsOfSizeTag="8"/>
+                    </xtce:Variable>
+                </xtce:StringDataEncoding>
+            </xtce:StringParameterType>
+            <!-- C string: the termination character delimits the buffer. Likewise 1.3-only. -->
+            <xtce:StringParameterType name="C_STR_Type">
+                <xtce:UnitSet/>
+                <xtce:StringDataEncoding encoding="UTF-8">
+                    <xtce:Variable maxSizeInBits="256">
+                        <xtce:TerminationChar>00</xtce:TerminationChar>
+                    </xtce:Variable>
+                </xtce:StringDataEncoding>
+            </xtce:StringParameterType>
+        </xtce:ParameterTypeSet>
+        <xtce:ParameterSet>
+            <xtce:Parameter name="VERSION" parameterTypeRef="VERSION_Type"/>
+            <xtce:Parameter name="TYPE" parameterTypeRef="TYPE_Type"/>
+            <xtce:Parameter name="SEC_HDR_FLG" parameterTypeRef="SEC_HDR_FLG_Type"/>
+            <xtce:Parameter name="PKT_APID" parameterTypeRef="PKT_APID_Type"/>
+            <xtce:Parameter name="SEQ_FLGS" parameterTypeRef="SEQ_FLGS_Type"/>
+            <xtce:Parameter name="SRC_SEQ_CTR" parameterTypeRef="SRC_SEQ_CTR_Type"/>
+            <xtce:Parameter name="PKT_LEN" parameterTypeRef="PKT_LEN_Type"/>
+            <xtce:Parameter name="PASCAL_STR" parameterTypeRef="PASCAL_STR_Type"/>
+            <xtce:Parameter name="C_STR" parameterTypeRef="C_STR_Type"/>
+        </xtce:ParameterSet>
+        <xtce:ContainerSet>
+            <xtce:SequenceContainer name="CCSDSPacket">
+                <xtce:EntryList>
+                    <xtce:ParameterRefEntry parameterRef="VERSION"/>
+                    <xtce:ParameterRefEntry parameterRef="TYPE"/>
+                    <xtce:ParameterRefEntry parameterRef="SEC_HDR_FLG"/>
+                    <xtce:ParameterRefEntry parameterRef="PKT_APID"/>
+                    <xtce:ParameterRefEntry parameterRef="SEQ_FLGS"/>
+                    <xtce:ParameterRefEntry parameterRef="SRC_SEQ_CTR"/>
+                    <xtce:ParameterRefEntry parameterRef="PKT_LEN"/>
+                    <xtce:ParameterRefEntry parameterRef="PASCAL_STR"/>
+                    <xtce:ParameterRefEntry parameterRef="C_STR"/>
+                </xtce:EntryList>
+            </xtce:SequenceContainer>
+        </xtce:ContainerSet>
+    </xtce:TelemetryMetaData>
+</xtce:SpaceSystem>

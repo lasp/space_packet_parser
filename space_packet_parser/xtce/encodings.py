@@ -165,10 +165,19 @@ class StringDataEncoding(DataEncoding):
         length_linear_adjuster: Callable | None = None,
         termination_character: str | None = None,
         leading_length_size: int | None = None,
+        max_size_in_bits: int | None = None,
     ):
         f"""Constructor
         Only one of termination_character, fixed_length, or leading_length_size should be set. Setting more than one
         is nonsensical.
+
+        The raw string buffer ("memory allocation") length may be given by exactly one of
+        fixed_raw_length, dynamic_length_reference, or discrete_lookup_length. XTCE 1.3 additionally
+        allows a variable-length string to give no buffer length at all, in which case the buffer is
+        delimited by the string content itself: by leading_length_size (buffer is the size tag plus
+        the length it reports) or by termination_character (buffer runs up to and including the
+        terminator). XTCE 1.2 requires an explicit buffer length, so a definition using the derived
+        form serializes to a valid 1.3 document but not to a valid 1.2 one.
 
         Parameters
         ----------
@@ -198,6 +207,10 @@ class StringDataEncoding(DataEncoding):
         length_linear_adjuster : Optional[Callable]
             Function that linearly adjusts a size. e.g. if the size reference parameter gives a length in bytes, the
             linear adjuster should multiply by 8 to give the size in bits.
+        max_size_in_bits : Optional[int]
+            Upper bound on the size of the raw string buffer, in bits. Comes from the `maxSizeInBits` attribute of a
+            Variable element, which the XTCE schema requires (in both 1.2 and 1.3). It bounds how far parsing will
+            scan for a termination character when the buffer length is derived rather than declared.
         """
         if encoding not in self._supported_encodings:
             raise ValueError(
@@ -224,10 +237,18 @@ class StringDataEncoding(DataEncoding):
 
         # Check to see if we are specifying raw length in more than one way
         buffer_length_specs = sum(bool(x) for x in (dynamic_length_reference, discrete_lookup_length, fixed_raw_length))
-        if buffer_length_specs != 1:
+        if buffer_length_specs > 1:
             raise ValueError(
-                "Expected exactly one of dynamic length reference, discrete length lookup, "
+                "Expected at most one of dynamic length reference, discrete length lookup, "
                 "or fixed length for specifying the raw length of a string."
+            )
+        if buffer_length_specs == 0 and not (leading_length_size or termination_character):
+            # With no declared buffer length and nothing delimiting the string content either, there
+            # is no way to know how many bits to read.
+            raise ValueError(
+                "Expected one of dynamic length reference, discrete length lookup, or fixed length for specifying "
+                "the raw length of a string, or (XTCE 1.3 only) a leading size or termination character from which "
+                "to derive it."
             )
 
         if length_linear_adjuster and not dynamic_length_reference:
@@ -257,6 +278,7 @@ class StringDataEncoding(DataEncoding):
         self.use_calibrated_value = use_calibrated_value
         self.discrete_lookup_length = discrete_lookup_length
         self.length_linear_adjuster = length_linear_adjuster
+        self.max_size_in_bits = max_size_in_bits
 
     def _calculate_size(self, packet: spp.SpacePacket) -> int:
         """Calculate the size of the raw string buffer field
@@ -293,9 +315,53 @@ class StringDataEncoding(DataEncoding):
                 # NOTE: This is assumed to be an integer value, represented as a float. If the linear adjuster
                 # returns a non integer, it will be truncated and probably lead to a parsing error later on.
                 buflen_bits = self.length_linear_adjuster(buflen_bits)
+        elif self.leading_length_size:
+            # XTCE 1.3 permits a Variable string with no declared buffer length, in which case the
+            # leading size tag delimits the buffer: the tag itself, plus the content length it reports.
+            buflen_bits = self.leading_length_size + self._peek_leading_size(packet)
+        elif self.termination_character is not None:
+            # As above, but delimited by a terminator: the buffer runs up to and including it.
+            buflen_bits = self._scan_to_termination_character(packet)
         else:
             raise ValueError("No raw length specifier found when decoding a string.")
         return int(buflen_bits)
+
+    def _peek_leading_size(self, packet: spp.SpacePacket) -> int:
+        """Read the leading size tag without consuming it, returning the string content length in bits.
+
+        The caller goes on to read the whole buffer (tag included) from the same position, so the
+        packet's parsing position must be left exactly where it was found.
+        """
+        start_pos = packet._parsing_pos
+        try:
+            return packet._read_from_binary_as_int(self.leading_length_size)
+        finally:
+            packet._parsing_pos = start_pos
+
+    def _scan_to_termination_character(self, packet: spp.SpacePacket) -> int:
+        """Return the buffer length in bits, scanning ahead for the termination character.
+
+        The buffer runs from the current parsing position up to and including the terminator. The
+        packet is not consumed; the caller reads the buffer afterwards.
+        """
+        if packet._parsing_pos % 8 != 0:
+            raise ValueError(
+                "A string whose raw buffer length is delimited by a termination character must begin on a byte "
+                f"boundary, but parsing is at bit {packet._parsing_pos}. Declare the buffer length explicitly with "
+                "a SizeInBits or DynamicValue element instead."
+            )
+        remaining = packet.binary_data[packet._parsing_pos // 8 :]
+        # maxSizeInBits bounds the scan, per its definition in the XTCE schema. Without it, scan to
+        # the end of the packet.
+        search_bytes = remaining if self.max_size_in_bits is None else remaining[: self.max_size_in_bits // 8]
+        index = search_bytes.find(self.termination_character)
+        if index == -1:
+            raise ValueError(
+                f"Reached the end of the string buffer without finding the termination character "
+                f"{self.termination_character}. Searched {len(search_bytes)} bytes"
+                + (f" (bounded by maxSizeInBits={self.max_size_in_bits})." if self.max_size_in_bits else ".")
+            )
+        return (index + len(self.termination_character)) * 8
 
     def _get_raw_buffer(self, packet: spp.SpacePacket) -> bytes:
         """Get the raw string buffer as bytes. This will include any leading size or termination characters.
@@ -438,6 +504,9 @@ class StringDataEncoding(DataEncoding):
             init_kwargs["fixed_raw_length"] = fixed_raw_length
         elif (size_element := element.find("Variable")) is not None:
             # This is a variable length raw string
+            if (max_size_in_bits := size_element.attrib.get("maxSizeInBits")) is not None:
+                init_kwargs["max_size_in_bits"] = int(max_size_in_bits)
+
             if (dynamic_value_element := size_element.find("DynamicValue")) is not None:
                 # Raw string length is specified by reference to another parameter
                 parameter_instance_ref_element = dynamic_value_element.find("ParameterInstanceRef")
@@ -456,8 +525,9 @@ class StringDataEncoding(DataEncoding):
                     comparisons.DiscreteLookup.from_xml(el) for el in discrete_lookup_list_element.iterfind("*")
                 ]
                 init_kwargs["discrete_lookup_length"] = discrete_lookup_list
-            else:
-                raise ValueError("Variable element must contain either DynamicValue or DiscreteLookupList.")
+            # A Variable element with neither is legal in XTCE 1.3, where the buffer length is derived
+            # from the LeadingSize or TerminationChar read below. The constructor rejects the case
+            # where neither of those is present either.
         else:
             raise ValueError("StringDataEncoding must contain either a SizeInBits or Variable element.")
 
@@ -487,7 +557,20 @@ class StringDataEncoding(DataEncoding):
         if self.fixed_length:
             size_element = elmaker.SizeInBits(elmaker.Fixed(elmaker.FixedValue(str(self.fixed_length))))
         else:
-            size_element = elmaker.Variable()
+            # maxSizeInBits is required on Variable by the XTCE schema, in both 1.2 and 1.3, but there
+            # is no way to infer an upper bound for a length that is only known at parse time. Warn
+            # rather than guess, so the caller knows why their document will not validate.
+            if self.max_size_in_bits is None:
+                warnings.warn(
+                    "Serializing a variable-length string encoding with no max_size_in_bits. The XTCE schema "
+                    "requires a maxSizeInBits attribute on a Variable element, so the resulting document will not "
+                    "pass schema validation. Set max_size_in_bits on the StringDataEncoding to fix this.",
+                    UserWarning,
+                )
+                size_element = elmaker.Variable()
+            else:
+                size_element = elmaker.Variable(maxSizeInBits=str(self.max_size_in_bits))
+
             if self.dynamic_length_reference:
                 dynamic_value_element = elmaker.DynamicValue(
                     elmaker.ParameterInstanceRef(
@@ -512,9 +595,8 @@ class StringDataEncoding(DataEncoding):
                 size_element.append(
                     elmaker.DiscreteLookupList(*(dl.to_xml(elmaker=elmaker) for dl in self.discrete_lookup_length))
                 )
-
-            else:
-                raise ValueError("Variable element must contain either DynamicValue or DiscreteLookupList.")
+            # Emitting neither is the XTCE 1.3 derived form, where the LeadingSize or TerminationChar
+            # appended below delimits the buffer. The constructor guarantees one of them is set.
 
         if self.leading_length_size:
             size_element.append(elmaker.LeadingSize(sizeInBitsOfSizeTag=str(self.leading_length_size)))

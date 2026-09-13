@@ -26,11 +26,18 @@ per the XSD it is a free-form version descriptor for the document itself. Only t
 identifies the standard version.
 ```
 
-The parts of the schema this library reads — parameter types, data encodings, calibrators,
-comparisons and sequence containers — are unchanged between XTCE 1.2 and 1.3, so the same
-definition parses identically under either version. The library also accepts documents that use a
+Nearly all of the schema this library reads — parameter types, data encodings, calibrators,
+comparisons and sequence containers — is unchanged between XTCE 1.2 and 1.3, so the same definition
+generally parses identically under either version. The library also accepts documents that use a
 non-standard namespace URI (many mission definitions do); those simply have no detectable XTCE
 version.
+
+```{note}
+Documents written by `space_packet_parser` 6.2 and earlier declare an `https` XTCE 1.2 namespace URI,
+which is not the `targetNamespace` of any XTCE schema and so cannot be schema validated. Such
+documents are still read as XTCE 1.2, and are rewritten with the canonical `http` URI (with a
+warning) when serialized — so loading one and writing it back out repairs it.
+```
 
 Schema validation requires correct namespacing declarations at the top of your XTCE document, e.g.
 
@@ -69,12 +76,24 @@ Serialized documents name the schema for their own version in `xsi:schemaLocatio
 validate without you having to supply an XSD. Definitions built from scratch default to XTCE 1.2,
 so that upgrading the library does not silently change the version of documents you write.
 
-```{note}
-Converting between versions rewrites namespaces, not element content. One thing to check by hand
-is the `units` attribute of a time parameter type's `Encoding` element, which is drawn from a
-version-specific enumeration: XTCE 1.2 spells it `picoSeconds`, while 1.3 spells it `picoseconds`
-and adds values such as `milliseconds`, `minutes` and `hours`.
-```
+### Version-specific content
+
+Converting between versions rewrites namespaces, not element content, and a few constructs differ
+between 1.2 and 1.3:
+
+- **Variable-length strings.** XTCE 1.2 requires a `DynamicValue` or `DiscreteLookupList` to declare
+  the raw buffer length, and treats `LeadingSize`/`TerminationChar` as optional. XTCE 1.3 inverts
+  this: the declared length is optional and exactly one of `LeadingSize`/`TerminationChar` is
+  required, so a Pascal string or C string can be described without a separate length parameter.
+  Both forms are parsed. Serializing a definition whose string encodings are not valid in the target
+  version emits a `UserWarning` naming the parameter types involved.
+- **Time units.** The `units` attribute of a time parameter type's `Encoding` element is drawn from a
+  version-specific enumeration: XTCE 1.2 spells it `picoSeconds`, while 1.3 spells it `picoseconds`
+  and adds values such as `milliseconds`, `minutes` and `hours`. Unit strings are passed through
+  verbatim, so a unit that is valid in one version is written unchanged into the other.
+- **Name references.** XTCE 1.3 tightened the characters allowed in a parameter or container
+  reference, excluding space and tab (and adding array subscript syntax). A definition whose
+  parameter names contain spaces is valid XTCE 1.2 but not valid XTCE 1.3.
 
 ## Schema Resolution and Network Security
 

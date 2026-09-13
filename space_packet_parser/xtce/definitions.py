@@ -17,6 +17,7 @@ from space_packet_parser.exceptions import InvalidParameterTypeError, Unrecogniz
 from space_packet_parser.generators import ccsds
 from space_packet_parser.xtce import (
     DEFAULT_XTCE_VERSION,
+    LEGACY_XTCE_XMLNS_ALIASES,
     STANDARD_XTCE_NS_PREFIX,
     STANDARD_XTCE_NSMAP,
     SUPPORTED_XTCE_VERSIONS,
@@ -25,6 +26,7 @@ from space_packet_parser.xtce import (
     XTCE_VERSION_BY_XMLNS,
     XTCE_XSD_URL_BY_VERSION,
     containers,
+    encodings,
     parameter_types,
     parameters,
     xtce_nsmap,
@@ -168,38 +170,49 @@ class XtcePacketDefinition(common.AttrComparable):
 
     @property
     def xtce_standard_version(self) -> str | None:
-        f"""Version of the XTCE standard this definition uses, as implied by its namespace URI.
+        """Version of the XTCE standard this definition uses, as implied by its namespace URI.
 
         Returns
         -------
         : Optional[str]
-            One of {SUPPORTED_XTCE_VERSIONS}, or None if this definition's XTCE namespace URI is not a
-            standard OMG XTCE namespace (including the case of a definition with no namespace at all).
-            A None value does not prevent parsing or serialization; it only means the XTCE version cannot
-            be determined from the document.
+            One of the supported XTCE versions ("1.2" or "1.3"), or None if this definition's XTCE
+            namespace URI is not a standard OMG XTCE namespace (including the case of a definition
+            with no namespace at all). A None value does not prevent parsing or serialization; it
+            only means the XTCE version cannot be determined from the document.
         """
         return xtce_version_from_uri(self.xtce_ns_uri)
 
     @xtce_standard_version.setter
     def xtce_standard_version(self, version: str) -> None:
-        f"""Retarget this definition at a different version of the XTCE standard.
+        """Retarget this definition at a different version of the XTCE standard.
 
         This rebinds the XTCE namespace URI (and the entry for it in the namespace mapping) to the
-        standard URI for the requested version, which is what converts a document from one XTCE version
-        to another. Because the telemetry elements this library reads and writes are identical across
-        XTCE 1.2 and 1.3, no other change is required.
+        standard URI for the requested version, which is what converts a document from one XTCE
+        version to another. Almost all of the telemetry content this library reads and writes is
+        identical across XTCE 1.2 and 1.3, so usually nothing else needs to change.
 
         Notes
         -----
-        Element content is not translated. In particular, the `units` attribute of a time parameter
-        type's `Encoding` element is drawn from a version-specific enumeration (XTCE 1.2 spells it
-        `picoSeconds`, 1.3 spells it `picoseconds` and adds several values), so a definition that uses
-        such a unit may need it updated by hand after switching versions.
+        Element content is not translated, and a few constructs are version-specific:
+
+        - Variable-length strings. XTCE 1.2 requires a declared raw buffer length and XTCE 1.3
+          requires a `LeadingSize` or `TerminationChar`. Serializing warns if the definition holds a
+          string encoding the target version's schema would reject.
+        - Time units. The `units` attribute of a time parameter type's `Encoding` element comes from
+          a version-specific enumeration: XTCE 1.2 spells it `picoSeconds`, 1.3 spells it
+          `picoseconds` and adds values such as `milliseconds`, `minutes` and `hours`.
+        - Name references. XTCE 1.3 tightened the allowed characters, excluding space and tab, so a
+          definition whose parameter names contain spaces is valid 1.2 but not valid 1.3.
 
         Parameters
         ----------
         version : str
-            XTCE version string, one of {SUPPORTED_XTCE_VERSIONS}.
+            XTCE version string, one of the supported XTCE versions ("1.2" or "1.3").
+
+        Raises
+        ------
+        ValueError
+            If the version is unrecognized, or if this definition has no XTCE namespace to rebind.
         """
         uri = xtce_uri_for_version(version)
         if self.xtce_ns_uri is None:
@@ -207,8 +220,62 @@ class XtcePacketDefinition(common.AttrComparable):
                 "Cannot set xtce_standard_version on a definition with no XTCE namespace. Assign a namespace "
                 "mapping to `ns` (and a matching `xtce_ns_prefix`) first."
             )
+        if self.xtce_ns_uri not in self.ns.values():
+            raise ValueError(
+                f"Cannot set xtce_standard_version: this definition's XTCE namespace URI {self.xtce_ns_uri!r} is "
+                f"not bound by its namespace mapping {self.ns!r}, so there is nothing to rebind. Assign a "
+                f"consistent `ns` and `xtce_ns_uri` first."
+            )
         self.ns = {prefix: (uri if u == self.xtce_ns_uri else u) for prefix, u in self.ns.items()}
         self.xtce_ns_uri = uri
+
+    def _warn_on_version_incompatible_encodings(self) -> None:
+        """Warn about content that is valid in one XTCE version but not in the version being written.
+
+        Retargeting a definition at another XTCE version rewrites namespaces, not element content, so
+        a definition can hold a construct the target version's schema rejects. Variable-length strings
+        are the case that actually bites: XTCE 1.2 requires a declared buffer length (`DynamicValue` or
+        `DiscreteLookupList`) and treats `LeadingSize`/`TerminationChar` as optional, while XTCE 1.3
+        makes the buffer length optional and requires exactly one of `LeadingSize`/`TerminationChar`.
+        Either direction can therefore produce a document that fails schema validation.
+        """
+        version = self.xtce_standard_version
+        if version not in ("1.2", "1.3"):
+            return
+
+        offenders = []
+        for parameter_type_name, parameter_type in self.parameter_types.items():
+            encoding = getattr(parameter_type, "encoding", None)
+            if not isinstance(encoding, encodings.StringDataEncoding) or encoding.fixed_length:
+                continue
+            has_declared_length = bool(encoding.dynamic_length_reference or encoding.discrete_lookup_length)
+            has_delimiter = bool(encoding.leading_length_size or encoding.termination_character)
+            if version == "1.3" and not has_delimiter:
+                offenders.append(parameter_type_name)
+            elif version == "1.2" and not has_declared_length:
+                offenders.append(parameter_type_name)
+
+        if not offenders:
+            return
+
+        if version == "1.3":
+            detail = (
+                "XTCE 1.3 requires a LeadingSize or TerminationChar element on a variable-length string, "
+                "which these parameter types do not have. Set leading_length_size or termination_character "
+                "on their encodings"
+            )
+        else:
+            detail = (
+                "XTCE 1.2 requires a DynamicValue or DiscreteLookupList element to declare the raw buffer "
+                "length of a variable-length string, which these parameter types do not have. Set "
+                "dynamic_length_reference or discrete_lookup_length on their encodings"
+            )
+        warnings.warn(
+            f"Serializing as XTCE {version}, but {len(offenders)} parameter type(s) use a variable-length string "
+            f"encoding that XTCE {version} does not allow: {sorted(offenders)}. {detail}, or serialize as the other "
+            f"version. The document will be written as-is and will fail schema validation.",
+            UserWarning,
+        )
 
     def write_xml(self, filepath: str | Path) -> None:
         """Write out the XTCE XML for this packet definition object to the specified path
@@ -233,25 +300,41 @@ class XtcePacketDefinition(common.AttrComparable):
                 "Ensure mydef.xtce_ns_prefix is a key in mydef.ns for valid XTCE output.",
                 UserWarning,
             )
+        self._warn_on_version_incompatible_encodings()
+
         nsmap = dict(self.ns)
         space_system_attrib = {}
+        xtce_ns_uri = self.xtce_ns_uri
+
+        # Documents written by space_packet_parser <= 6.2 carry an https XTCE 1.2 namespace URI that
+        # no schema declares. Repair it on the way out rather than writing it back out unusable.
+        if xtce_ns_uri in LEGACY_XTCE_XMLNS_ALIASES:
+            canonical_uri = xtce_uri_for_version(LEGACY_XTCE_XMLNS_ALIASES[xtce_ns_uri])
+            warnings.warn(
+                f"XTCE namespace URI {xtce_ns_uri!r} is not the targetNamespace of any XTCE schema; documents "
+                f"using it cannot be schema validated. It was written by space_packet_parser 6.2 and earlier. "
+                f"Writing the canonical URI {canonical_uri!r} instead.",
+                UserWarning,
+            )
+            nsmap = {prefix: (canonical_uri if u == xtce_ns_uri else u) for prefix, u in nsmap.items()}
+            xtce_ns_uri = canonical_uri
 
         # Point the document at the XSD for the XTCE version implied by its namespace URI, so that
         # a serialized definition is schema-validatable without the reader having to supply an XSD.
         # We only do this for a recognized standard XTCE namespace; for a custom namespace URI we
         # have no schema to name and leave the attribute off.
-        xsd_url = XTCE_XSD_URL_BY_VERSION.get(XTCE_VERSION_BY_XMLNS.get(self.xtce_ns_uri, ""))
+        xsd_url = XTCE_XSD_URL_BY_VERSION.get(XTCE_VERSION_BY_XMLNS.get(xtce_ns_uri, ""))
         if xsd_url is not None:
             # xsi must be bound in the document in order to write an xsi:schemaLocation attribute.
             if XSI_XMLNS not in nsmap.values():
                 nsmap[XSI_NS_PREFIX] = XSI_XMLNS
-            space_system_attrib[f"{{{XSI_XMLNS}}}schemaLocation"] = f"{self.xtce_ns_uri} {xsd_url}"
+            space_system_attrib[f"{{{XSI_XMLNS}}}schemaLocation"] = f"{xtce_ns_uri} {xsd_url}"
 
         # ElementMaker element factory with predefined namespace and namespace mapping
         # The XTCE namespace actually defines the XTCE elements
         # The ns mapping just affects the serialization of XTCE elements
         # Both can be None, resulting in no namespace awareness
-        elmaker = ElementMaker(namespace=self.xtce_ns_uri, nsmap=nsmap)
+        elmaker = ElementMaker(namespace=xtce_ns_uri, nsmap=nsmap)
 
         if self.space_system_name:
             space_system_attrib["name"] = self.space_system_name
