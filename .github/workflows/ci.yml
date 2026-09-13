@@ -54,7 +54,10 @@ jobs:
 
       - name: Testing
         run: |
-          pytest --color=yes --cov --cov-report=xml
+          # --benchmark-disable: pytest-benchmark calls sys.settrace(None) around the
+          # timed loop, which silently drops coverage for the rest of each benchmark
+          # test body. Benchmarked functions still run once; we don't consume CI timings.
+          pytest --color=yes --cov --cov-report=xml --benchmark-disable
 
       - uses: codecov/codecov-action@v7
         with:

@@ -9,6 +9,16 @@ coverage:
         threshold: 5% # Allow 5% drop without failing
         if_no_uploads: error # Fail if no coverage data
         only_pulls: false # Check coverage on all commits
+      # Test code that never executes is a defect: a skipped test, a dead
+      # fixture, or an unexercised error branch. Hold tests/ to a much higher
+      # bar than the library itself.
+      tests:
+        target: 99% # Very high threshold for test files
+        threshold: 1% # Allow only a 1% drop
+        paths:
+          - "tests/**"
+        if_no_uploads: error
+        only_pulls: false
     patch:
       default:
         target: 85% # Lower threshold for new code

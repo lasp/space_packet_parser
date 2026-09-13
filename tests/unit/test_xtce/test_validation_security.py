@@ -37,10 +37,13 @@ def _mock_urlopen_returning(content: bytes):
     class _Resp:
         headers: dict = {}
 
+        def __init__(self):
+            # Delegate to BytesIO so read() and read(size) behave exactly like a real response
+            # body without this helper carrying a branch of its own.
+            self._body = io.BytesIO(content)
+
         def read(self, *args):
-            if args:
-                return content[: args[0]]
-            return content
+            return self._body.read(*args)
 
         def __enter__(self):
             return self
