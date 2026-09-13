@@ -4,13 +4,17 @@ from pathlib import Path
 
 from space_packet_parser.common import SpacePacket
 from space_packet_parser.generators import ccsds_generator
+from space_packet_parser.xtce import DEFAULT_XTCE_VERSION, LATEST_XTCE_VERSION, SUPPORTED_XTCE_VERSIONS
 from space_packet_parser.xtce.definitions import XtcePacketDefinition
 from space_packet_parser.xtce.validation import DEFAULT_ALLOWED_SCHEMA_HOSTS, validate_xtce
 
 __all__ = [
     "ccsds_generator",
     "DEFAULT_ALLOWED_SCHEMA_HOSTS",
+    "DEFAULT_XTCE_VERSION",
+    "LATEST_XTCE_VERSION",
     "SpacePacket",
+    "SUPPORTED_XTCE_VERSIONS",
     "XtcePacketDefinition",
     "load_xtce",
     "validate_xtce",

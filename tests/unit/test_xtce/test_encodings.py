@@ -3,6 +3,7 @@
 import lxml.etree as ElementTree
 import pytest
 
+import space_packet_parser as spp
 from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, encodings
 
 
@@ -51,6 +52,7 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
                 dynamic_length_reference="SizeFromThisParameter",
                 length_linear_adjuster=object(),
                 termination_character="58",
+                max_size_in_bits=32,
             ),
         ),
         (
@@ -66,7 +68,10 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
 </xtce:StringDataEncoding>
 """,
             encodings.StringDataEncoding(
-                dynamic_length_reference="SizeFromThisParameter", length_linear_adjuster=object(), leading_length_size=3
+                dynamic_length_reference="SizeFromThisParameter",
+                length_linear_adjuster=object(),
+                leading_length_size=3,
+                max_size_in_bits=32,
             ),
         ),
         (
@@ -91,6 +96,7 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
                     comparisons.DiscreteLookup([comparisons.Comparison("2", "P1")], 25),
                 ],
                 termination_character="58",
+                max_size_in_bits=32,
             ),
         ),
         (
@@ -115,6 +121,7 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
                     comparisons.DiscreteLookup([comparisons.Comparison("2", "P1")], 25),
                 ],
                 leading_length_size=3,
+                max_size_in_bits=32,
             ),
         ),
         (
@@ -163,7 +170,7 @@ def test_string_data_encoding(elmaker, xtce_parser, xml_string: str, expectation
             (),
             {},
             ValueError,
-            "Expected exactly one of dynamic length reference, discrete length lookup, or fixed length",
+            "Expected one of dynamic length reference, discrete length lookup, or fixed length",
         ),
         (
             (),
@@ -548,3 +555,139 @@ def test_binary_data_encoding_validation(args, kwargs, expected_error, expected_
     """Test initialization errors for BinaryDataEncoding"""
     with pytest.raises(expected_error, match=expected_error_msg):
         encodings.BinaryDataEncoding(*args, **kwargs)
+
+
+def test_variable_string_without_max_size_warns_on_serialization(elmaker):
+    """maxSizeInBits is required on Variable by both XTCE schemas, so its absence is surfaced
+
+    An encoding read from a document always has it (the schema requires it), but one built in
+    Python may not, in which case there is no way to infer an upper bound. Warn rather than guess.
+    """
+    encoding = encodings.StringDataEncoding(dynamic_length_reference="LEN")
+    with pytest.warns(UserWarning, match="no max_size_in_bits"):
+        element = encoding.to_xml(elmaker=elmaker)
+    assert "maxSizeInBits" not in element.find(f"{{{XTCE_1_2_XMLNS}}}Variable").attrib
+
+    encoding = encodings.StringDataEncoding(dynamic_length_reference="LEN", max_size_in_bits=128)
+    element = encoding.to_xml(elmaker=elmaker)
+    assert element.find(f"{{{XTCE_1_2_XMLNS}}}Variable").attrib["maxSizeInBits"] == "128"
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "raw_data", "expected"),
+    [
+        # XTCE 1.3 Pascal string: buffer is the 8-bit size tag plus the 24 bits it reports.
+        ({"leading_length_size": 8, "max_size_in_bits": 256}, bytes([24]) + b"ABCtrailing", "ABC"),
+        # XTCE 1.3 C string: buffer runs up to and including the terminator.
+        ({"termination_character": "00", "max_size_in_bits": 256}, b"ABC\x00trailing", "ABC"),
+    ],
+)
+def test_string_encoding_derives_buffer_length_from_delimiter(kwargs, raw_data, expected):
+    """With no declared buffer length (XTCE 1.3), the delimiter determines how much to read"""
+    encoding = encodings.StringDataEncoding(**kwargs)
+    packet = spp.SpacePacket(binary_data=raw_data)
+    assert encoding.parse_value(packet) == expected
+    # Only the delimited buffer is consumed; the trailing bytes are left for the next field.
+    assert packet._parsing_pos == (len(expected) + 1) * 8
+
+
+def test_string_encoding_termination_scan_respects_max_size_in_bits():
+    """The scan for a termination character is bounded by maxSizeInBits, per the XTCE schema"""
+    encoding = encodings.StringDataEncoding(termination_character="00", max_size_in_bits=16)
+    packet = spp.SpacePacket(binary_data=b"ABCDEF\x00")
+    with pytest.raises(ValueError, match="without finding the termination character"):
+        encoding.parse_value(packet)
+
+
+def test_termination_scan_does_not_match_across_character_boundaries():
+    """A multi-byte terminator must be found on a character boundary, not anywhere in the bytes
+
+    b"\\x41\\x00\\x00\\x42" in UTF-16BE is the two characters U+4100 U+0042 and contains no
+    terminator, even though the byte sequence b"\\x00\\x00" appears inside it.
+    """
+    encoding = encodings.StringDataEncoding(encoding="UTF-16BE", termination_character="0000", max_size_in_bits=256)
+    packet = spp.SpacePacket(binary_data=b"\x41\x00\x00\x42" + "!".encode("utf-16-be") + b"\x00\x00")
+    assert encoding.parse_value(packet) == "䄀B!"
+
+
+@pytest.mark.parametrize(
+    ("encoding_name", "termination_character", "raw_data", "expected"),
+    [
+        # UTF-8 is variable-width, so a multi-byte terminator (U+00A5) sits at a byte offset that is
+        # not a multiple of its own length. Scanning by a fixed stride would step straight over it.
+        ("UTF-8", "c2a5", b"A\xc2\xa5XX", "A"),
+        ("UTF-8", "00", b"AB\x00XX", "AB"),
+        # Fixed-width encodings are scanned a character at a time.
+        ("UTF-16BE", "0000", "AB".encode("utf-16-be") + b"\x00\x00", "AB"),
+        ("UTF-16LE", "0000", "AB".encode("utf-16-le") + b"\x00\x00", "AB"),
+        ("UTF-32BE", "00000000", "AB".encode("utf-32-be") + b"\x00" * 4, "AB"),
+    ],
+)
+def test_termination_character_search_handles_variable_width_encodings(
+    encoding_name, termination_character, raw_data, expected
+):
+    """Finding the terminator must work for variable-width encodings as well as fixed-width ones"""
+    encoding = encodings.StringDataEncoding(
+        encoding=encoding_name,
+        termination_character=termination_character,
+        fixed_raw_length=len(raw_data) * 8,
+    )
+    assert encoding.parse_value(spp.SpacePacket(binary_data=raw_data)) == expected
+
+
+@pytest.mark.parametrize(
+    ("attributes", "expected"),
+    [
+        # XTCE 1.3 defaults slope to 1 and intercept to 0, so an omitted attribute leaves the value
+        # untouched rather than collapsing the adjustment to a constant.
+        ({"intercept": "8"}, 24.0),
+        ({"slope": "8"}, 128.0),
+        ({}, 16.0),
+        ({"slope": "8", "intercept": "25"}, 153.0),
+    ],
+)
+def test_linear_adjustment_attribute_defaults(xtce_parser, attributes, expected):
+    """An omitted LinearAdjustment slope means 1, not 0"""
+    rendered = " ".join(f'{name}="{value}"' for name, value in attributes.items())
+    element = ElementTree.fromstring(
+        f'<xtce:DynamicValue xmlns:xtce="{XTCE_1_2_XMLNS}">'
+        f'<xtce:ParameterInstanceRef parameterRef="P1"/>'
+        f"<xtce:LinearAdjustment {rendered}/>"
+        f"</xtce:DynamicValue>",
+        parser=xtce_parser,
+    )
+    adjuster = encodings.DataEncoding._get_linear_adjuster(element)
+    assert adjuster(16) == expected
+
+
+@pytest.mark.parametrize(
+    ("encoding_name", "char_width"),
+    [
+        ("UTF-16", 2),
+        ("UTF-16LE", 2),
+        ("UTF-16BE", 2),
+        ("UTF-32", 4),
+        ("UTF-32LE", 4),
+        ("UTF-32BE", 4),
+    ],
+)
+def test_fixed_width_encodings_do_not_match_a_straddling_terminator(encoding_name, char_width):
+    """Every fixed-width encoding is scanned a character at a time, not byte by byte
+
+    Covers the bare `UTF-16`/`UTF-32` spellings as well as the explicitly endian ones, so that a
+    missing entry in the character-width table is caught rather than silently falling back to a
+    byte-by-byte scan. The expected widths are written out here rather than read from the table
+    under test.
+    """
+    encoding = encodings.StringDataEncoding(
+        encoding=encoding_name,
+        byte_order="mostSignificantByteFirst",
+        termination_character="00" * char_width,
+        max_size_in_bits=256,
+    )
+    # Two non-null characters whose bytes nonetheless contain a run of nulls as long as the
+    # terminator, straddling the boundary between them. There is no terminator in this buffer.
+    straddling = (b"\x41" + b"\x00" * (char_width - 1)) + (b"\x00" * (char_width - 1) + b"\x42")
+    assert encoding._find_termination_character(straddling) == -1
+    # The same buffer with a real, character-aligned terminator appended.
+    assert encoding._find_termination_character(straddling + b"\x00" * char_width) == len(straddling)

@@ -181,11 +181,6 @@ class SequenceContainer(common.Parseable, common.XmlObject):
         else:
             restrictions = em.ComparisonList(*(rc.to_xml(elmaker=elmaker) for rc in self.restriction_criteria))
 
-        if self.base_container_name:
-            sc.append(
-                em.BaseContainer(em.RestrictionCriteria(restrictions), containerRef=self.base_container_name),
-            )
-
         entry_list = em.EntryList()
         for entry in self.entry_list:
             if isinstance(entry, parameters.Parameter):
@@ -197,6 +192,13 @@ class SequenceContainer(common.Parseable, common.XmlObject):
             entry_list.append(entry_element)
 
         sc.append(entry_list)
+
+        # BaseContainer follows EntryList in the SequenceContainerType sequence, per the XTCE XSD
+        # (identically in 1.2 and 1.3), so it must be appended after the entry list.
+        if self.base_container_name:
+            sc.append(
+                em.BaseContainer(em.RestrictionCriteria(restrictions), containerRef=self.base_container_name),
+            )
 
         return sc
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
+<!-- 
 
 Style Notes, used throughout the schema:
 
@@ -7,26 +7,26 @@ Style Notes, used throughout the schema:
 	- Type names end with the word "Type".
 	- Attribute names begin with a lowercase letter.
 	- Usually, when the UML class diagram references classes, W3C Elements are used, and whenever
-	  the UML references simple types (strings, ints), W3C Attributes are used.  In general,
-	  attributes are preferred over elements because they're easier to deal with
+	  the UML references simple types (strings, ints), W3C Attributes are used.  In general, 
+	  attributes are preferred over elements because they're easier to deal with 
 	  in SAX and DOM, but whenever the Element/Attribute may one day carry metadata,
-	  elements should be used.  One exception, is enumerated classes, because enumerations
+	  elements should be used.  One exception, is enumerated classes, because enumerations 
 	  may be defined for attributes but not for elements.
 	- Bias toward self-describing names over short, bandwidth conserving ones.
 	- Use mixed case in names rather than underscores to combine multiple words (camelCase).
-	- A documentation annotation is included in every element and type definition.  Annotations for a type are
+	- A documentation annotation is included in every element and type definition.  Annotations for a type are 
         included with the type definition, use of the type is annotated in the element definition.
-	- Hints on units (for values with units) are provided in the names of attributes and
-	  elements (e.g. "dataRateInBPS" is preferred over "dataRate" OR "frameLengthInBits" is
+	- Hints on units (for values with units) are provided in the names of attributes and 
+	  elements (e.g. "dataRateInBPS" is preferred over "dataRate" OR "frameLengthInBits" is 
 	  preferred over "frameLength").
 	- Major elements or any elements used multiple times are first defined with a complexType definition
 	- All collections are put inside either a "List" element or a "Set" Element depending on whether the collection
 	  is ordered or unordered.
 	- Simplicity in the XML files is favored over simplicity in the Schema
-	- Whenever an additional validity check must be performed that is not describable in the schema language,
+	- Whenever an additional validity check must be performed that is not describable in the schema language, 
 	  an appinfo annotation describes that validity check.
 -->
-<schema xmlns:xtce="http://www.omg.org/spec/XTCE/20180204" xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.omg.org/spec/XTCE/20180204" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.2">
+<schema xmlns:xtce="http://www.omg.org/spec/XTCE/20250214" xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.omg.org/spec/XTCE/20250214" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.3">
 	<import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/03/xml.xsd"/>
 	<annotation>
 		<documentation xml:lang="en">This XML Schema Definition (XSD) defines syntax with concrete semantics for describing space or remote device telemetry and commanding in a platform and program independent manner.</documentation>
@@ -93,7 +93,7 @@ Style Notes, used throughout the schema:
 			<annotation>
 				<documentation xml:lang="en">This key ensures a unique argument type name at the system level.</documentation>
 			</annotation>
-			<selector xpath="xtce:CommandMetaData/xtce:ArgumentTypeSet/*|xtce:CommandMetaData/xtce:ParameterTypeSet/*"/>
+			<selector xpath="xtce:CommandMetaData/xtce:ArgumentTypeSet/*"/>
 			<field xpath="@name"/>
 		</key>
 		<key name="blockMetaCommandNameKey">
@@ -133,6 +133,16 @@ Style Notes, used throughout the schema:
 						</annotation>
 					</element>
 				</sequence>
+				<attribute name="systemType" type="xtce:SystemTypeType" default="unknown">
+					<annotation>
+						<documentation xml:lang="en">Type of the space system.  Represents what from a space enterprise this SpaceSystem element represents.  See the individual enumeration descriptions in SystemTypeType.</documentation>
+					</annotation>
+				</attribute>
+				<attribute name="assetType" type="string" default="unknown">
+					<annotation>
+						<documentation xml:lang="en">Broad name for the type of asset, such as spacecraft, aircraft, device, or any other that makes sense for the system.</documentation>
+					</annotation>
+				</attribute>
 				<attribute name="operationalStatus" type="token" use="optional">
 					<annotation>
 						<documentation xml:lang="en">Optional descriptive attribute for document owner convenience.</documentation>
@@ -142,6 +152,33 @@ Style Notes, used throughout the schema:
 			</extension>
 		</complexContent>
 	</complexType>
+	<simpleType name="SystemTypeType">
+		<annotation>
+			<documentation xml:lang="en">The type attribute represents what from a space enterprise this SpaceSystem element represents.  See the enumerations for specific details.  Unknown is the default for backwards compatibility, though it should be avoided in newer documents.</documentation>
+		</annotation>
+		<restriction base="token">
+			<enumeration value="asset">
+				<annotation>
+					<documentation xml:lang="en">An form of asset monitored and/or controlled by the enterprise that may participate in a larger group and may be subdivided into internal components.</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="assetGroup">
+				<annotation>
+					<documentation xml:lang="en">A grouping of assets that make sense to aggregate together in the data model, such as a fleet or constellation.</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="assetComponent">
+				<annotation>
+					<documentation xml:lang="en">Internal systems of assets permit managing the structure of XTCE documents by decomposing the internal structures of interest to tighten the scope of an individual SpaceSystem element.  The XInclude facility is also available at the SpaceSystem element for managing the size of XTCE documents, in addition to the internal organization.</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="unknown">
+				<annotation>
+					<documentation xml:lang="en">The default enumeration is meant for backwards compatibility with earlier versions and should be avoided.</documentation>
+				</annotation>
+			</enumeration>
+		</restriction>
+	</simpleType>
 	<complexType name="CommandMetaDataType" mixed="false">
 		<annotation>
 			<documentation xml:lang="en">Describe command related metadata. Items defined in this area may refer to items defined in TelemetryMetaData.  See TelemetryMetaDataType.</documentation>
@@ -225,7 +262,7 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:ArgumentSequenceEntryType">
-				<attribute name="argumentRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="argumentRef" type="xtce:ExpandedNameReferenceNoPathType" use="required"/>
 			</extension>
 		</complexContent>
 	</complexType>
@@ -245,7 +282,7 @@ Style Notes, used throughout the schema:
 						</annotation>
 					</element>
 				</sequence>
-				<attribute name="argumentRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="argumentRef" type="xtce:ExpandedNameReferenceNoPathType" use="required"/>
 				<attribute name="lastEntryForThisArrayInstance" type="boolean" default="false"/>
 			</extension>
 		</complexContent>
@@ -266,7 +303,7 @@ Style Notes, used throughout the schema:
 						</annotation>
 					</element>
 				</sequence>
-				<attribute name="parameterRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="parameterRef" type="xtce:ExpandedNameReferenceWithPathType" use="required"/>
 				<attribute name="lastEntryForThisArrayInstance" type="boolean" default="false"/>
 			</extension>
 		</complexContent>
@@ -277,7 +314,7 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:ArgumentSequenceEntryType">
-				<attribute name="containerRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="containerRef" type="xtce:NameReferenceWithPathType" use="required"/>
 			</extension>
 		</complexContent>
 	</complexType>
@@ -287,7 +324,7 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:ArgumentSequenceEntryType">
-				<attribute name="containerRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="containerRef" type="xtce:NameReferenceWithPathType" use="required"/>
 				<attribute name="order" type="xtce:PositiveLongType"/>
 				<attribute name="sizeInBits" type="xtce:PositiveLongType" use="required"/>
 			</extension>
@@ -336,7 +373,7 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:ArgumentSequenceEntryType">
-				<attribute name="parameterRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="parameterRef" type="xtce:ExpandedNameReferenceWithPathType" use="required"/>
 			</extension>
 		</complexContent>
 	</complexType>
@@ -346,7 +383,7 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:ArgumentSequenceEntryType">
-				<attribute name="parameterRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="parameterRef" type="xtce:ExpandedNameReferenceWithPathType" use="required"/>
 				<attribute name="order" type="xtce:PositiveLongType"/>
 				<attribute name="sizeInBits" type="xtce:PositiveLongType" use="required"/>
 			</extension>
@@ -358,7 +395,7 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:ArgumentSequenceEntryType">
-				<attribute name="streamRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="streamRef" type="xtce:NameReferenceWithPathType" use="required"/>
 				<attribute name="order" type="xtce:PositiveLongType"/>
 				<attribute name="sizeInBits" type="xtce:PositiveLongType" use="required"/>
 			</extension>
@@ -366,7 +403,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="ArrayParameterRefEntryType">
 		<annotation>
-			<documentation>Describe an entry that is an array parameter. Specify the dimension sizes if you subsetting the array (the number of dimensions shall match the number defined in the parameter’s type definition), otherwise the ones in the ParameterType are assumed.  See SequenceEntryType.</documentation>
+			<documentation>Describe an entry that is an array parameter. Specify the dimension sizes if you subsetting the array (the number of dimensions shall match the number defined in the parameter's type definition), otherwise the ones in the ParameterType are assumed.  See SequenceEntryType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:SequenceEntryType">
@@ -380,7 +417,7 @@ Style Notes, used throughout the schema:
 						</annotation>
 					</element>
 				</sequence>
-				<attribute name="parameterRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="parameterRef" type="xtce:ExpandedNameReferenceWithPathType" use="required"/>
 			</extension>
 		</complexContent>
 	</complexType>
@@ -413,7 +450,7 @@ Style Notes, used throughout the schema:
 				</annotation>
 			</element>
 		</sequence>
-		<attribute name="containerRef" type="xtce:NameReferenceType" use="required">
+		<attribute name="containerRef" type="xtce:NameReferenceWithPathType" use="required">
 			<annotation>
 				<documentation xml:lang="en">Reference to the container that this container extends.</documentation>
 			</annotation>
@@ -432,7 +469,7 @@ Style Notes, used throughout the schema:
 					</annotation>
 					<element name="DefaultRateInStream" type="xtce:RateInStreamType" minOccurs="0"/>
 					<element name="RateInStreamSet" type="xtce:RateInStreamSetType" minOccurs="0"/>
-					<element name="BinaryEncoding" type="xtce:BinaryDataEncodingType" minOccurs="0">
+					<element name="BinaryEncoding" type="xtce:ContainerBinaryDataEncodingType" minOccurs="0">
 						<annotation>
 							<documentation xml:lang="en">May be used to indicate error detection and correction, change byte order,  provide the size (when it can't be derived), or perform some custom processing.</documentation>
 						</annotation>
@@ -450,7 +487,7 @@ Style Notes, used throughout the schema:
 		<annotation>
 			<documentation xml:lang="en">Holds a reference to a container</documentation>
 		</annotation>
-		<attribute name="containerRef" type="xtce:NameReferenceType" use="required">
+		<attribute name="containerRef" type="xtce:NameReferenceWithPathType" use="required">
 			<annotation>
 				<documentation xml:lang="en">name of container</documentation>
 			</annotation>
@@ -462,7 +499,7 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:SequenceEntryType">
-				<attribute name="containerRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="containerRef" type="xtce:NameReferenceWithPathType" use="required"/>
 			</extension>
 		</complexContent>
 	</complexType>
@@ -472,7 +509,7 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:SequenceEntryType">
-				<attribute name="containerRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="containerRef" type="xtce:NameReferenceWithPathType" use="required"/>
 				<attribute name="order" type="xtce:PositiveLongType"/>
 				<attribute name="sizeInBits" type="xtce:PositiveLongType" use="required"/>
 			</extension>
@@ -547,7 +584,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="LocationInContainerInBitsType">
 		<annotation>
-			<documentation xml:lang="en">Describe the absolute or relative bit location of an entry in a container.  The "referenceLocation" attribute specifies the starting bit anchor.  If no referenceLocation value is given, the entry is assumed to begin at the first bit position after the previous entry.  Each container starts at bit 0, thus "containerStart" is an offset from 0.  Negative container start bits are before the container and are implementation dependent – these should be flagged as likely errors.  "containerEnd" is given as a positive offset from the end of the container, thus a container end of 0 is exactly at the end of the container.  Negative container end addresses are after the container and are implementation dependent – these should be flagged as likely errors.  Positive "previouEntry" values are offsets from the previous entry – zero (0) is the default which means it follows contiguously from the last occupied bit of the previous entry.  A value of one means it is offset 1-bit from the previous entry, and a value of negative 1 (-1) means it overlaps the previous entry by one bit, and so forth. The "nextEntry" attribute value is proposed for deprecation and should be avoided.  See SequenceEntryType.</documentation>
+			<documentation xml:lang="en">Describe the absolute or relative bit location of an entry in a container.  The "referenceLocation" attribute specifies the starting bit anchor.  If no referenceLocation value is given, the entry is assumed to begin at the first bit position after the previous entry.  Each container starts at bit 0, thus "containerStart" is an offset from 0.  Negative container start bits are before the container and are implementation dependent - these should be flagged as likely errors.  "containerEnd" is given as a positive offset from the end of the container, thus a container end of 0 is exactly at the end of the container.  Negative container end addresses are after the container and are implementation dependent - these should be flagged as likely errors.  Positive "previouEntry" values are offsets from the previous entry - zero (0) is the default which means it follows contiguously from the last occupied bit of the previous entry.  A value of one means it is offset 1-bit from the previous entry, and a value of negative 1 (-1) means it overlaps the previous entry by one bit, and so forth. The "nextEntry" attribute value is proposed for deprecation and should be avoided.  See SequenceEntryType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:IntegerValueType">
@@ -573,7 +610,7 @@ Style Notes, used throughout the schema:
 		<annotation>
 			<documentation xml:lang="en">Holds a reference to a message</documentation>
 		</annotation>
-		<attribute name="messageRef" type="xtce:NameReferenceType" use="required">
+		<attribute name="messageRef" type="xtce:NameReferenceWithPathType" use="required">
 			<annotation>
 				<documentation xml:lang="en">name of message</documentation>
 			</annotation>
@@ -585,7 +622,7 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:SequenceEntryType">
-				<attribute name="parameterRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="parameterRef" type="xtce:ExpandedNameReferenceWithPathType" use="required"/>
 			</extension>
 		</complexContent>
 	</complexType>
@@ -595,7 +632,7 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:SequenceEntryType">
-				<attribute name="parameterRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="parameterRef" type="xtce:ExpandedNameReferenceWithPathType" use="required"/>
 				<attribute name="order" type="xtce:PositiveLongType"/>
 				<attribute name="sizeInBits" type="xtce:PositiveLongType" use="required"/>
 			</extension>
@@ -603,7 +640,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="SequenceContainerType">
 		<annotation>
-			<documentation xml:lang="en">Describes the binary layout/packing of data and also related properties, including an entry list of parameters, parameter segments, array parameters, stream segments, containers, and container segments.  Sequence containers may extend other sequence containers (see BaseContainerType).   The parent container’s entries are placed before the entries in the child container forming one entry list.  An inheritance chain may be formed using this mechanism, but only one entry list is being created.  Sequence containers may be marked as "abstract", when this occurs an instance of it cannot itself be created.  The idle pattern is part of any unallocated space in the container.  See EntryListType.</documentation>
+			<documentation xml:lang="en">Describes the binary layout/packing of data and also related properties, including an entry list of parameters, parameter segments, array parameters, stream segments, containers, and container segments.  Sequence containers may extend other sequence containers (see BaseContainerType).   The parent container's entries are placed before the entries in the child container forming one entry list.  An inheritance chain may be formed using this mechanism, but only one entry list is being created.  Sequence containers may be marked as "abstract", when this occurs an instance of it cannot itself be created.  The idle pattern is part of any unallocated space in the container.  See EntryListType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:ContainerType">
@@ -624,7 +661,7 @@ Style Notes, used throughout the schema:
 						<documentation xml:lang="en">Abstract container definitions that are not instantiated, rather only used as bases to inherit from to create specialized container definitions.</documentation>
 					</annotation>
 				</attribute>
-				<attribute name="idlePattern" type="xtce:FixedIntegerValueType" default="0x0">
+				<attribute name="idlePattern" type="xtce:FixedIntegerValueType" default="0">
 					<annotation>
 						<documentation xml:lang="en">The idle pattern is part of any unallocated space in the container.  This is uncommon.</documentation>
 					</annotation>
@@ -634,7 +671,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="SequenceEntryType" abstract="true">
 		<annotation>
-			<documentation xml:lang="en">Defines an abstract schema type used to create other entry types. Describe an entry’s location in the container (See LocationInContainerInBitsType). The location may be fixed or dynamic, absolute or relative. Entries may be included depending on the value of a condition (See IncludeConditionType), and entries may also repeat (see RepeatEntryType). The entry’s IncludeCondition resolves to true, it is fully-resolved when its size is computable after RepeatEntry has been accounted for and then offset by LocationInContainer. See EntryListType, IncludeConditionType, RepeatEntryType and LocationInContainerInBitsType.</documentation>
+			<documentation xml:lang="en">Defines an abstract schema type used to create other entry types. Describe an entry's location in the container (See LocationInContainerInBitsType). The location may be fixed or dynamic, absolute or relative. Entries may be included depending on the value of a condition (See IncludeConditionType), and entries may also repeat (see RepeatEntryType). The entry's IncludeCondition resolves to true, it is fully-resolved when its size is computable after RepeatEntry has been accounted for and then offset by LocationInContainer. See EntryListType, IncludeConditionType, RepeatEntryType and LocationInContainerInBitsType.</documentation>
 		</annotation>
 		<sequence>
 			<element name="LocationInContainerInBits" type="xtce:LocationInContainerInBitsType" minOccurs="0">
@@ -720,7 +757,7 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:SequenceEntryType">
-				<attribute name="streamRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="streamRef" type="xtce:NameReferenceWithPathType" use="required"/>
 				<attribute name="order" type="xtce:PositiveLongType"/>
 				<attribute name="sizeInBits" type="xtce:PositiveLongType" use="required"/>
 			</extension>
@@ -780,7 +817,7 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:RateInStreamType">
-				<attribute name="streamRef" type="xtce:NameReferenceType" use="required">
+				<attribute name="streamRef" type="xtce:NameReferenceWithPathType" use="required">
 					<annotation>
 						<documentation xml:lang="en">Reference to a named stream for which this rate specification applies.</documentation>
 					</annotation>
@@ -837,7 +874,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="AggregateParameterType">
 		<annotation>
-			<documentation xml:lang="en">Describe a complex data type analogous to a C-struct. Each field of the data type is called a Member.  Each Member is part of the MemberList which forms the list of items to be placed under this data type’s name.  The MemberList defines a data block and block’s size is defined by the DataEncodings of each Member’s type reference. The data members are ordered and contiguous in the MemberList element (packed).  Each member may be addressed by the dot syntax similar to C such as P.voltage if P is the referring parameter and voltage is of a member of P’s aggregate type.  See MemberType, MemberListType, DataEncodingType, NameReferenceType, and AggregateDataType.</documentation>
+			<documentation xml:lang="en">Describe a complex data type analogous to a C-struct. Each field of the data type is called a Member.  Each Member is part of the MemberList which forms the list of items to be placed under this data type's name.  The MemberList defines a data block and block's size is defined by the DataEncodings of each Member's type reference. The data members are ordered and contiguous in the MemberList element (packed).  Each member may be addressed by the dot syntax similar to C such as P.voltage if P is the referring parameter and voltage is of a member of P's aggregate type.  See MemberType, MemberListType, DataEncodingType, NameReferenceType, and AggregateDataType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:AggregateDataType"/>
@@ -861,7 +898,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="BinaryParameterType">
 		<annotation>
-			<documentation xml:lang="en">Describe a binary engineering/calibrated parameter type (sometimes called a “blob type”). It may be of fixed or variable length, and has an optional encoding and decoding algorithm that may be defined to transform the data between space and ground.  See BinaryDataEncodingType, IntegerValueType, InputAlgorithmType and BinaryDataType.</documentation>
+			<documentation xml:lang="en">Describe a binary engineering/calibrated parameter type (sometimes called a "blob type"). It may be of fixed or variable length, and has an optional encoding and decoding algorithm that may be defined to transform the data between space and ground.  See BinaryDataEncodingType, IntegerValueType, InputAlgorithmType and BinaryDataType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:BinaryDataType">
@@ -871,7 +908,7 @@ Style Notes, used throughout the schema:
 							<documentation xml:lang="en">Optionally describe an alarm monitoring specification that is effective whenever a contextual alarm definition does not take precedence.</documentation>
 						</annotation>
 					</element>
-					<element name="BinaryContextAlarmList" type="xtce:BinaryContextAlarmListType" minOccurs="0">
+					<element name="ContextAlarmList" type="xtce:BinaryContextAlarmListType" minOccurs="0">
 						<annotation>
 							<documentation xml:lang="en">Optionally describe one or more alarm monitoring specifications that are effective whenever a contextual match definition evaluates to true.  The first match that evaluates to true takes precedence.</documentation>
 						</annotation>
@@ -882,7 +919,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="BooleanParameterType">
 		<annotation>
-			<documentation xml:lang="en">Describe a boolean parameter type which has two values only: ‘True’ (1) or ‘False’ (0). The values one and zero may be mapped to a specific string using the attributes oneStringValue and zeroStringValue.  This type is a simplified form of the EnumeratedDataType.  See IntegerDataEncoding and BooleanDataType.</documentation>
+			<documentation xml:lang="en">Describe a boolean parameter type which has two values only: "True" (1) or "False" (0). The values one and zero may be mapped to a specific string using the attributes oneStringValue and zeroStringValue.  This type is a simplified form of the EnumeratedDataType.  See IntegerDataEncoding and BooleanDataType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:BooleanDataType">
@@ -929,7 +966,7 @@ Style Notes, used throughout the schema:
 		<sequence>
 			<element name="ContextAlarm" type="xtce:EnumerationContextAlarmType" maxOccurs="unbounded">
 				<annotation>
-					<documentation xml:lang="en">Describe the alarm matching context criteria and the alarm definition itself.</documentation>
+					<documentation xml:lang="en">A Context contains a new alarm definition and a context match.  The match takes precedence over any default alarm when the first in the overall list evaluates to true.  It is also possible the alarm definition is empty, in which case the context means no alarm defined when the match is true.</documentation>
 				</annotation>
 			</element>
 		</sequence>
@@ -988,7 +1025,7 @@ Style Notes, used throughout the schema:
 		<sequence>
 			<element name="ContextAlarm" type="xtce:NumericContextAlarmType" maxOccurs="unbounded">
 				<annotation>
-					<documentation xml:lang="en">A contextual alarm definition for the parameter that uses this type that is valid when a test against the value of one or more other parameters evaluates to true.</documentation>
+					<documentation xml:lang="en">A Context contains a new alarm definition and a context match.  The match takes precedence over any default alarm when the first in the overall list evaluates to true.  It is also possible the alarm definition is empty, in which case the context means no alarm defined when the match is true.</documentation>
 				</annotation>
 			</element>
 		</sequence>
@@ -1048,7 +1085,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="ParameterType">
 		<annotation>
-			<documentation xml:lang="en">Describe the properties of a telemetry parameter, including its data type (parameter type). The bulk of properties associated with a telemetry parameter are in its parameter type. The initial value specified here, overrides the initial value in the parameter type. A parameter may be local, in which case its parameter type would have no data encodings. Ideally such a definition would also set data source in parameter properties to ‘local’ but the syntax does not enforce this. See BaseDataType, BaseTimeDataType, and NameReferenceType.</documentation>
+			<documentation xml:lang="en">Describe the properties of a telemetry parameter, including its data type (parameter type). The bulk of properties associated with a telemetry parameter are in its parameter type. The initial value specified here, overrides the initial value in the parameter type. A parameter may be local, in which case its parameter type would have no data encodings. Ideally such a definition would also set data source in parameter properties to "local" but the syntax does not enforce this. See BaseDataType, BaseTimeDataType, and NameReferenceType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:NameDescriptionType">
@@ -1059,14 +1096,14 @@ Style Notes, used throughout the schema:
 						</annotation>
 					</element>
 				</sequence>
-				<attribute name="parameterTypeRef" type="xtce:NameReferenceType" use="required">
+				<attribute name="parameterTypeRef" type="xtce:NameReferenceWithPathType" use="required">
 					<annotation>
 						<documentation xml:lang="en">Specify the reference to the parameter type from the ParameterTypeSet area using the path reference rules, either local to this SpaceSystem, relative, or absolute.</documentation>
 					</annotation>
 				</attribute>
 				<attribute name="initialValue" type="string" use="optional">
 					<annotation>
-						<documentation xml:lang="en">Specify as: integer data type using xs:integer, float data type using xs:double, string data type using xs:string, boolean data type using xs:boolean, binary data type using xs:hexBinary, enum data type using label name, relative time data type using xs:duration, absolute time data type using xs:dateTime.  Values must not exceed the characteristics for the data type or this is a validation error. Takes precedence over an initial value given in the data type. Values are calibrated unless there is an option to override it.</documentation>
+						<documentation xml:lang="en">Specify as: integer data type using xs:integer, float data type using xs:double, string data type using xs:string, boolean data type using xs:boolean, binary data type using xs:hexBinary, enum data type using label name, relative time data type using xs:duration, absolute time data type using xs:dateTime, arrays using JSON syntax (e.g. '[1, 3, 4]', and aggregates using JSON syntax '{"member1": 1, "member2": "foo"}' ). Values must not exceed the characteristics for the data type or this is a validation error. Takes precedence over an initial value given in the data type. Values are calibrated unless there is an option to override it.</documentation>
 						<appinfo>The value type must match the Parameter type</appinfo>
 					</annotation>
 				</attribute>
@@ -1132,9 +1169,9 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="ParameterRefType">
 		<annotation>
-			<documentation xml:lang="en">A reference to a Parameter. Uses Unix ‘like’ naming across the SpaceSystem Tree (e.g., SimpleSat/Bus/EPDS/BatteryOne/Voltage).  To reference an individual member of an array use the zero based bracket notation commonly used in languages like C, C++, and Java.</documentation>
+			<documentation xml:lang="en">A reference to a Parameter. Uses Unix-like naming across the SpaceSystem Tree (e.g., SimpleSat/Bus/EPDS/BatteryOne/Voltage).  To reference an individual member of an array use the zero based bracket notation commonly used in languages like C, C++, and Java.</documentation>
 		</annotation>
-		<attribute name="parameterRef" type="xtce:NameReferenceType" use="required"/>
+		<attribute name="parameterRef" type="xtce:ExpandedNameReferenceWithPathType" use="required"/>
 	</complexType>
 	<complexType name="PhysicalAddressSetType">
 		<annotation>
@@ -1249,9 +1286,9 @@ Style Notes, used throughout the schema:
 						<documentation xml:lang="en">The offset is used to supply a relative time offset from the time association and to this parameter</documentation>
 					</annotation>
 				</attribute>
-				<attribute name="unit" type="xtce:TimeAssociationUnitType" default="si_second">
+				<attribute name="unit" type="xtce:TimeAssociationUnitType" default="seconds">
 					<annotation>
-						<documentation xml:lang="en">Specify the units the offset is in, the default is si_second.</documentation>
+						<documentation xml:lang="en">Specify the units the offset is in, the default is seconds.</documentation>
 					</annotation>
 				</attribute>
 			</extension>
@@ -1295,7 +1332,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="AggregateArgumentType">
 		<annotation>
-			<documentation xml:lang="en">Describe a complex data type analogous to a C-struct. Each field of the data type is called a Member.  Each Member is part of the MemberList which forms the list of items to be placed under this data type’s name.  The MemberList defines a data block and block’s size is defined by the DataEncodings of each Member’s type reference. The data members are ordered and contiguous in the MemberList element (packed).  Each member may be addressed by the dot syntax similar to C such as P.voltage if P is the referring parameter and voltage is of a member of P’s aggregate type.  See MemberType, MemberListType, DataEncodingType, NameReferenceType, and AggregateDataType.</documentation>
+			<documentation xml:lang="en">Describe a complex data type analogous to a C-struct. Each field of the data type is called a Member.  Each Member is part of the MemberList which forms the list of items to be placed under this data type's name.  The MemberList defines a data block and block's size is defined by the DataEncodings of each Member's type reference. The data members are ordered and contiguous in the MemberList element (packed).  Each member may be addressed by the dot syntax similar to C such as P.voltage if P is the referring parameter and voltage is of a member of P's aggregate type.  See MemberType, MemberListType, DataEncodingType, NameReferenceType, and AggregateDataType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:AggregateDataType"/>
@@ -1303,7 +1340,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="ArgumentAssignmentListType">
 		<annotation>
-			<documentation xml:lang="en">Argument Assignments specialize a MetaCommand or BlockMetaCommand when inheriting from another MetaCommand.  General argument values can be restricted to specific values to further specialize the MetaCommand.  Use it to ‘narrow’ a MetaCommand from its base MetaCommand by specifying values of arguments for example, a power command may be narrowed to a power on’ command by assigning the value of an argument to ‘on’.  See ArgumentAssignmentType and MetaCommandType.</documentation>
+			<documentation xml:lang="en">Argument Assignments specialize a MetaCommand or BlockMetaCommand when inheriting from another MetaCommand.  General argument values can be restricted to specific values to further specialize the MetaCommand.  Use it to "narrow" a MetaCommand from its base MetaCommand by specifying values of arguments for example, a power command may be narrowed to a "power on" command by assigning the value of an argument to "on".  See ArgumentAssignmentType and MetaCommandType.</documentation>
 		</annotation>
 		<sequence>
 			<element name="ArgumentAssignment" type="xtce:ArgumentAssignmentType" maxOccurs="unbounded">
@@ -1317,7 +1354,7 @@ Style Notes, used throughout the schema:
 		<annotation>
 			<documentation xml:lang="en">Describe an assignment of an argument with a calibrated/engineering value. See ArgumentAssignmentListType.</documentation>
 		</annotation>
-		<attribute name="argumentName" type="xtce:NameReferenceType" use="required">
+		<attribute name="argumentName" type="xtce:ExpandedNameReferenceNoPathType" use="required">
 			<annotation>
 				<documentation xml:lang="en">The named argument from the base MetaCommand to assign/restrict with a value.</documentation>
 			</annotation>
@@ -1360,7 +1397,7 @@ Style Notes, used throughout the schema:
 			<documentation xml:lang="en">Identical to ComparisonCheckType but supports argument instance references.</documentation>
 		</annotation>
 		<complexContent>
-			<extension base="xtce:BaseConditionsType">
+			<extension base="xtce:BaseComparisonType">
 				<sequence>
 					<choice>
 						<element name="ParameterInstanceRef" type="xtce:ParameterInstanceRefType">
@@ -1439,6 +1476,11 @@ Style Notes, used throughout the schema:
 				</annotation>
 			</element>
 		</sequence>
+		<attribute name="defaultValue" type="long" use="required">
+			<annotation>
+				<documentation xml:lang="en">In the event that no lookup condition evaluates to true, then this value will be used.</documentation>
+			</annotation>
+		</attribute>
 	</complexType>
 	<complexType name="ArgumentDynamicValueType">
 		<annotation>
@@ -1495,13 +1537,18 @@ Style Notes, used throughout the schema:
 					<documentation xml:lang="en">Reference an argument to serve as an input to the algorithm.</documentation>
 				</annotation>
 			</element>
+			<element name="Constant" type="xtce:ConstantType">
+				<annotation>
+					<documentation xml:lang="en">Supply a local constant name and value to input to this algorithm.</documentation>
+				</annotation>
+			</element>
 		</choice>
 	</complexType>
 	<complexType name="ArgumentInstanceRefType">
 		<annotation>
 			<documentation xml:lang="en">An argument instance is the name of an argument as the reference is always resolved locally to the metacommand.</documentation>
 		</annotation>
-		<attribute name="argumentRef" type="xtce:NameType" use="required">
+		<attribute name="argumentRef" type="xtce:ExpandedNameReferenceNoPathType" use="required">
 			<annotation>
 				<documentation xml:lang="en">Give the name of the argument.  There is no path, this is a local reference.</documentation>
 			</annotation>
@@ -1616,20 +1663,32 @@ Style Notes, used throughout the schema:
 			</element>
 		</choice>
 	</complexType>
+	<complexType name="ArgumentRestrictionListType">
+		<annotation>
+			<documentation xml:lang="en">Defines a list of argument values that restrict a constraint from being realized in the commanding lifecycle.</documentation>
+		</annotation>
+		<sequence>
+			<element name="ArgumentRestriction" type="xtce:ArgumentAssignmentType" maxOccurs="unbounded">
+				<annotation>
+					<documentation xml:lang="en">Specifies an argument value that causes this constraint to be realized.</documentation>
+				</annotation>
+			</element>
+		</sequence>
+	</complexType>
 	<complexType name="ArgumentType">
 		<annotation>
 			<documentation xml:lang="en">An Argument has a name and can take on values with the underlying value type described by the ArgumentTypeRef. Describe the properties of a command argument referring to a data type (argument type). The bulk of properties associated with a command argument are in its argument type. The initial value specified here, overrides the initial value in the argument type. See BaseDataType, BaseTimeDataType and NameReferenceType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:NameDescriptionType">
-				<attribute name="argumentTypeRef" type="xtce:NameReferenceType" use="required">
+				<attribute name="argumentTypeRef" type="xtce:NameReferenceWithPathType" use="required">
 					<annotation>
 						<documentation xml:lang="en">Specify the reference to the argument type from the ArgumentTypeSet area using the path reference rules, either local to this SpaceSystem, relative, or absolute.</documentation>
 					</annotation>
 				</attribute>
 				<attribute name="initialValue" type="string">
 					<annotation>
-						<documentation xml:lang="en">Specify as: integer data type using xs:integer, float data type using xs:double, string data type using xs:string, boolean data type using xs:boolean, binary data type using xs:hexBinary, enum data type using label name, relative time data type using xs:duration, absolute time data type using xs:dateTime.  Values must not exceed the characteristics for the data type or this is a validation error. Takes precedence over an initial value given in the data type. Values are calibrated unless there is an option to override it.</documentation>
+						<documentation xml:lang="en">Specify as: integer data type using xs:integer, float data type using xs:double, string data type using xs:string, boolean data type using xs:boolean, binary data type using xs:hexBinary, enum data type using label name, relative time data type using xs:duration, absolute time data type using xs:dateTime, arrays using JSON syntax (e.g. '[1, 3, 4]', and aggregates using JSON syntax '{"member1": 1, "member2": "foo"}' ). Values must not exceed the characteristics for the data type or this is a validation error. Takes precedence over an initial value given in the data type. Values are calibrated unless there is an option to override it.</documentation>
 						<appinfo>The value type must match the Argument type</appinfo>
 					</annotation>
 				</attribute>
@@ -1671,7 +1730,7 @@ Style Notes, used throughout the schema:
 					<documentation xml:lang="en">Describe an argument type that has an engineering/calibrated value in the form of a boolean enumeration.</documentation>
 				</annotation>
 			</element>
-			<element name="RelativeTimeAgumentType" type="xtce:RelativeTimeArgumentType">
+			<element name="RelativeTimeArgumentType" type="xtce:RelativeTimeArgumentType">
 				<annotation>
 					<documentation xml:lang="en">Describe an argument type that has an engineering/calibrated value in the form of a duration in time.</documentation>
 				</annotation>
@@ -1695,7 +1754,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="BaseMetaCommandType">
 		<annotation>
-			<documentation xml:lang="en">When specified, a BaseMetaCommand element identifies that this MetaCommand inherits (extends) another MetaCommand.  It’s required ArgumentAssignmentList narrows or this command from the parent.  This is typically used when specializing a generic MetaCommand to a specific MetaCommand.  See MetaCommandType.</documentation>
+			<documentation xml:lang="en">When specified, a BaseMetaCommand element identifies that this MetaCommand inherits (extends) another MetaCommand.  It's required ArgumentAssignmentList narrows or this command from the parent.  This is typically used when specializing a generic MetaCommand to a specific MetaCommand.  See MetaCommandType.</documentation>
 		</annotation>
 		<sequence>
 			<element name="ArgumentAssignmentList" type="xtce:ArgumentAssignmentListType" minOccurs="0">
@@ -1704,7 +1763,7 @@ Style Notes, used throughout the schema:
 				</annotation>
 			</element>
 		</sequence>
-		<attribute name="metaCommandRef" type="xtce:NameReferenceType" use="required">
+		<attribute name="metaCommandRef" type="xtce:NameReferenceWithPathType" use="required">
 			<annotation>
 				<documentation xml:lang="en">Reference to the MetaCommand definition that this MetaCommand extends.</documentation>
 			</annotation>
@@ -1712,7 +1771,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="BinaryArgumentType">
 		<annotation>
-			<documentation xml:lang="en">Defines a binary engineering/calibrated argument type (often called “blob type”). The binary data may be of fixed or variable length, and has an optional encoding and decoding algorithm that may be defined to transform the data between space and ground.  See BinaryDataEncodingType, IntegerValueType, InputAlgorithmType, and BinaryDataType.</documentation>
+			<documentation xml:lang="en">Defines a binary engineering/calibrated argument type (often called "blob type"). The binary data may be of fixed or variable length, and has an optional encoding and decoding algorithm that may be defined to transform the data between space and ground.  See BinaryDataEncodingType, IntegerValueType, InputAlgorithmType, and BinaryDataType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:ArgumentBinaryDataType"/>
@@ -1736,7 +1795,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="BooleanArgumentType">
 		<annotation>
-			<documentation xml:lang="en">Defines a boolean argument type which has two values only: ‘True’ (1) or ‘False’ (0). The values one and zero may be mapped to a specific string using the attributes oneStringValue and zeroStringValue.  This type is a simplified form of the EnumeratedDataType.  See IntegerDataEncoding and BooleanDataType.</documentation>
+			<documentation xml:lang="en">Defines a boolean argument type which has two values only: "True" (1) or "False" (0). The values one and zero may be mapped to a specific string using the attributes oneStringValue and zeroStringValue.  This type is a simplified form of the EnumeratedDataType.  See IntegerDataEncoding and BooleanDataType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:ArgumentBooleanDataType"/>
@@ -1879,6 +1938,11 @@ Style Notes, used throughout the schema:
 							</annotation>
 						</element>
 					</choice>
+					<element name="ArgumentRestrictionList" type="xtce:ArgumentAssignmentListType" minOccurs="0">
+						<annotation>
+							<documentation xml:lang="en">Optional list of argument values that manifest this post-transmission validation parameter value check.  When not present, this check applies to all instances of the command.</documentation>
+						</annotation>
+					</element>
 				</sequence>
 			</extension>
 		</complexContent>
@@ -1937,7 +2001,7 @@ Style Notes, used throughout the schema:
 					<field xpath="@name"/>
 				</key>
 			</element>
-			<element name="MetaCommandRef" type="xtce:NameReferenceType">
+			<element name="MetaCommandRef" type="xtce:NameReferenceWithPathType">
 				<annotation>
 					<documentation xml:lang="en">Used to include a MetaCommand defined in another sub-system in this sub-system.</documentation>
 				</annotation>
@@ -1966,13 +2030,13 @@ Style Notes, used throughout the schema:
 			<documentation>Describe a MetaCommand step, consisting MetaCommand reference and argument list. See MetaCommandStepListType and NameReferenceType.</documentation>
 		</annotation>
 		<sequence>
-			<element name="ArgumentAssigmentList" type="xtce:ArgumentAssignmentListType" minOccurs="0"/>
+			<element name="ArgumentAssignmentList" type="xtce:ArgumentAssignmentListType" minOccurs="0"/>
 		</sequence>
-		<attribute name="metaCommandRef" type="xtce:NameReferenceType" use="required"/>
+		<attribute name="metaCommandRef" type="xtce:NameReferenceWithPathType" use="required"/>
 	</complexType>
 	<complexType name="MetaCommandType" mixed="false">
 		<annotation>
-			<documentation xml:lang="en">Describe a command which consists of an abstract portion (MetaCommand) and an optional packaging portion (MetaCommand CommandContainer).  An argument list is provided. MetaCommand may extend other MetaCommands and their CommandContainer may extend other CommandContainer or SequenceContainers.  A MetaCommand’s CommandContainer is private except as referred to in BaseMetaCommand (they are not visible to other containers and cannot be used in an entry list). MetaCommands may also define various other behavioral aspects of a command such as command verifiers.  See CommandContainerType, ArgumentListType, BaseMetaCommandType and BaseContainerType.</documentation>
+			<documentation xml:lang="en">Describe a command which consists of an abstract portion (MetaCommand) and an optional packaging portion (MetaCommand CommandContainer).  An argument list is provided. MetaCommand may extend other MetaCommands and their CommandContainer may extend other CommandContainer or SequenceContainers.  A MetaCommand's CommandContainer is private except as referred to in BaseMetaCommand (they are not visible to other containers and cannot be used in an entry list). MetaCommands may also define various other behavioral aspects of a command such as command verifiers.  See CommandContainerType, ArgumentListType, BaseMetaCommandType and BaseContainerType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:NameDescriptionType">
@@ -2053,7 +2117,7 @@ Style Notes, used throughout the schema:
 		<annotation>
 			<documentation xml:lang="en">Significance provides some cautionary information about the potential consequence of each MetaCommand.</documentation>
 		</annotation>
-		<attribute name="spaceSystemAtRisk" type="xtce:NameReferenceType">
+		<attribute name="spaceSystemAtRisk" type="xtce:NameReferenceWithPathType">
 			<annotation>
 				<documentation xml:lang="en">If none is supplied, then the current SpaceSystem is assumed to be the one at risk by the issuance of this command</documentation>
 			</annotation>
@@ -2073,7 +2137,7 @@ Style Notes, used throughout the schema:
 	<!--******** Types used with Cmd Execution Control ****-->
 	<complexType name="AcceptedVerifierType">
 		<annotation>
-			<documentation xml:lang="en">A verifier that means the SpaceSystem has accepted the command</documentation>
+			<documentation xml:lang="en">A verifier that means the destination has accepted the command.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:CommandVerifierType"/>
@@ -2098,7 +2162,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="CompleteVerifierType">
 		<annotation>
-			<documentation xml:lang="en">A possible set of verifiers that all must be true for the command be considered completed.  </documentation>
+			<documentation xml:lang="en">A possible set of verifiers that all must be true for the command be considered completed.  Consider that some may not participate due to argument value restriction, if that element is used.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:CommandVerifierType">
@@ -2132,7 +2196,7 @@ Style Notes, used throughout the schema:
 		<sequence>
 			<element name="ContextSignificance" type="xtce:ContextSignificanceType" maxOccurs="unbounded">
 				<annotation>
-					<documentation xml:lang="en">Describe a significance level for a MetaCommand definition where the significance level depends on matching a context value.  See ContextMatchType and SignificanceType.</documentation>
+					<documentation xml:lang="en">A Context contains a different significance definition and a context match.  The match takes precedence over any default significance when the first in the overall list evaluates to true.</documentation>
 				</annotation>
 			</element>
 		</sequence>
@@ -2165,7 +2229,7 @@ Style Notes, used throughout the schema:
 		<annotation>
 			<documentation xml:lang="en">Describe a type of constraint on the next command, rather than this command. Interlocks apply only to the next command.  An interlock will block successive commands until this command has reached a certain stage of verifier.  Interlocks are scoped to a SpaceSystem basis:  they by default apply to the SpaceSystem the MetaCommand is defined in but this may be overridden.  See MetaCommandType and VerifierSetType.</documentation>
 		</annotation>
-		<attribute name="scopeToSpaceSystem" type="xtce:NameReferenceType">
+		<attribute name="scopeToSpaceSystem" type="xtce:NameReferenceWithPathType">
 			<annotation>
 				<documentation xml:lang="en">The name of a SpaceSystem this Interlock applies to.  By default, it only applies to the SpaceSystem that contains this MetaCommand.</documentation>
 			</annotation>
@@ -2194,9 +2258,9 @@ Style Notes, used throughout the schema:
 		<complexContent>
 			<extension base="xtce:ParameterRefType">
 				<choice>
-					<element name="Derivation" type="xtce:MathOperationType">
+					<element name="Derivation" type="xtce:ArgumentMathOperationType">
 						<annotation>
-							<documentation xml:lang="en">Specify a MathOperation to use to set the Parameter value.  See MathOperationType.</documentation>
+							<documentation xml:lang="en">Specify a simple algorithm to use to set the target Parameter value.  See ArgumentMathOperationType.</documentation>
 						</annotation>
 					</element>
 					<element name="NewValue" type="string">
@@ -2251,7 +2315,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="QueuedVerifierType">
 		<annotation>
-			<documentation xml:lang="en">A verifer that means the command is scheduled for execution by the SpaceSystem.</documentation>
+			<documentation xml:lang="en">A verifer that means the command is scheduled for execution by the destination.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:CommandVerifierType"/>
@@ -2259,7 +2323,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="ReceivedVerifierType">
 		<annotation>
-			<documentation xml:lang="en">A verifier that simply means the SpaceSystem has received the command.</documentation>
+			<documentation xml:lang="en">A verifier that simply means the destination has received the command.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:CommandVerifierType"/>
@@ -2267,7 +2331,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="SentFromRangeVerifierType">
 		<annotation>
-			<documentation xml:lang="en">Sent from range means the command has been transmitted to the spacecraft by the network that connects the ground system to the spacecraft.  Obviously, this verifier must come from something other than the spacecraft. </documentation>
+			<documentation xml:lang="en">Sent from range means the command has been transmitted to the spacecraft by the network that connects the ground system to the spacecraft.  Typically, this verifier would come from something other than the spacecraft, such as a modem or front end processor.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:CommandVerifierType"/>
@@ -2278,18 +2342,21 @@ Style Notes, used throughout the schema:
 			<documentation>Time units the time association decimal value is in.</documentation>
 		</annotation>
 		<restriction base="string">
-			<enumeration value="si_nanosecond"/>
-			<enumeration value="si_microsecond"/>
-			<enumeration value="si_millsecond"/>
-			<enumeration value="si_second"/>
-			<enumeration value="minute"/>
-			<enumeration value="day"/>
-			<enumeration value="julianYear"/>
+			<enumeration value="seconds"/>
+			<enumeration value="milliseconds"/>
+			<enumeration value="microseconds"/>
+			<enumeration value="nanoseconds"/>
+			<enumeration value="picoseconds"/>
+			<enumeration value="minutes"/>
+			<enumeration value="hours"/>
+			<enumeration value="days"/>
+			<enumeration value="months"/>
+			<enumeration value="years"/>
 		</restriction>
 	</simpleType>
 	<complexType name="TransferredToRangeVerifierType">
 		<annotation>
-			<documentation xml:lang="en">Transferred to range means the command has been received to the network that connects the ground system to the spacecraft.  Obviously, this verifier must come from something other than the spacecraft. </documentation>
+			<documentation xml:lang="en">Transferred to range means the command has been received to the network that connects the ground system to the spacecraft.  Typically, this verifier would come from something other than the spacecraft, such as a modem or front end processor.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:CommandVerifierType"/>
@@ -2301,6 +2368,13 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:MatchCriteriaType">
+				<sequence>
+					<element name="ArgumentRestrictionList" type="xtce:ArgumentAssignmentListType" minOccurs="0">
+						<annotation>
+							<documentation xml:lang="en">Optional list of argument values that manifest this pre-transmission constraint parameter value check.</documentation>
+						</annotation>
+					</element>
+				</sequence>
 				<attribute name="timeOut" type="xtce:RelativeTimeType">
 					<annotation>
 						<documentation xml:lang="en">Pause during timeOut, fail when the timeout passes</documentation>
@@ -2320,7 +2394,11 @@ Style Notes, used throughout the schema:
 			<documentation xml:lang="en">Appended to the TramsmissionConstraint List of the base command.  Constraints are checked in order.  </documentation>
 		</annotation>
 		<sequence>
-			<element name="TransmissionConstraint" type="xtce:TransmissionConstraintType" maxOccurs="unbounded"/>
+			<element name="TransmissionConstraint" type="xtce:TransmissionConstraintType" maxOccurs="unbounded">
+				<annotation>
+					<documentation xml:lang="en">A constraint that potentially blocks transmission of this command based on parameter values for all instances or optionally limited to only when specified argument values are used in the command.</documentation>
+				</annotation>
+			</element>
 		</sequence>
 	</complexType>
 	<simpleType name="VerifierEnumerationType">
@@ -2341,17 +2419,49 @@ Style Notes, used throughout the schema:
 	</simpleType>
 	<complexType name="VerifierSetType">
 		<annotation>
-			<documentation xml:lang="en">Describe a collection of unordered verifiers.  A command verifier is a conditional check on the telemetry from a SpaceSystem that that provides positive indication on the processing state of a command.  There are eight different verifiers each associated with difference states in command processing: TransferredToRange, TransferredFromRange, Received, Accepted, Queued, Execution, Complete, and Failed.  There may be multiple ‘complete’ and 'execution' verifiers. If the MetaCommand is part of an inheritance relation (BaseMetaCommand), the 'complete' and 'execution' verifier sets are appended to any defined in the parent MetaCommand. All others will override a verifier defined in a BaseMetaCommand.  Duplicate verifiers in the list of CompleteVerifiers and ExecutionVerifiers before and after appending to the verifiers in BaseMetaCommand should be avoided. See MetaCommandType and BaseMetaCommandType for additional information.</documentation>
+			<documentation xml:lang="en">Describe a collection of unordered verifiers.  A command verifier is a conditional check on the telemetry from a SpaceSystem that that provides positive indication on the processing state of a command.  There are eight different verifiers each associated with different states in command processing: TransferredToRange, TransferredFromRange, Received, Accepted, Queued, Execution, Complete, and Failed.  There may be multiple "complete" and "execution" verifiers. If the MetaCommand is part of an inheritance relation (BaseMetaCommand), the "complete" and "execution" verifier sets are appended to any defined in the parent MetaCommand. All others will override a verifier defined in a BaseMetaCommand.  Duplicate verifiers in the list of CompleteVerifiers and ExecutionVerifiers before and after appending to the verifiers in BaseMetaCommand should be avoided. See MetaCommandType and BaseMetaCommandType for additional information.</documentation>
 		</annotation>
 		<sequence>
-			<element name="TransferredToRangeVerifier" type="xtce:TransferredToRangeVerifierType" minOccurs="0"/>
-			<element name="SentFromRangeVerifier" type="xtce:SentFromRangeVerifierType" minOccurs="0"/>
-			<element name="ReceivedVerifier" type="xtce:ReceivedVerifierType" minOccurs="0"/>
-			<element name="AcceptedVerifier" type="xtce:AcceptedVerifierType" minOccurs="0"/>
-			<element name="QueuedVerifier" type="xtce:QueuedVerifierType" minOccurs="0"/>
-			<element name="ExecutionVerifier" type="xtce:ExecutionVerifierType" minOccurs="0" maxOccurs="unbounded"/>
-			<element name="CompleteVerifier" type="xtce:CompleteVerifierType" minOccurs="0" maxOccurs="unbounded"/>
-			<element name="FailedVerifier" type="xtce:FailedVerifierType" minOccurs="0"/>
+			<element name="TransferredToRangeVerifier" type="xtce:TransferredToRangeVerifierType" minOccurs="0">
+				<annotation>
+					<documentation xml:lang="en">Transferred to range means the command has been received to the network that connects the ground system to the spacecraft.  Typically, this verifier would come from something other than the spacecraft, such as a modem or front end processor.</documentation>
+				</annotation>
+			</element>
+			<element name="SentFromRangeVerifier" type="xtce:SentFromRangeVerifierType" minOccurs="0">
+				<annotation>
+					<documentation xml:lang="en">Sent from range means the command has been transmitted to the spacecraft by the network that connects the ground system to the spacecraft.  Typically, this verifier would come from something other than the spacecraft, such as a modem or front end processor.</documentation>
+				</annotation>
+			</element>
+			<element name="ReceivedVerifier" type="xtce:ReceivedVerifierType" minOccurs="0">
+				<annotation>
+					<documentation xml:lang="en">A verifier that simply means the destination has received the command.</documentation>
+				</annotation>
+			</element>
+			<element name="AcceptedVerifier" type="xtce:AcceptedVerifierType" minOccurs="0">
+				<annotation>
+					<documentation xml:lang="en">A verifier that means the destination has accepted the command.</documentation>
+				</annotation>
+			</element>
+			<element name="QueuedVerifier" type="xtce:QueuedVerifierType" minOccurs="0">
+				<annotation>
+					<documentation xml:lang="en">A verifer that means the command is scheduled for execution by the destination.</documentation>
+				</annotation>
+			</element>
+			<element name="ExecutionVerifier" type="xtce:ExecutionVerifierType" minOccurs="0" maxOccurs="unbounded">
+				<annotation>
+					<documentation xml:lang="en">A verifier that indicates that the command is being executed.  An optional Element indicates how far along the command has progressed either as a fixed value or an (possibly scaled) ParameterInstance value.</documentation>
+				</annotation>
+			</element>
+			<element name="CompleteVerifier" type="xtce:CompleteVerifierType" minOccurs="0" maxOccurs="unbounded">
+				<annotation>
+					<documentation xml:lang="en">A possible set of verifiers that all must be true for the command be considered completed.  Consider that some may not participate due to argument value restriction, if that element is used.</documentation>
+				</annotation>
+			</element>
+			<element name="FailedVerifier" type="xtce:FailedVerifierType" minOccurs="0">
+				<annotation>
+					<documentation xml:lang="en">When true, indicates that the command failed.  timeToWait is how long to wait for the FailedVerifier to test true.</documentation>
+				</annotation>
+			</element>
 		</sequence>
 	</complexType>
 	<!--******** End of Command Schema *********************-->
@@ -2377,20 +2487,28 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="ChecksumType">
 		<annotation>
-			<documentation>Describe checksum information.</documentation>
+			<documentation xml:lang="en">Describe checksum or hash function definiton.  See ErrorDetectCorrectType.</documentation>
 		</annotation>
 		<sequence>
 			<element name="InputAlgorithm" type="xtce:InputAlgorithmType" minOccurs="0">
 				<annotation>
-					<documentation>Assumed to return the computed checksum.</documentation>
+					<documentation xml:lang="en">Provided to account for an algorithm not otherwise listed by enumeration.  Assumed to return the computed checksum.</documentation>
 				</annotation>
 			</element>
 		</sequence>
-		<attribute name="bitsFromReference" type="xtce:NonNegativeLongType"/>
-		<attribute name="reference" type="xtce:ReferencePointType" default="start"/>
+		<attribute name="bitsFromReference" type="xtce:NonNegativeLongType" default="0">
+			<annotation>
+				<documentation xml:lang="en">An offset of non-zero may be specified to skip some bits against the reference position in the reference attribute.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="reference" type="xtce:ReferencePointType" default="start">
+			<annotation>
+				<documentation xml:lang="en">The bits involved in the calculation may start at the beginning or the end of the container.</documentation>
+			</annotation>
+		</attribute>
 		<attribute name="name" use="required">
 			<annotation>
-				<documentation>Qualified list of name checksum algorithms. If custom is chosen, InputAlgorithm must be set.</documentation>
+				<documentation xml:lang="en">Qualified list of named common checksum algorithms. If custom is chosen, InputAlgorithm must be set.</documentation>
 			</annotation>
 			<simpleType>
 				<restriction base="string">
@@ -2409,20 +2527,37 @@ Style Notes, used throughout the schema:
 					<enumeration value="damm"/>
 					<enumeration value="custom">
 						<annotation>
-							<documentation>Document a custom checksum algorithm</documentation>
+							<documentation xml:lang="en">Document a custom checksum algorithm in the InputAlgorithm element.</documentation>
 						</annotation>
 					</enumeration>
 				</restriction>
 			</simpleType>
 		</attribute>
-		<attribute name="hashSizeInBits" type="xtce:PositiveLongType"/>
+		<attribute name="hashSizeInBits" type="xtce:PositiveLongType">
+			<annotation>
+				<documentation xml:lang="en">The hashing algorithm may use a larger internal bucket size than the emitted value size in bits captured by the parameterRef attribute.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="parameterRef" type="xtce:ExpandedNameReferenceWithPathType">
+			<annotation>
+				<documentation xml:lang="en">Reference to the parameter that contains the value of this computed checksum or hash based on this container.  This attribute is optional because not all implementations verify (telemetry) or create (telecommand) error control fields using the XTCE definition.</documentation>
+			</annotation>
+		</attribute>
 	</complexType>
 	<complexType name="ConstantType">
 		<annotation>
 			<documentation xml:lang="en">Names and provides a value for a constant input to the algorithm.  There are two attributes to Constant, constantName and value.  constantName is a variable name in the algorithm to be executed.  value is the value of the constant to be used.</documentation>
 		</annotation>
-		<attribute name="constantName" type="string"/>
-		<attribute name="value" type="string" use="required"/>
+		<attribute name="constantName" type="string" use="required">
+			<annotation>
+				<documentation xml:lang="en">Supply a name for the constant to be used to access this value from within the algorithm.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="value" type="string" use="required">
+			<annotation>
+				<documentation xml:lang="en">Supply the constant value in the form of the data type needed in the algorithm.</documentation>
+			</annotation>
+		</attribute>
 	</complexType>
 	<complexType name="ContextCalibratorListType">
 		<annotation>
@@ -2486,7 +2621,7 @@ Style Notes, used throughout the schema:
 				<sequence>
 					<element name="TriggerSet" type="xtce:TriggerSetType" minOccurs="0"/>
 				</sequence>
-				<attribute name="triggerContainer" type="xtce:NameReferenceType" use="optional">
+				<attribute name="triggerContainer" type="xtce:NameReferenceWithPathType" use="optional">
 					<annotation>
 						<documentation xml:lang="en">First telemetry container from which the output parameter should be calculated.</documentation>
 					</annotation>
@@ -2511,8 +2646,16 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="InputSetType">
 		<choice maxOccurs="unbounded">
-			<element name="InputParameterInstanceRef" type="xtce:InputParameterInstanceRefType"/>
-			<element name="Constant" type="xtce:ConstantType" minOccurs="0"/>
+			<element name="InputParameterInstanceRef" type="xtce:InputParameterInstanceRefType">
+				<annotation>
+					<documentation xml:lang="en">Reference a parameter to serve as an input to the algorithm.</documentation>
+				</annotation>
+			</element>
+			<element name="Constant" type="xtce:ConstantType">
+				<annotation>
+					<documentation xml:lang="en">Supply a local constant name and value to input to this algorithm.</documentation>
+				</annotation>
+			</element>
 		</choice>
 	</complexType>
 	<complexType name="MathAlgorithmType">
@@ -2537,7 +2680,7 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:BaseTriggerType">
-				<attribute name="containerRef" type="xtce:NameReferenceType" use="required">
+				<attribute name="containerRef" type="xtce:NameReferenceWithPathType" use="required">
 					<annotation>
 						<documentation xml:lang="en">Reference to the Container whose update/receipt triggers this algorithm to evaluate.</documentation>
 					</annotation>
@@ -2565,7 +2708,7 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:BaseTriggerType">
-				<attribute name="parameterRef" type="xtce:NameReferenceType" use="required">
+				<attribute name="parameterRef" type="xtce:ExpandedNameReferenceWithPathType" use="required">
 					<annotation>
 						<documentation xml:lang="en">Reference to the Parameter whose update triggers this algorithm to evaluate.</documentation>
 					</annotation>
@@ -2607,7 +2750,7 @@ Style Notes, used throughout the schema:
 				<sequence>
 					<element name="TriggerSet" type="xtce:TriggerSetType"/>
 				</sequence>
-				<attribute name="outputParameterRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="outputParameterRef" type="xtce:ExpandedNameReferenceWithPathType" use="required"/>
 			</extension>
 		</complexContent>
 	</complexType>
@@ -2810,8 +2953,8 @@ Style Notes, used throughout the schema:
 						</annotation>
 					</element>
 				</sequence>
-				<attribute name="encodedStreamRef" type="xtce:NameReferenceType" use="required"/>
-				<attribute name="decodedStreamRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="encodedStreamRef" type="xtce:NameReferenceWithPathType" use="required"/>
+				<attribute name="decodedStreamRef" type="xtce:NameReferenceWithPathType" use="required"/>
 			</extension>
 		</complexContent>
 	</complexType>
@@ -2912,7 +3055,7 @@ Style Notes, used throughout the schema:
 		<annotation>
 			<documentation xml:lang="en">Holds a reference to a stream</documentation>
 		</annotation>
-		<attribute name="streamRef" type="xtce:NameReferenceType" use="required">
+		<attribute name="streamRef" type="xtce:NameReferenceWithPathType" use="required">
 			<annotation>
 				<documentation xml:lang="en">name of reference stream</documentation>
 			</annotation>
@@ -3019,7 +3162,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="AggregateDataType" abstract="true">
 		<annotation>
-			<documentation xml:lang="en">A base schema type for describing a complex data type analogous to a C-struct. Each field of the data type is called a Member.  Each Member is part of the MemberList which forms the list of items to be placed under this data type’s name.  The MemberList defines a data block and block’s size is defined by the DataEncodings of each Member’s type reference. The data members are ordered and contiguous in the MemberList element (packed).  Each member may be addressed by the dot syntax similar to C such as P.voltage if P is the referring parameter and voltage is of a member of P’s aggregate type.  See MemberType, MemberListType, DataEncodingType, NameReferenceType, AggregateParameterType and AggregateArgumentType.</documentation>
+			<documentation xml:lang="en">A base schema type for describing a complex data type analogous to a C-struct. Each field of the data type is called a Member.  Each Member is part of the MemberList which forms the list of items to be placed under this data type's name.  The MemberList defines a data block and block's size is defined by the DataEncodings of each Member's type reference. The data members are ordered and contiguous in the MemberList element (packed).  Each member may be addressed by the dot syntax similar to C such as P.voltage if P is the referring parameter and voltage is of a member of P's aggregate type.  See MemberType, MemberListType, DataEncodingType, NameReferenceType, AggregateParameterType and AggregateArgumentType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:NameDescriptionType">
@@ -3030,6 +3173,11 @@ Style Notes, used throughout the schema:
 						</annotation>
 					</element>
 				</sequence>
+				<attribute name="initialValue" type="string">
+					<annotation>
+						<documentation xml:lang="en">Initial values for the individual members of the aggregate/structure may be provided here at the type definition using JSON style notation (e.g. '{ "member1": 2, "member2": "foo" }').  When Member elements provide initialValue attributes, they take precedence over these since these are at the type definition level and the Member element acts like a Parameter element.  These may also recurse into members that are also aggregates.</documentation>
+					</annotation>
+				</attribute>
 			</extension>
 		</complexContent>
 	</complexType>
@@ -3039,9 +3187,14 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:NameDescriptionType">
-				<attribute name="arrayTypeRef" type="xtce:NameReferenceType" use="required">
+				<attribute name="arrayTypeRef" type="xtce:NameReferenceWithPathType" use="required">
 					<annotation>
 						<documentation xml:lang="en">Reference to the data type that represents the type of the elements for this array.</documentation>
+					</annotation>
+				</attribute>
+				<attribute name="initialValue" type="string">
+					<annotation>
+						<documentation xml:lang="en">Initial values for the individual elements of the array may be provided here at the type definition using JSON style array notation (e.g. [1, 2, 3]).  It may be multi-dimension, in which case the sequence matches the sequence of the Dimension elements in the DimensionList.  When provided here, the initialValue attributes in the type definition specified in attribute arrayTypeRef are ignored.</documentation>
 					</annotation>
 				</attribute>
 			</extension>
@@ -3082,7 +3235,7 @@ Style Notes, used throughout the schema:
 						</element>
 					</choice>
 				</sequence>
-				<attribute name="baseType" type="xtce:NameReferenceType">
+				<attribute name="baseType" type="xtce:NameReferenceWithPathType">
 					<annotation>
 						<appinfo>Must be derived from a like type (e.g,, String from String).  No circular derivations.</appinfo>
 						<documentation xml:lang="en">Used to derive one Data Type from another - will inherit all the attributes from the baseType any of which may be redefined in this type definition.</documentation>
@@ -3126,7 +3279,7 @@ Style Notes, used throughout the schema:
 						</element>
 					</choice>
 				</sequence>
-				<attribute name="baseType" type="xtce:NameReferenceType">
+				<attribute name="baseType" type="xtce:NameReferenceWithPathType">
 					<annotation>
 						<appinfo>Must be derived from a like type (e.g,, String from String).  No circular derivations.</appinfo>
 						<documentation xml:lang="en">Used to derive one Data Type from another - will inherit all the attributes from the baseType any of which may be redefined in this type definition.</documentation>
@@ -3153,7 +3306,7 @@ Style Notes, used throughout the schema:
 						</annotation>
 					</element>
 				</sequence>
-				<attribute name="baseType" type="xtce:NameReferenceType">
+				<attribute name="baseType" type="xtce:NameReferenceWithPathType">
 					<annotation>
 						<documentation xml:lang="en">Extend another absolute or relative time type.</documentation>
 					</annotation>
@@ -3179,7 +3332,7 @@ Style Notes, used throughout the schema:
 						</annotation>
 					</element>
 				</sequence>
-				<attribute name="baseType" type="xtce:NameReferenceType">
+				<attribute name="baseType" type="xtce:NameReferenceWithPathType">
 					<annotation>
 						<documentation xml:lang="en">Extend another absolute or relative time type.</documentation>
 					</annotation>
@@ -3203,7 +3356,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="BinaryDataType" abstract="true">
 		<annotation>
-			<documentation xml:lang="en">A base schema type for describing a binary data engineering/calibrated type (often called “blob type”). The binary data may be of fixed or variable length, and has an optional encoding and decoding algorithm that may be defined to transform the data between space and ground.  See BaseDataType, BinaryParameterType and BinaryArgumentType.</documentation>
+			<documentation xml:lang="en">A base schema type for describing a binary data engineering/calibrated type (often called "blob type"). The binary data may be of fixed or variable length, and has an optional encoding and decoding algorithm that may be defined to transform the data between space and ground.  See BaseDataType, BinaryParameterType and BinaryArgumentType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:BaseDataType">
@@ -3242,7 +3395,7 @@ Style Notes, used throughout the schema:
 	</complexType>
 	<complexType name="BooleanDataType" abstract="true">
 		<annotation>
-			<documentation xml:lang="en">A base schema type for describing a boolean data type which has two values only: ‘True’ (1) or ‘False’ (0). The values one and zero may be mapped to a specific string using the attributes oneStringValue and zeroStringValue.  This type is a simplified form of the EnumeratedDataType.  See BaseDataType, BooleanParameterType and BooleanArgumentType.</documentation>
+			<documentation xml:lang="en">A base schema type for describing a boolean data type which has two values only: "True" (1) or "False" (0). The values one and zero may be mapped to a specific string using the attributes oneStringValue and zeroStringValue.  This type is a simplified form of the EnumeratedDataType.  See BaseDataType, BooleanParameterType and BooleanArgumentType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:BaseDataType">
@@ -3408,7 +3561,7 @@ Style Notes, used throughout the schema:
 					</element>
 					<element name="ValidRange" minOccurs="0">
 						<annotation>
-							<documentation xml:lang="en">The Valid Range provides additional boundary/constraint information beyond that of the data encoding in the range of possible values that are meaningful to this parameter.  Not to be construed as an alarm definition, violations of the valid range make a parameter value "unreasonable", as opposed to reasonable to be reported, but in a state which should be of concern.</documentation>
+							<documentation xml:lang="en">The ValidRange defines the span of valid values for this data type.  This is a subset within the data type itself.  For example, an IEEE754 encoded float has almost a universal of possible values.  However, the known possible valid range may only span -180.0 to +180.0, due to the physics of the measurement.  So, the valid range provides additional boundary/constraint information beyond that of the data encoding in the range of possible values that are meaningful to this parameter.  The valid range is not to be construed as an alarm definition and is not affected by any alarm definitions, instead violations of the valid range make a parameter value "unreasonable", as opposed to reasonable to be reported.  The exact effect of this state which should be of concern is implementation dependent.</documentation>
 						</annotation>
 						<complexType>
 							<complexContent>
@@ -3449,9 +3602,9 @@ Style Notes, used throughout the schema:
 						</annotation>
 					</element>
 				</sequence>
-				<attribute name="initialValue" type="xtce:FixedIntegerValueType">
+				<attribute name="initialValue" type="long">
 					<annotation>
-						<documentation xml:lang="en">Default/Initial value is always given in calibrated form.  Default is base 10 form; binary, octal, or hexadecimal values may be given by preceding value with 0[b|B], 0[o|O|, 0[x|X] respectively.</documentation>
+						<documentation xml:lang="en">Default/Initial value is always given in calibrated form.  Specify the value as a base 10 integer.</documentation>
 					</annotation>
 				</attribute>
 				<attribute name="sizeInBits" type="xtce:PositiveLongType" default="32">
@@ -3481,7 +3634,7 @@ Style Notes, used throughout the schema:
 					</element>
 					<element name="ValidRange" minOccurs="0">
 						<annotation>
-							<documentation xml:lang="en">The Valid Range provides additional boundary/constraint information beyond that of the data encoding in the range of possible values that are meaningful to this parameter.  Not to be construed as an alarm definition, violations of the valid range make a parameter value "unreasonable", as opposed to reasonable to be reported, but in a state which should be of concern.</documentation>
+							<documentation xml:lang="en">The ValidRange defines the span of valid values for this data type.  This is a subset within the data type itself.  For example, a 16 bit unsigned integer has possible values from 0 to 65535.  However, the known possible valid range may only span 0 to 999, due to the physics of the measurement.  So, the valid range provides additional boundary/constraint information beyond that of the data encoding in the range of possible values that are meaningful to this parameter.  The valid range is not to be construed as an alarm definition and is not affected by any alarm definitions, instead violations of the valid range make a parameter value "unreasonable", as opposed to reasonable to be reported.  The exact effect of this state which should be of concern is implementation dependent.</documentation>
 						</annotation>
 						<complexType>
 							<complexContent>
@@ -3498,7 +3651,7 @@ Style Notes, used throughout the schema:
 				</sequence>
 				<attribute name="initialValue" type="long">
 					<annotation>
-						<documentation xml:lang="en">Default/Initial value is always given in calibrated form.  Default is base 10 form; binary, octal, or hexadecimal values may be given by preceding value with 0[b|B], 0[o|O|, 0[x|X] respectively.</documentation>
+						<documentation xml:lang="en">Default/Initial value is always given in calibrated form.  Specify the value as a base 10 integer.</documentation>
 					</annotation>
 				</attribute>
 				<attribute name="sizeInBits" type="xtce:PositiveLongType" default="32">
@@ -3521,10 +3674,10 @@ Style Notes, used throughout the schema:
 		</annotation>
 		<complexContent>
 			<extension base="xtce:NameDescriptionType">
-				<attribute name="typeRef" type="xtce:NameReferenceType" use="required"/>
+				<attribute name="typeRef" type="xtce:NameReferenceWithPathType" use="required"/>
 				<attribute name="initialValue" type="string" use="optional">
 					<annotation>
-						<documentation xml:lang="en">Used to set the initial calibrated values of Parameters.  Will overwrite an initial value defined for the ParameterType.  For integer types base 10 (decimal) form is assumed unless: if proceeded by a 0b or 0B, value is in base two (binary form, if proceeded by a 0o or 0O, values is in base 8 (octal) form, or if proceeded by a 0x or 0X, value is in base 16 (hex) form.  Floating point types may be specified in normal (100.0) or scientific (1.0e2) form.  Time types are specified using the ISO 8601 formats described for XTCE time data types.  Initial values for string types, may include C language style (\n, \t, \", \\, etc.) escape sequences.</documentation>
+						<documentation xml:lang="en">Used to set the initial calibrated values of Parameters and Arguments.  Will overwrite an initial value defined for the ParameterType or ArgumentType definition elements.  For integer types it is base 10 form.  Floating point types may be specified in normal (100.0) or scientific (1.0e2) form.  Time types are specified using the ISO 8601 formats described for XTCE time data types.  Initial values for string types, may include C language style (\n, \t, \", \\, etc.) escape sequences.</documentation>
 						<appinfo>The value type must match the Parameter type</appinfo>
 					</annotation>
 				</attribute>
@@ -3578,7 +3731,11 @@ Style Notes, used throughout the schema:
 						<documentation xml:lang="en">restriction pattern is a regular expression</documentation>
 					</annotation>
 				</attribute>
-				<attribute name="characterWidth" type="xtce:CharacterWidthType"/>
+				<attribute name="characterWidth" type="xtce:CharacterWidthType">
+					<annotation>
+						<documentation xml:lang="en">Optional hint to the implementation about the size of the engineering/calibrated data type to use internally. Generally this can be determined by examination of the encoding information for the string, but it is not always clear, so this attribute allows the extra hint when needed. A tolerant implementation will endeavor to always make sufficient size engineering data types to capture the entire range of possible characters.</documentation>
+					</annotation>
+				</attribute>
 			</extension>
 		</complexContent>
 	</complexType>
@@ -3605,7 +3762,11 @@ Style Notes, used throughout the schema:
 						<documentation xml:lang="en">restriction pattern is a regular expression</documentation>
 					</annotation>
 				</attribute>
-				<attribute name="characterWidth" type="xtce:CharacterWidthType"/>
+				<attribute name="characterWidth" type="xtce:CharacterWidthType">
+					<annotation>
+						<documentation xml:lang="en">Optional hint to the implementation about the size of the engineering/calibrated data type to use internally. Generally this can be determined by examination of the encoding information for the string, but it is not always clear, so this attribute allows the extra hint when needed. A tolerant implementation will endeavor to always make sufficient size engineering data types to capture the entire range of possible characters.</documentation>
+					</annotation>
+				</attribute>
 			</extension>
 		</complexContent>
 	</complexType>
@@ -3725,39 +3886,114 @@ Style Notes, used throughout the schema:
 		<restriction base="integer">
 			<enumeration value="8"/>
 			<enumeration value="16"/>
+			<enumeration value="32"/>
 		</restriction>
 	</simpleType>
-	<complexType name="CRCType">
+	<complexType name="ContainerBinaryDataEncodingType">
 		<annotation>
-			<documentation xml:lang="en">Cyclic Redundancy Check (CRC) definition. The polynomial coefficients for the CRC
-are defined as a truncated hex value.  The coefficient for the nth bit of an n-bit CRC will always be 1 and is not
-represented in the truncated hex value.  For example, the truncated hex value of CRC-32 (width=32 bits) used in the
-Ethernet specification is 0x04C11DB7, where each non-zero bit of the truncated hex represents a coefficient of 1 in
-the polynomial and the bit position represents the exponent. There may also be an initial remainder "InitRemainder"
-and a final XOR "FinalXOR" to fully specify the CRC.  reflectData and reflectRemainder may also be specified to
-reverse the bit order in the incoming data and/or the result.
-      </documentation>
+			<documentation xml:lang="en">Describe container binary data that is unmolested in the decoding/encoding or cannot be represented in any of the other data encoding formats. Optionally use the FromBinaryTransformAlgorithm and ToBinaryTransformAlgorithm element to describe the transformation process. See InputAlgorithmType for the transformation structure.</documentation>
 		</annotation>
 		<sequence>
-			<element name="Polynomial" type="hexBinary"/>
-			<element name="InitRemainder" type="hexBinary" minOccurs="0"/>
-			<element name="FinalXOR" type="hexBinary" minOccurs="0"/>
+			<element name="ErrorDetectCorrect" type="xtce:ErrorDetectCorrectType" minOccurs="0">
+				<annotation>
+					<documentation xml:lang="en">Describes the optional inclusion of an error detection and/or correction algorithm used with this container.</documentation>
+				</annotation>
+			</element>
+			<element name="SizeInBits" type="xtce:IntegerValueType" minOccurs="0">
+				<annotation>
+					<documentation xml:lang="en">Number of bits this container occupies on the stream being encoded/decoded.  This is only needed to "force" the bit length of the container to be a fixed value.  In most cases, the entry list would define the size of the container.</documentation>
+				</annotation>
+			</element>
+			<element name="FromBinaryTransformAlgorithm" type="xtce:InputAlgorithmType" minOccurs="0">
+				<annotation>
+					<documentation xml:lang="en">Used to convert binary data to an application data type.</documentation>
+				</annotation>
+			</element>
+			<element name="ToBinaryTransformAlgorithm" type="xtce:InputAlgorithmType" minOccurs="0">
+				<annotation>
+					<documentation xml:lang="en">Used to convert binary data from an application data type to binary data.</documentation>
+				</annotation>
+			</element>
 		</sequence>
-		<attribute name="width" type="xtce:PositiveLongType"/>
-		<attribute name="reflectData" type="boolean" default="false"/>
-		<attribute name="reflectRemainder" type="boolean" default="false"/>
-		<attribute name="bitsFromReference" type="xtce:NonNegativeLongType"/>
-		<attribute name="reference" type="xtce:ReferencePointType" default="start"/>
+	</complexType>
+	<complexType name="CRCType">
+		<annotation>
+			<documentation xml:lang="en">Cyclic Redundancy Check (CRC) definition. The polynomial coefficients for the CRC are defined as a truncated hex value.  The coefficient for the nth bit of an n-bit CRC will always be 1 and is not represented in the truncated hex value.  For example, the truncated hex value of CRC-32 (width=32 bits) used in the Ethernet specification is 0x04C11DB7, where each non-zero bit of the truncated hex represents a coefficient of 1 in the polynomial and the bit position represents the exponent. There may also be an initial remainder "InitRemainder" and a final XOR "FinalXOR" to fully specify the CRC.  reflectData and reflectRemainder may also be specified to reverse the bit order in the incoming data and/or the result.</documentation>
+		</annotation>
+		<sequence>
+			<element name="Polynomial" type="hexBinary">
+				<annotation>
+					<documentation xml:lang="en">The polynomial that represents the calculation in hexadecimal form (described at CRCType annotation).</documentation>
+				</annotation>
+			</element>
+			<element name="InitRemainder" type="hexBinary" minOccurs="0" default="00">
+				<annotation>
+					<documentation xml:lang="en">A hexadecimal digit string specifying the initial value to set in the shift register before computing the CRC.</documentation>
+				</annotation>
+			</element>
+			<element name="FinalXOR" type="hexBinary" minOccurs="0" default="00">
+				<annotation>
+					<documentation xml:lang="en">A hexadecimal digit string specifying the value to be added to the final shift register value before output.</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="width" type="xtce:PositiveLongType" use="required">
+			<annotation>
+				<documentation xml:lang="en">The width is the number of bits in the shift register, which is not necessarily the number of bits of the parameter holding the value.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="reflectData" type="boolean" default="false">
+			<annotation>
+				<documentation xml:lang="en">Endianness of the input data, true=little, false=big.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="reflectRemainder" type="boolean" default="false">
+			<annotation>
+				<documentation xml:lang="en">Endianness of the output data, true=little, false=big.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="direction" type="xtce:BitOrderType" default="mostSignificantBitFirst">
+			<annotation>
+				<documentation xml:lang="en">The direction to perform the CRC calculation.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="bitsFromReference" type="xtce:NonNegativeLongType" default="0">
+			<annotation>
+				<documentation xml:lang="en">An offset of non-zero may be specified to skip some bits against the reference position in the reference attribute.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="reference" type="xtce:ReferencePointType" default="start">
+			<annotation>
+				<documentation xml:lang="en">The bits involved in the calculation may start at the beginning or the end of the container.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="parameterRef" type="xtce:ExpandedNameReferenceWithPathType">
+			<annotation>
+				<documentation xml:lang="en">Reference to the parameter that contains the value of the CRC based on this container.  This attribute is optional because not all implementations verify (telemetry) or create (telecommand) error control fields using the XTCE definition.</documentation>
+			</annotation>
+		</attribute>
 	</complexType>
 	<complexType name="DataEncodingType" abstract="true">
 		<annotation>
 			<documentation xml:lang="en">Describes how a particular piece of data is sent or received from some non-native, off-platform device. (e.g. a spacecraft)</documentation>
 		</annotation>
 		<sequence>
-			<element name="ErrorDetectCorrect" type="xtce:ErrorDetectCorrectType" minOccurs="0"/>
+			<element name="ErrorDetectCorrect" type="xtce:ErrorDetectCorrectType" minOccurs="0">
+				<annotation>
+					<documentation xml:lang="en">DEPRECATED: Use the ErrorDetectCorrect element in the container elements instead.</documentation>
+				</annotation>
+			</element>
 		</sequence>
-		<attribute name="bitOrder" type="xtce:BitOrderType" default="mostSignificantBitFirst"/>
-		<attribute name="byteOrder" type="xtce:ByteOrderType" default="mostSignificantByteFirst"/>
+		<attribute name="bitOrder" type="xtce:BitOrderType" default="mostSignificantBitFirst">
+			<annotation>
+				<documentation xml:lang="en">Describes the bit ordering of the encoded value.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="byteOrder" type="xtce:ByteOrderType" default="mostSignificantByteFirst">
+			<annotation>
+				<documentation xml:lang="en">Describes the endianness of the encoded value.</documentation>
+			</annotation>
+		</attribute>
 	</complexType>
 	<complexType name="EncodingType">
 		<annotation>
@@ -3821,7 +4057,7 @@ reverse the bit order in the incoming data and/or the result.
 					</element>
 					<element name="ContextCalibratorList" type="xtce:ContextCalibratorListType" minOccurs="0">
 						<annotation>
-							<documentation xml:lang="en">Calibrator to be applied to the raw uncalibrated value to arrive at the engineering/calibrated value when a MatchCriteria evaluates to true.</documentation>
+							<documentation xml:lang="en">Calibrator to be applied to the raw uncalibrated value to arrive at the engineering/calibrated value when a MatchCriteria evaluates to true.  The first in the list to match takes precedence.</documentation>
 						</annotation>
 					</element>
 				</sequence>
@@ -3914,7 +4150,7 @@ reverse the bit order in the incoming data and/or the result.
 					</element>
 					<element name="ContextCalibratorList" type="xtce:ContextCalibratorListType" minOccurs="0">
 						<annotation>
-							<documentation xml:lang="en">Calibrator to be applied to the raw uncalibrated value to arrive at the engineering/calibrated value when a MatchCriteria evaluates to true.</documentation>
+							<documentation xml:lang="en">Calibrator to be applied to the raw uncalibrated value to arrive at the engineering/calibrated value when a MatchCriteria evaluates to true.  The first in the list to match takes precedence.</documentation>
 						</annotation>
 					</element>
 				</sequence>
@@ -3960,11 +4196,28 @@ reverse the bit order in the incoming data and/or the result.
 	</simpleType>
 	<complexType name="ParityType">
 		<annotation>
-			<documentation xml:lang="en">Bit position starts with 'zero'.</documentation>
+			<documentation xml:lang="en">Describe the parity value.  See ErrorDetectCorrectType.</documentation>
 		</annotation>
-		<attribute name="type" type="xtce:ParityFormType" use="required"/>
-		<attribute name="bitsFromReference" type="xtce:NonNegativeLongType" use="required"/>
-		<attribute name="reference" type="xtce:ReferencePointType" default="start"/>
+		<attribute name="type" type="xtce:ParityFormType" use="required">
+			<annotation>
+				<documentation xml:lang="en">The parity form.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="bitsFromReference" type="xtce:NonNegativeLongType" default="0">
+			<annotation>
+				<documentation xml:lang="en">An offset of non-zero may be specified to skip some bits against the reference position in the reference attribute.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="reference" type="xtce:ReferencePointType" default="start">
+			<annotation>
+				<documentation xml:lang="en">The bits involved in the calculation may start at the beginning or the end of the container.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="parameterRef" type="xtce:ExpandedNameReferenceWithPathType">
+			<annotation>
+				<documentation xml:lang="en">Reference to the parameter that contains the value of the parity based on this container.  This attribute is optional because not all implementations verify (telemetry) or create (telecommand) error control fields using the XTCE definition.</documentation>
+			</annotation>
+		</attribute>
 	</complexType>
 	<complexType name="SizeInBitsType">
 		<sequence>
@@ -3999,7 +4252,10 @@ reverse the bit order in the incoming data and/or the result.
 			<documentation>Identical to VariableStringType but supports argument instance references.</documentation>
 		</annotation>
 		<sequence>
-			<choice>
+			<choice minOccurs="0">
+				<annotation>
+					<documentation>Select the method by which the container entry list allocation in bits will be observed while encoding or decoding the container fields.</documentation>
+				</annotation>
 				<element name="DynamicValue" type="xtce:ArgumentDynamicValueType">
 					<annotation>
 						<documentation xml:lang="en">Determine the container size in bits by interrogating an instance of a parameter or argument.</documentation>
@@ -4011,16 +4267,21 @@ reverse the bit order in the incoming data and/or the result.
 					</annotation>
 				</element>
 			</choice>
-			<element name="LeadingSize" type="xtce:LeadingSizeType" minOccurs="0">
+			<choice>
 				<annotation>
-					<documentation xml:lang="en">In some string implementations, the size of the string contents (not the memory allocation size) is determined by a leading numeric value.  This is sometimes referred to as Pascal strings.  If a LeadingSize is specified, then the TerminationChar element does not have a functional meaning.</documentation>
+					<documentation>Select the method by which the string content is encoded or decoded within the container entry list allocation of bits.</documentation>
 				</annotation>
-			</element>
-			<element name="TerminationChar" type="hexBinary" default="00" minOccurs="0">
-				<annotation>
-					<documentation xml:lang="en">The termination character that represents the end of the string contents.  For C and most strings, this is null (00), which is the default.</documentation>
-				</annotation>
-			</element>
+				<element name="LeadingSize" type="xtce:LeadingSizeType">
+					<annotation>
+						<documentation xml:lang="en">In some string implementations, the size of the string contents (not the memory allocation size) is determined by a leading numeric value.  This is sometimes referred to as Pascal strings.  If a LeadingSize is specified, then the TerminationChar element does not have a functional meaning.</documentation>
+					</annotation>
+				</element>
+				<element name="TerminationChar" type="hexBinary" default="00">
+					<annotation>
+						<documentation xml:lang="en">The termination character that represents the end of the string contents.  For C and most strings, this is null (00), which is the default.</documentation>
+					</annotation>
+				</element>
+			</choice>
 		</sequence>
 		<attribute name="maxSizeInBits" type="xtce:PositiveLongType" use="required">
 			<annotation>
@@ -4033,7 +4294,10 @@ reverse the bit order in the incoming data and/or the result.
 			<documentation xml:lang="en">Describe a variable string whose length may change between samples.</documentation>
 		</annotation>
 		<sequence>
-			<choice>
+			<choice minOccurs="0">
+				<annotation>
+					<documentation>Select the method by which the container entry list allocation in bits will be observed while encoding or decoding the container fields.</documentation>
+				</annotation>
 				<element name="DynamicValue" type="xtce:DynamicValueType">
 					<annotation>
 						<documentation xml:lang="en">Determine the container size in bits by interrogating an instance of a parameter.</documentation>
@@ -4045,16 +4309,21 @@ reverse the bit order in the incoming data and/or the result.
 					</annotation>
 				</element>
 			</choice>
-			<element name="LeadingSize" type="xtce:LeadingSizeType" minOccurs="0">
+			<choice>
 				<annotation>
-					<documentation xml:lang="en">In some string implementations, the size of the string contents (not the memory allocation size) is determined by a leading numeric value.  This is sometimes referred to as Pascal strings.  If a LeadingSize is specified, then the TerminationChar element does not have a functional meaning.</documentation>
+					<documentation>Select the method by which the string content is encoded or decoded within the container entry list allocation of bits.</documentation>
 				</annotation>
-			</element>
-			<element name="TerminationChar" type="hexBinary" default="00" minOccurs="0">
-				<annotation>
-					<documentation xml:lang="en">The termination character that represents the end of the string contents.  For C and most strings, this is null (00), which is the default.</documentation>
-				</annotation>
-			</element>
+				<element name="LeadingSize" type="xtce:LeadingSizeType">
+					<annotation>
+						<documentation xml:lang="en">In some string implementations, the size of the string contents (not the memory allocation size) is determined by a leading numeric value.  This is sometimes referred to as Pascal strings.  If a LeadingSize is specified, then the TerminationChar element does not have a functional meaning.</documentation>
+					</annotation>
+				</element>
+				<element name="TerminationChar" type="hexBinary" default="00">
+					<annotation>
+						<documentation xml:lang="en">The termination character that represents the end of the string contents.  For C and most strings, this is null (00), which is the default.</documentation>
+					</annotation>
+				</element>
+			</choice>
 		</sequence>
 		<attribute name="maxSizeInBits" type="xtce:PositiveLongType" use="required">
 			<annotation>
@@ -4291,6 +4560,11 @@ reverse the bit order in the incoming data and/or the result.
 		</annotation>
 		<restriction base="string"/>
 	</simpleType>
+	<complexType name="BaseComparisonType" abstract="true">
+		<annotation>
+			<documentation xml:lang="en">A base type for comparison related elements that improves the mapping produced by data binding tools.</documentation>
+		</annotation>
+	</complexType>
 	<complexType name="BaseConditionsType" abstract="true">
 		<annotation>
 			<documentation xml:lang="en">A base type for boolean expression related elements that improves the mapping produced by data binding tools.</documentation>
@@ -4343,7 +4617,7 @@ reverse the bit order in the incoming data and/or the result.
 	</simpleType>
 	<simpleType name="ByteOrderArbitraryType">
 		<annotation>
-			<documentation xml:lang="en">Describe a byte order using a byte list. The list is viewed as representing memory, the first item in the list is address 0. For mostSignificantByteFirst/big endian, the high order byte is the first byte in the list and has the highest significance followed by the less significant bytes ending with the least significant byte. For leastSignificantByteFirst/little endian, the first byte starts with the least significant byte which is first in the least and ends at the highest significant byte. For example given the value 0x0A0B0C0D the following example orderings can be formed. For mostSignificantByteFirst/big endian the significances would be listed as 3 (0x0A), 2 (0x0B), 1 (0x0C), 0 (0x0D) with ‘3’ being first in the list, and for leastSignificantByteFirst/little endian as 0 (0x0D), 1 (0x0C), 2 (0x0B), 3 (0x0A) with ‘0’ being first in the list. See DataEncodingType.</documentation>
+			<documentation xml:lang="en">Describe a byte order using a byte list. The list is viewed as representing memory, the first item in the list is address 0. For mostSignificantByteFirst/big endian, the high order byte is the first byte in the list and has the highest significance followed by the less significant bytes ending with the least significant byte. For leastSignificantByteFirst/little endian, the first byte starts with the least significant byte which is first in the least and ends at the highest significant byte. For example given the value 0x0A0B0C0D the following example orderings can be formed. For mostSignificantByteFirst/big endian the significances would be listed as 3 (0x0A), 2 (0x0B), 1 (0x0C), 0 (0x0D) with 3 being first in the list, and for leastSignificantByteFirst/little endian as 0 (0x0D), 1 (0x0C), 2 (0x0B), 3 (0x0A) with 0 being first in the list. See DataEncodingType.</documentation>
 		</annotation>
 		<restriction base="string">
 			<pattern value="(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15)(,(0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15))*"/>
@@ -4354,7 +4628,7 @@ reverse the bit order in the incoming data and/or the result.
 			<documentation xml:lang="en">Describe the comparison between the instance (value) of a parameter against either a specified value or another parameter instance.</documentation>
 		</annotation>
 		<complexContent>
-			<extension base="xtce:BaseConditionsType">
+			<extension base="xtce:BaseComparisonType">
 				<sequence>
 					<element name="ParameterInstanceRef" type="xtce:ParameterInstanceRefType">
 						<annotation>
@@ -4409,7 +4683,7 @@ reverse the bit order in the incoming data and/or the result.
 	</simpleType>
 	<complexType name="ComparisonType">
 		<annotation>
-			<documentation xml:lang="en">A simple ParameterInstanceRef to value comparison.  The string supplied in the value attribute needs to be converted to a type matching the Parameter being compared to.  Numerical values are assumed to be base 10 unless proceeded by 0x (hexadecimal), 0o (octal), or 0b (binary).  The value is truncated  to use the least significant bits that match the bit size of the Parameter being compared to.</documentation>
+			<documentation xml:lang="en">A simple ParameterInstanceRef to value comparison.  The string supplied in the value attribute needs to be converted to a type matching the Parameter being compared to.  For integer types it is base 10 form.  Floating point types may be specified in normal (100.0) or scientific (1.0e2) form.  The value is truncated  to use the least significant bits that match the bit size of the Parameter being compared to.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:ParameterInstanceRefType">
@@ -4437,7 +4711,7 @@ reverse the bit order in the incoming data and/or the result.
 	</complexType>
 	<complexType name="ContextMatchType">
 		<annotation>
-			<documentation xml:lang="en">A MatchCriteriaType used for Context selection.</documentation>
+			<documentation xml:lang="en">A MatchCriteriaType used for Context selection.  It is possible that no match evaluates to true, which results in the default element being used.  It is also possible that a match can have an empty context change, in which case the default is replaced with nothing.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:MatchCriteriaType"/>
@@ -4520,6 +4794,11 @@ reverse the bit order in the incoming data and/or the result.
 				</annotation>
 			</element>
 		</sequence>
+		<attribute name="defaultValue" type="long" use="required">
+			<annotation>
+				<documentation xml:lang="en">In the event that no lookup condition evaluates to true, then this value will be used.</documentation>
+			</annotation>
+		</attribute>
 	</complexType>
 	<complexType name="DynamicValueType">
 		<annotation>
@@ -4540,12 +4819,29 @@ reverse the bit order in the incoming data and/or the result.
 	</complexType>
 	<complexType name="ErrorDetectCorrectType">
 		<annotation>
-			<documentation>Describe error detection/correction algorithm.</documentation>
+			<documentation>Describe CRC, Checksum, Parity, or XOR for error detection and correction algorithm calculation.  See CRCType, ChecksumType, ParityType, and XORType.</documentation>
 		</annotation>
-		<choice>
-			<element name="Checksum" type="xtce:ChecksumType"/>
-			<element name="CRC" type="xtce:CRCType"/>
-			<element name="Parity" type="xtce:ParityType"/>
+		<choice maxOccurs="unbounded">
+			<element name="Checksum" type="xtce:ChecksumType">
+				<annotation>
+					<documentation xml:lang="en">Describe checksum or hash function applied to all or part of this container definition.</documentation>
+				</annotation>
+			</element>
+			<element name="CRC" type="xtce:CRCType">
+				<annotation>
+					<documentation xml:lang="en">Describe a Cyclic Redundancy Check (CRC) algorithm applied to all or part of this container definition.</documentation>
+				</annotation>
+			</element>
+			<element name="XOR" type="xtce:XORType">
+				<annotation>
+					<documentation xml:lang="en">Describe an "exclusive or" (XOR) checksum applied to all or part of this container definition.</documentation>
+				</annotation>
+			</element>
+			<element name="Parity" type="xtce:ParityType">
+				<annotation>
+					<documentation xml:lang="en">Describe a parity applied to all or part of this container definition.</documentation>
+				</annotation>
+			</element>
 		</choice>
 	</complexType>
 	<simpleType name="FixedIntegerValueType">
@@ -4978,6 +5274,41 @@ reverse the bit order in the incoming data and/or the result.
 			</element>
 		</choice>
 	</complexType>
+	<complexType name="ArgumentMathOperationType">
+		<annotation>
+			<documentation xml:lang="en">Describe a value to set to a destination Parameter after completion of a commanding lifecycle step.</documentation>
+		</annotation>
+		<choice maxOccurs="unbounded">
+			<annotation>
+				<documentation xml:lang="en">Describe a postfix (aka Reverse Polish Notation (RPN)) expression for mathematical equations. It uses a stack where operands (either fixed values or ParameterInstances) are pushed onto the stack from first to last in the XML. As the operators are specified, each pops off operands as it evaluates them, and pushes the result back onto the stack. For example, the stack, 4 8 /, would result as 0.5.  In this case postfix is used to avoid having to specify parenthesis. To convert from infix to postfix, use Dijkstra's "shunting yard" algorithm.</documentation>
+			</annotation>
+			<element name="ValueOperand" type="string">
+				<annotation>
+					<documentation xml:lang="en">Use a constant in the calculation.</documentation>
+				</annotation>
+			</element>
+			<element name="ThisParameterOperand" type="string" fixed="">
+				<annotation>
+					<documentation xml:lang="en">Use the value of the target parameter in the calculation. It is the calibrated/engineering value only.  If the raw value is needed, specify it explicitly using ParameterInstanceRefOperand. Note this element has no content.</documentation>
+				</annotation>
+			</element>
+			<element name="Operator" type="xtce:MathOperatorsType">
+				<annotation>
+					<documentation xml:lang="en">All operators utilize operands on the top values in the stack and leaving the result on the top of the stack.  Ternary operators utilize the top three operands on the stack, binary operators utilize the top two operands on the stack, and unary operators use the top operand on the stack.</documentation>
+				</annotation>
+			</element>
+			<element name="ParameterInstanceRefOperand" type="xtce:ParameterInstanceRefType">
+				<annotation>
+					<documentation xml:lang="en">This element is used to reference the last received/assigned value of any Parameter in this math operation.</documentation>
+				</annotation>
+			</element>
+			<element name="ArgumentInstanceRefOperand" type="xtce:ArgumentInstanceRefType">
+				<annotation>
+					<documentation xml:lang="en">This element is used to reference a value of any Argument from this command instance in this math operation.</documentation>
+				</annotation>
+			</element>
+		</choice>
+	</complexType>
 	<complexType name="MathOperationType" abstract="true">
 		<annotation>
 			<documentation xml:lang="en">Postfix (aka Reverse Polish Notation (RPN)) notation is used to describe mathmatical equations. It uses a stack where operands (either fixed values or ParameterInstances) are pushed onto the stack from first to last in the XML. As the operators are specified, each pops off operands as it evaluates them, and pushes the result back onto the stack. In this case postfix is used to avoid having to specify parenthesis. To convert from infix to postfix, use Dijkstra's "shunting yard" algorithm.</documentation>
@@ -4988,10 +5319,10 @@ reverse the bit order in the incoming data and/or the result.
 	</complexType>
 	<simpleType name="NameType">
 		<annotation>
-			<documentation>Defines a name where all characters are allowed except '.', '[', ']', ':',  ' ', and '/'.  See NameDescriptionType.</documentation>
+			<documentation>Defines a basic name where all characters are allowed except '.', '[', ']', ':', '/', and whitespace.  See NameDescriptionType.</documentation>
 		</annotation>
 		<restriction base="normalizedString">
-			<pattern value="[^./:\[\] ]+"/>
+			<pattern value="[^.\[\]:/ \t]+"/>
 		</restriction>
 	</simpleType>
 	<complexType name="NameDescriptionType">
@@ -5008,12 +5339,36 @@ reverse the bit order in the incoming data and/or the result.
 			</extension>
 		</complexContent>
 	</complexType>
-	<simpleType name="NameReferenceType">
+	<simpleType name="NameReferenceNoPathType">
 		<annotation>
-			<documentation>Describe a reference to a named item in an XTCE instance document.  The named must be of schema type NameType.  All name references use a Unix style file system name format where the SpaceSystem names form a path in the SpaceSystem tree. The following characters are reserved for the path: '/', ‘..’ and ‘.’ (multiple consecutive ‘/’s are treated as one).  The path portion is similar to the directory path used in file system names and the path characters have similar meaning (e.g., SimpleSat/Bus/EPDS/BatteryOne/Voltage). There are three overall forms for name references:  absolute path, relative path and just the name.  The first two forms are called qualified name references; the last form is called an unqualified name reference.  The unqualified form refers to an item in the SpaceSystem the reference is used in.  The unqualified form refers to an item in the SpaceSystem the reference is used in.  It is illegal for a name reference to point to no item (“a dangling name reference”).</documentation>
+			<documentation xml:lang="en">This is identical to NameType above and is used for references that point to named objects for which path is not an option and array/aggregate typing is not an option.  This is not used by the schema.</documentation>
 		</annotation>
 		<restriction base="normalizedString">
-			<pattern value="/?(([^./:\[\]]+|\.|\.\.)/)*([^./:\[\]]+)+"/>
+			<pattern value="[^.\[\]:/ \t]+"/>
+		</restriction>
+	</simpleType>
+	<simpleType name="ExpandedNameReferenceNoPathType">
+		<annotation>
+			<documentation xml:lang="en">Defines a reference to a named object where array and aggregate are possibilities, but path is not a possibility.  This is used by the argumentName attribute within the ArgumentAssignment element and ArgumentRef variations.</documentation>
+		</annotation>
+		<restriction base="normalizedString">
+			<pattern value="([^\.\[\]:/ \t]+(\[[0-9]+\])*(\.[^\.\[\]:/ \t]+(\[[0-9]+\])*)*)"/>
+		</restriction>
+	</simpleType>
+	<simpleType name="NameReferenceWithPathType">
+		<annotation>
+			<documentation xml:lang="en">Defines a reference that can include a path to a named object where array and aggregate are not possible.  The named must be of schema type NameType.  All name references use a Unix style file system name format where the SpaceSystem names form a path in the SpaceSystem tree. The following characters are reserved for the path: '/', '..' and '.' (multiple consecutive '/'s are treated as one).  The path portion is similar to the directory path used in file system names and the path characters have similar meaning (e.g., SimpleSat/Bus/EPDS/BatteryOne/Voltage). There are three overall forms for name references:  absolute path, relative path and just the name.  The first two forms are called qualified name references; the last form is called an unqualified name reference.  The unqualified form refers to an item in the SpaceSystem the reference is used in.  The unqualified form refers to an item in the SpaceSystem the reference is used in.  All name references must resolve to a named item (i.e. no dangling name references).  This is used by the ParameterTypeRef, ArgumentTypeRef, baseType attribute, typeRef attribute, arrayTypeRef attribute, spaceSystemAtRisk attribute, scopeToSpaceSystem attribute, triggerContainer attribute, StreamRef, ContainerRef, MetaCommandRef, ServiceRef, and MessageRef variations.</documentation>
+		</annotation>
+		<restriction base="normalizedString">
+			<pattern value="(/?(|\.{1,2}/|[^.\[\]:/ \t]+))*[^.\[\]:/ \t]+"/>
+		</restriction>
+	</simpleType>
+	<simpleType name="ExpandedNameReferenceWithPathType">
+		<annotation>
+			<documentation xml:lang="en">Defines a reference that can include a path to a named object where array and aggregate are possible.  The named must be of schema type NameType.  All name references use a Unix style file system name format where the SpaceSystem names form a path in the SpaceSystem tree. The following characters are reserved for the path: '/', '..' and '.' (multiple consecutive '/'s are treated as one).  The path portion is similar to the directory path used in file system names and the path characters have similar meaning (e.g., SimpleSat/Bus/EPDS/BatteryOne/Voltage). There are three overall forms for name references:  absolute path, relative path and just the name.  The first two forms are called qualified name references; the last form is called an unqualified name reference.  The unqualified form refers to an item in the SpaceSystem the reference is used in.  The unqualified form refers to an item in the SpaceSystem the reference is used in.  All name references must resolve to a named item (i.e. no dangling name references).  This is used by the ParameterRef variations.</documentation>
+		</annotation>
+		<restriction base="normalizedString">
+			<pattern value="(/?(|\.{1,2}/|[^.\[\]:/ \t]+))*[^.\[\]:/ \t]+([^\.\[\]:/ \t]+(\[[0-9]+\])*(\.[^\.\[\]:/ \t]+(\[[0-9]+\])*)*)*"/>
 		</restriction>
 	</simpleType>
 	<complexType name="NoteSetType">
@@ -5165,7 +5520,7 @@ reverse the bit order in the incoming data and/or the result.
 	</simpleType>
 	<simpleType name="RangeFormType">
 		<annotation>
-			<documentation>Defines whether the defined range between the minimum and maximum is the outside or inside the range being defined. The default, outside matches values less than the minimum and greater than the maximum.  Inside matches values between the minimum and maximum.</documentation>
+			<documentation xml:lang="en">Defines inside and outside enumerated terms, where the term outside means the range is (-inf,  minimum) and (maximum, inf) -- that is a range where acceptable values must be less than the minimum and greater than the maximum, and the term inside means the range is (minimum, maximum) -- that is acceptable values are between the minimum and maximum (either the min or max may be inclusive or exclusive).</documentation>
 		</annotation>
 		<restriction base="string">
 			<enumeration value="outside"/>
@@ -5193,15 +5548,19 @@ reverse the bit order in the incoming data and/or the result.
 	</simpleType>
 	<complexType name="RepeatType">
 		<annotation>
-			<documentation xml:lang="en">Hold a structure that can be repeated X times, where X is the Count</documentation>
+			<documentation xml:lang="en">Contains elements that describe how an Entry is identically repeated. This includes a Count of the number of appearances and an optional Offset in bits that may occur between appearances. A Count of 1 indicates no repetition. The Offset default is 0 when not specified.</documentation>
 		</annotation>
 		<sequence>
 			<element name="Count" type="xtce:IntegerValueType">
 				<annotation>
-					<documentation xml:lang="en">Value (either fixed or dynamic) that contains the count of repeated structures.</documentation>
+					<documentation xml:lang="en">Value (either fixed or dynamic) that contains the count of appearances for an Entry. The value must be positive where 1 is the same as not specifying a RepeatEntry element at all.</documentation>
 				</annotation>
 			</element>
-			<element name="Offset" type="xtce:IntegerValueType" minOccurs="0"/>
+			<element name="Offset" type="xtce:IntegerValueType" minOccurs="0">
+				<annotation>
+					<documentation xml:lang="en">Value (either fixed or dynamic) that contains an optional offset in bits between repeats of the Entry. The default is 0, which is contiguous. The value must be 0 or positive. Empty offset after the last repeat count is not implicitly reserved, so the parent EntryList should consider if these are occupied bits when placing the next Entry.</documentation>
+				</annotation>
+			</element>
 		</sequence>
 	</complexType>
 	<complexType name="ArgumentRepeatType">
@@ -5221,11 +5580,7 @@ reverse the bit order in the incoming data and/or the result.
 		<annotation>
 			<documentation xml:lang="en">A reference to a Service</documentation>
 		</annotation>
-		<simpleContent>
-			<extension base="xtce:NameReferenceType">
-				<attribute name="serviceRef" type="xtce:NameReferenceType" use="required"/>
-			</extension>
-		</simpleContent>
+		<attribute name="serviceRef" type="xtce:NameReferenceWithPathType" use="required"/>
 	</complexType>
 	<simpleType name="ShortDescriptionType">
 		<annotation>
@@ -5270,11 +5625,16 @@ reverse the bit order in the incoming data and/or the result.
 	</complexType>
 	<simpleType name="TimeUnitsType">
 		<annotation>
-			<documentation xml:lang="en">base time units.  days, months, years have obvoius ambiguity and should be avoided</documentation>
+			<documentation xml:lang="en">Base time unit of measure.  It is best practice to avoid days, months, and years due to ambiguity involving leap seconds and leap days.  If these are used, the system should document how the leaps are handled.</documentation>
 		</annotation>
 		<restriction base="string">
 			<enumeration value="seconds"/>
-			<enumeration value="picoSeconds"/>
+			<enumeration value="milliseconds"/>
+			<enumeration value="microseconds"/>
+			<enumeration value="nanoseconds"/>
+			<enumeration value="picoseconds"/>
+			<enumeration value="minutes"/>
+			<enumeration value="hours"/>
 			<enumeration value="days"/>
 			<enumeration value="months"/>
 			<enumeration value="years"/>
@@ -5338,6 +5698,26 @@ reverse the bit order in the incoming data and/or the result.
 		<attribute name="shortDescription" type="xtce:ShortDescriptionType">
 			<annotation>
 				<documentation xml:lang="en">An optional additional string description can be specified for this enumeration label to provide extended information if desired.</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+	<complexType name="XORType">
+		<annotation>
+			<documentation xml:lang="en">Describe an exclusive or (XOR) checksum definition. See ErrorDetectCorrectType.</documentation>
+		</annotation>
+		<attribute name="bitsFromReference" type="xtce:NonNegativeLongType" default="0">
+			<annotation>
+				<documentation xml:lang="en">An offset of non-zero may be specified to skip some bits against the reference position in the reference attribute.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="reference" type="xtce:ReferencePointType" default="start">
+			<annotation>
+				<documentation xml:lang="en">The bits involved in the calculation may start at the beginning or the end of the container.</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="parameterRef" type="xtce:ExpandedNameReferenceWithPathType">
+			<annotation>
+				<documentation xml:lang="en">Reference to the parameter that contains the value of this computed XOR based on this container.  This attribute is optional because not all implementations verify (telemetry) or create (telecommand) error control fields using the XTCE definition.</documentation>
 			</annotation>
 		</attribute>
 	</complexType>
@@ -5410,7 +5790,7 @@ reverse the bit order in the incoming data and/or the result.
 				</sequence>
 				<attribute name="rangeForm" type="xtce:RangeFormType" default="outside">
 					<annotation>
-						<documentation xml:lang="en">A value of outside specifies that the most severe range is outside all the other ranges: -severe -critical -distress -warning -watch normal +watch +warning +distress +critical +severe. A value of inside "inverts" these bands: -green -watch -warning -distress -critical severe +critical +distress +warning +watch. The most common form used is "outside" and is the default.</documentation>
+						<documentation xml:lang="en">A value of outside specifies that the most severe range is outside all the other ranges: -severe -critical -distress -warning -watch normal +watch +warning +distress +critical +severe.  This means each min, max pair are a range: (-inf, min) or (-inf, min], and [max, inf) or (max, inf).  However a value of inside "inverts" these bands: -normal -watch -warning -distress -critical severe +critical +distress +warning +watch, +normal.  This means each min, max pair form a range of (min, max) or [min, max) or (min, max] or [min, max]. The most common form used is "outside" and it is the default.  The set notation used defines parenthesis as exclusive and square brackets as inclusive.</documentation>
 					</annotation>
 				</attribute>
 			</extension>
@@ -5418,32 +5798,35 @@ reverse the bit order in the incoming data and/or the result.
 	</complexType>
 	<complexType name="AlarmType" abstract="true">
 		<annotation>
-			<documentation xml:lang="en">Defines a base schema type used to build up the other data type specific alarm types. The definition includes a count to go into alarm (minViolations – the counts to go out of alarm is the same), a condition style alarm and a custom alarm. See AlarmConditionType, CustomAlgorithmType, BinaryAlarmConditionType, BooleanAlarmType, BinaryContextAlarmType, EnumerationAlarmType, NumericAlarmType, StringAlarmType, TimeAlarmType, TimeAlarmConditionType.</documentation>
+			<documentation xml:lang="en">Defines a base schema type used to build up the other data type specific alarm types. The definition includes a count to go into alarm (minViolations - the counts to go out of alarm is the same), a condition style alarm and a custom alarm. See AlarmConditionType, CustomAlgorithmType, BinaryAlarmConditionType, BooleanAlarmType, BinaryContextAlarmType, EnumerationAlarmType, NumericAlarmType, StringAlarmType, TimeAlarmType, TimeAlarmConditionType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:BaseAlarmType">
-				<sequence>
-					<choice minOccurs="0">
-						<element name="AlarmConditions" type="xtce:AlarmConditionsType">
-							<annotation>
-								<documentation xml:lang="en">A MatchCriteria may be specified for each of the 5 alarm levels. Each level is optional and the alarm should be the highest level to test true.</documentation>
-							</annotation>
-						</element>
-						<element name="CustomAlarm" type="xtce:CustomAlarmType">
-							<annotation>
-								<documentation xml:lang="en">An escape for ridiculously complex alarm conditions. Will trigger on changes to the containing Parameter.</documentation>
-							</annotation>
-						</element>
-					</choice>
-				</sequence>
+				<choice minOccurs="0">
+					<element name="AlarmConditions" type="xtce:AlarmConditionsType">
+						<annotation>
+							<documentation xml:lang="en">A MatchCriteria may be specified for each of the 5 alarm levels. Each level is optional and the alarm should be the highest level to test true.</documentation>
+						</annotation>
+					</element>
+					<element name="CustomAlarm" type="xtce:CustomAlarmType">
+						<annotation>
+							<documentation xml:lang="en">An escape for ridiculously complex alarm conditions. Will trigger on changes to the containing Parameter.</documentation>
+						</annotation>
+					</element>
+				</choice>
 				<attribute name="minViolations" type="xtce:PositiveLongType" default="1">
 					<annotation>
 						<documentation xml:lang="en">The number of successive instances that meet the alarm conditions for the alarm to trigger. The default is 1.</documentation>
 					</annotation>
 				</attribute>
-				<attribute name="minConformance" type="xtce:PositiveLongType">
+				<attribute name="minConformance" type="xtce:PositiveLongType" default="1">
 					<annotation>
 						<documentation xml:lang="en">Optionally specify the number of successive instances that do not meet the alarm conditions to leave the alarm state. If this attribute is not specified, it is treated as being equal to minViolations (symmetric).</documentation>
+					</annotation>
+				</attribute>
+				<attribute name="disabled" type="boolean" default="false">
+					<annotation>
+						<documentation xml:lang="en">The initial state of this alarm definition as delivered.  When true, this leaves the alarm definition empty for the parameter and also short circuits the remaining context matches and the default so no alarm is active on the parameter.</documentation>
 					</annotation>
 				</attribute>
 			</extension>
@@ -5451,14 +5834,14 @@ reverse the bit order in the incoming data and/or the result.
 	</complexType>
 	<complexType name="AlarmMultiRangesType">
 		<annotation>
-			<documentation xml:lang="en">Describe any number of alarm ranges, each with its own level (normal, warning, watch, distress, critical, severe) and range form (inside or outside). Ranges may overlap, be disjoint and so forth. Ranges within the value sprectrum non-specified are non-normal. The most severe range level of value within the ranges is the level of the alarm. Range values are in calibrated engineering units. See FloatRangeType.</documentation>
+			<documentation xml:lang="en">Describe any number of alarm ranges, each with its own level (normal, warning, watch, distress, critical, severe) and range form (inside -- (min,max), [min,max), (min, max], [min, max], or outside -- (-inf, min) or (-inf,min] and [max, +inf) or (max,+inf). Ranges may overlap, be disjoint and so forth. Ranges within the value spectrum non-specified are non-normal. The most severe range level of value within the ranges is the level of the alarm. Range values are in calibrated engineering units. See FloatRangeType.</documentation>
 		</annotation>
 		<complexContent>
 			<extension base="xtce:BaseAlarmType">
 				<sequence>
 					<element name="Range" type="xtce:MultiRangeType" maxOccurs="unbounded">
 						<annotation>
-							<documentation xml:lang="en">Describe any number of alarm ranges, each with its own level (normal, warning, watch, distress, critical, severe) and range form (inside or outside). Ranges may overlap, be disjoint and so forth. Ranges within the value sprectrum non-specified are non-normal. The most severe range level of value within the ranges is the level of the alarm. Range values are in calibrated engineering units. See FloatRangeType.</documentation>
+							<documentation xml:lang="en">Describe any number of alarm ranges, each with its own level (normal, warning, watch, distress, critical, severe) and range form (inside -- (min,max),[min,max), (min, max], [min, max], or outside -- (-inf, min) or (-inf,min] and [max, +inf) or (max,+inf).. Ranges may overlap, be disjoint and so forth. Ranges within the value spectrum non-specified are non-normal. The most severe range level of value within the ranges is the level of the alarm. Range values are in calibrated engineering units. See FloatRangeType.</documentation>
 						</annotation>
 					</element>
 				</sequence>
@@ -5495,12 +5878,16 @@ reverse the bit order in the incoming data and/or the result.
 			<documentation xml:lang="en">Describe an ordered collection of context binary alarms, duplicates are valid.  Process the contexts in list order.  See BinaryContextAlarmType.</documentation>
 		</annotation>
 		<sequence>
-			<element name="ContextAlarm" type="xtce:BinaryContextAlarmType" maxOccurs="unbounded"/>
+			<element name="ContextAlarm" type="xtce:BinaryContextAlarmType" maxOccurs="unbounded">
+				<annotation>
+					<documentation xml:lang="en">A Context contains a new alarm definition and a context match.  The match takes precedence over any default alarm when the first in the overall list evaluates to true.  It is also possible the alarm definition is empty, in which case the context means no alarm defined when the match is true.</documentation>
+				</annotation>
+			</element>
 		</sequence>
 	</complexType>
 	<complexType name="BinaryContextAlarmType">
 		<complexContent>
-			<extension base="xtce:AlarmType">
+			<extension base="xtce:BinaryAlarmType">
 				<sequence>
 					<element name="ContextMatch" type="xtce:ContextMatchType"/>
 				</sequence>
@@ -5517,8 +5904,15 @@ reverse the bit order in the incoming data and/or the result.
 		</complexContent>
 	</complexType>
 	<complexType name="BooleanContextAlarmListType">
+		<annotation>
+			<documentation xml:lang="en">Describe an ordered collection of context boolean alarms, duplicates are valid.  Process the contexts in list order.  See BooleanContextAlarmType.</documentation>
+		</annotation>
 		<sequence>
-			<element name="ContextAlarm" type="xtce:BooleanContextAlarmType" maxOccurs="unbounded"/>
+			<element name="ContextAlarm" type="xtce:BooleanContextAlarmType" maxOccurs="unbounded">
+				<annotation>
+					<documentation xml:lang="en">A Context contains a new alarm definition and a context match.  The match takes precedence over any default alarm when the first in the overall list evaluates to true.  It is also possible the alarm definition is empty, in which case the context means no alarm defined when the match is true.</documentation>
+				</annotation>
+			</element>
 		</sequence>
 	</complexType>
 	<complexType name="ChangeAlarmRangesType">
@@ -5545,15 +5939,39 @@ reverse the bit order in the incoming data and/or the result.
 	</simpleType>
 	<simpleType name="ConcernLevelsType">
 		<annotation>
-			<documentation xml:lang="en">Defines six levels: Normal, Watch, Warning, Distress, Critical and Severe. Typical implementations color the "normal" level as green, "warning" level as yellow, and "critical" level as red. These level definitions are used throughout the alarm definitions. Some systems provide a greater fidelity with the additional levels provided here. The "normal" level is not typically needed because "normal" should be construed as none of the concern levels evaluating to true. For cases where definiing "normal" is needed, refer to the specific alarm definition types.</documentation>
+			<documentation xml:lang="en">Defines six levels: Normal, Watch, Warning, Distress, Critical and Severe, in that order of concern from least to most. These level definitions are used throughout the alarm definitions. An implementation should interpret these as best to match their uniqueness and provide documentation on how this standard maps to their implementation.  Not all are likely to be provided, with some either ignored, promoted or demoted to others, or warned on input.  There exist some reasonable usage recommendations in the user community.</documentation>
 		</annotation>
 		<restriction base="string">
-			<enumeration value="normal"/>
-			<enumeration value="watch"/>
-			<enumeration value="warning"/>
-			<enumeration value="distress"/>
-			<enumeration value="critical"/>
-			<enumeration value="severe"/>
+			<enumeration value="normal">
+				<annotation>
+					<documentation xml:lang="en">The case of "normal" or "no concern level" is generally the default.  This value can be useful when describing an exception or disabling when the more typical case is a non-normal concern level.</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="watch">
+				<annotation>
+					<documentation xml:lang="en">DEPRECATED: The lowest level of concern.  Systems that support only 3 or 4 concern levels have been observed to promote "watch" to "warning" during data processing, if this enumeration is not explicitly supported.  This value may not exist in future versions of this specification.</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="warning">
+				<annotation>
+					<documentation xml:lang="en">A level of concern to be interpreted by the user as less than the highest possible concern.  This is intended by the specification to be quite vague.  The project operational concept will explicitly define how these are to be used.</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="distress">
+				<annotation>
+					<documentation xml:lang="en">A level of concern to be interpreted by the user as greater than the least concern but not yet rising to the highest possible concern.  This is intended by the specification to be quite vague.  The project operational concept will explicitly define how these are to be used.</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="critical">
+				<annotation>
+					<documentation xml:lang="en">A level of concern to be interpreted by the user as the highest possible concern.  This is intended by the specification to be quite vague.  The project operational concept will explicitly define how these are to be used.</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="severe">
+				<annotation>
+					<documentation xml:lang="en">DEPRECATED: The highest level of concern.  Systems that support only 3 or 4 concern levels have been observed to demote "severe" to "critical" during data processing, if this enumeration is not explicitly supported.  This value may not exist in future versions of this specification.</documentation>
+				</annotation>
+			</enumeration>
 		</restriction>
 	</simpleType>
 	<simpleType name="ConsequenceLevelType">
@@ -5728,9 +6146,9 @@ reverse the bit order in the incoming data and/or the result.
 	</complexType>
 	<complexType name="LinearAdjustmentType">
 		<annotation>
-			<documentation xml:lang="en">A slope and intercept may be applied to scale or shift the value of the parameter in the dynamic value</documentation>
+			<documentation xml:lang="en">A slope and intercept may be applied to scale or shift the value of the parameter in the dynamic value.  The default of slope=1 and intercept=0 results in no change to the value.</documentation>
 		</annotation>
-		<attribute name="slope" type="double"/>
+		<attribute name="slope" type="double" default="1"/>
 		<attribute name="intercept" type="double" default="0"/>
 	</complexType>
 	<complexType name="MultiRangeType">
@@ -5741,7 +6159,7 @@ reverse the bit order in the incoming data and/or the result.
 			<extension base="xtce:FloatRangeType">
 				<attribute name="rangeForm" type="xtce:RangeFormType" default="outside">
 					<annotation>
-						<documentation xml:lang="en">A value of outside specifies that the most severe range is outside all the other ranges: -severe -critical -distress -warning -watch normal +watch +warning +distress +critical +severe. A value of inside "inverts" these bands: -green -watch -warning -distress -critical severe +critical +distress +warning +watch. The most common form used is "outside" and is the default.</documentation>
+						<documentation xml:lang="en">A value of outside specifies that the most severe range is outside all the other ranges: -severe -critical -distress -warning -watch normal +watch +warning +distress +critical +severe.  This means each min, max pair are a range: (-inf, min) or (-inf, min], and [max, inf) or (max, inf).  However a value of inside "inverts" these bands: -normal -watch -warning -distress -critical severe +critical +distress +warning +watch, +normal.  This means each min, max pair form a range of (min, max) or [min, max) or (min, max] or [min, max].  The most common form used is "outside" and it is the default.  The set notation used defines parenthesis as exclusive and square brackets as inclusive.</documentation>
 					</annotation>
 				</attribute>
 				<attribute name="level" type="xtce:ConcernLevelsType">
@@ -5836,10 +6254,14 @@ reverse the bit order in the incoming data and/or the result.
 	</complexType>
 	<complexType name="StringContextAlarmListType">
 		<annotation>
-			<documentation xml:lang="en">An ordered collection of numeric alarms associated with a context. Process the contexts in list order. See StringContextAlarmType.</documentation>
+			<documentation xml:lang="en">Describe an ordered collection of context string alarms, duplicates are valid. Process the contexts in list order. See StringContextAlarmType.</documentation>
 		</annotation>
 		<sequence>
-			<element name="ContextAlarm" type="xtce:StringContextAlarmType" maxOccurs="unbounded"/>
+			<element name="ContextAlarm" type="xtce:StringContextAlarmType" maxOccurs="unbounded">
+				<annotation>
+					<documentation xml:lang="en">A Context contains a new alarm definition and a context match.  The match takes precedence over any default alarm when the first in the overall list evaluates to true.  It is also possible the alarm definition is empty, in which case the context means no alarm defined when the match is true.</documentation>
+				</annotation>
+			</element>
 		</sequence>
 	</complexType>
 	<complexType name="TimeAlarmType">
@@ -5866,13 +6288,24 @@ reverse the bit order in the incoming data and/or the result.
 	<complexType name="TimeAlarmRangesType">
 		<complexContent>
 			<extension base="xtce:AlarmRangesType">
-				<attribute name="timeUnits" type="xtce:TimeUnitsType" default="seconds"/>
+				<attribute name="timeUnits" type="xtce:TimeUnitsType" default="seconds">
+					<annotation>
+						<documentation xml:lang="en">Time units, with the default being in seconds.</documentation>
+					</annotation>
+				</attribute>
 			</extension>
 		</complexContent>
 	</complexType>
 	<complexType name="TimeContextAlarmListType">
+		<annotation>
+			<documentation xml:lang="en">An ordered collection of temporal alarms associated with a context. A context is an alarm definition on a parameter which is valid only in the case of a test on the value of other parameters. Process the contexts in list order. See TimeContextAlarmType.</documentation>
+		</annotation>
 		<sequence>
-			<element name="ContextAlarm" type="xtce:TimeContextAlarmType" maxOccurs="unbounded"/>
+			<element name="ContextAlarm" type="xtce:TimeContextAlarmType" maxOccurs="unbounded">
+				<annotation>
+					<documentation xml:lang="en">A Context contains a new alarm definition and a context match.  The match takes precedence over any default alarm when the first in the overall list evaluates to true.  It is also possible the alarm definition is empty, in which case the context means no alarm defined when the match is true.</documentation>
+				</annotation>
+			</element>
 		</sequence>
 	</complexType>
 	<complexType name="TimeContextAlarmType">
@@ -5905,12 +6338,24 @@ reverse the bit order in the incoming data and/or the result.
 	</simpleType>
 	<simpleType name="UnitFormType">
 		<annotation>
-			<documentation>Optionally specify if this information pertains to something other than the calibrated/engineering value.</documentation>
+			<documentation xml:lang="en">Defines enumerated values to categorize a unit associated with a telemetered value.  Typically the unit refers to the calibrated (engineering) value.  In some cases the unit may be associated with the uncalibrated or raw values.  Uncalibrated and raw here are typically synonymous, but there are exceptions.</documentation>
 		</annotation>
 		<restriction base="string">
-			<enumeration value="calibrated"/>
-			<enumeration value="uncalibrated"/>
-			<enumeration value="raw"/>
+			<enumeration value="calibrated">
+				<annotation>
+					<documentation xml:lang="en">The unit of measure for this value refers to the engineer/calibrated value.</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="uncalibrated">
+				<annotation>
+					<documentation xml:lang="en">The unit of measure for this value refers to the pre-calibrated data, after extraction from the data stream, when in the local native data type.  This is unusual, but present in some cases.</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="raw">
+				<annotation>
+					<documentation xml:lang="en">The unit of measure for this value refers to the raw binary value from the data stream, prior to conversion to the local native data type and application of calibrators.</documentation>
+				</annotation>
+			</enumeration>
 		</restriction>
 	</simpleType>
 	<!--******** End of Common Types Schema **************-->
