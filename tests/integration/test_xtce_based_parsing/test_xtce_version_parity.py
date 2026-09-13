@@ -1,8 +1,8 @@
 """Integration tests proving XTCE 1.3 support against real mission packet definitions.
 
-The telemetry half of the XTCE schema is unchanged between 1.2 and 1.3, so a mission definition
-moved to the 1.3 namespace must parse to exactly the same objects and decode packets to exactly the
-same values. Rather than committing a second copy of every (large) mission definition, each test
+None of these mission definitions uses a construct that differs between XTCE 1.2 and 1.3 (see
+test_xtce_1_3_only_features.xml for those), so each one moved to the 1.3 namespace must parse to
+exactly the same objects and decode packets to exactly the same values. Rather than committing a second copy of every (large) mission definition, each test
 rewrites the 1.2 namespace to the 1.3 namespace in memory and compares the two results.
 """
 
@@ -19,8 +19,9 @@ from space_packet_parser.xtce.validation import validate_xtce
 def _as_xtce_1_3(definition_path) -> io.BytesIO:
     """Rewrite an XTCE 1.2 document as the equivalent XTCE 1.3 document.
 
-    Only the namespace URI and the schema it points at change; every element and attribute the
-    library reads is identical between the two versions.
+    Only the namespace URI and the schema it points at change. That is a valid conversion for these
+    particular documents because none of them uses a construct whose meaning or validity differs
+    between the two versions; it is not a general-purpose converter.
     """
     source = definition_path.read_bytes()
     assert xtce.XTCE_1_2_XMLNS.encode() in source, f"{definition_path} is not an XTCE 1.2 document"

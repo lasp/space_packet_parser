@@ -12,8 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support XTCE 1.3 (OMG, July 2025) alongside XTCE 1.2. Documents in the XTCE 1.3 namespace
   (`http://www.omg.org/spec/XTCE/20250214`) are parsed, serialized, and schema validated, and the
   OMG 1.3 schema is bundled with the package so validation works offline with no network request.
-  The elements this library reads are unchanged between 1.2 and 1.3, so the same definition parses
-  identically under either version.
+  Nearly all of the schema this library reads is unchanged between 1.2 and 1.3, so a definition
+  generally parses identically under either version; the version-specific constructs are covered by
+  the entries below and are documented in the XTCE validation user guide.
   [#184](https://github.com/lasp/space_packet_parser/issues/184)
 - Add a registry of supported XTCE versions in `space_packet_parser.xtce`: `SUPPORTED_XTCE_VERSIONS`,
   `LATEST_XTCE_VERSION`, `DEFAULT_XTCE_VERSION`, the per-version namespace URI and schema URL
@@ -53,6 +54,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   recognized as XTCE 1.2 (see `LEGACY_XTCE_XMLNS_ALIASES`) and are rewritten to the canonical URI,
   with a warning, when serialized — so reading such a document and writing it back out repairs it.
 
+- `XtcePacketDefinition(xtce_ns_prefix=None)` now binds the XTCE namespace as the document's default
+  namespace (unprefixed element names) rather than producing a document with no namespace at all.
+  Pass `ns={}` for the latter.
+- Serializing a definition now writes the canonical OMG schema URL in `xsi:schemaLocation`, replacing
+  whatever URL the source document named. Anyone pointing documents at an internal schema mirror will
+  need to rewrite the attribute after serializing.
+
 ### Fixed
 
 - Make `CITATION.cff` conform to CFF 1.2.0 so citation exports work, and update the
@@ -75,11 +83,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   orders them the other way around (identically in 1.2 and 1.3), so written documents failed schema
   validation. Serialized documents now also declare `xsi:schemaLocation`, pointing at the schema for
   their own XTCE version, so a definition written out by this library is schema-valid as-is.
-- Search for a string's termination character on character boundaries rather than byte boundaries.
-  For a multi-byte encoding, the terminator's byte pattern can occur straddling two characters — in
-  UTF-16BE, `b"\x00\x00"` appears inside `b"\x41\x00\x00\x42"`, which is the two characters U+4100
-  and U+0042 and contains no terminator. Such a string previously terminated early and could fail to
-  decode.
+- Search for a string's termination character on character boundaries rather than byte boundaries in
+  fixed-width encodings. In UTF-16BE the terminator `b"\x00\x00"` appears inside
+  `b"\x41\x00\x00\x42"`, which is the two characters U+4100 and U+0042 and contains no terminator,
+  so such a string previously terminated early and could fail to decode. Variable-width (UTF-8) and
+  single-byte encodings are unaffected, and continue to be searched byte by byte.
+- Default an omitted `LinearAdjustment` `slope` attribute to 1 rather than 0. The XTCE 1.3 schema
+  declares a default of 1 (XTCE 1.2 declares none), so `<LinearAdjustment intercept="8"/>` means
+  `f(x) = x + 8`. Defaulting the slope to 0 collapsed the adjustment to a constant, which silently
+  produced the wrong length for a dynamically sized string or binary field and corrupted every
+  subsequent field in the packet.
 - Write the `maxSizeInBits` attribute when serializing a variable-length string. The XTCE schema
   requires it on a `Variable` element in both 1.2 and 1.3, so every variable-length string this
   library wrote previously failed schema validation.
