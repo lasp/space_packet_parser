@@ -150,3 +150,26 @@ def test_validate_xtce_failure(test_data_dir):
     assert "INVALID_XTCE_NAMESPACE" in result.output
     assert "SCHEMA_VALIDATION_ERROR" in result.output
     assert result.exit_code == 1
+
+
+def test_validate_xtce_1_3(test_data_dir):
+    """An XTCE 1.3 document validates via the CLI, offline, and the version is reported"""
+    runner = CliRunner()
+
+    result = runner.invoke(
+        cli.validate,
+        [str(test_data_dir / "test_xtce_1_3.xml"), "--level", "all", "--no-schema-download"],
+    )
+    assert result.exit_code == 0, result.output
+    assert "VALID" in result.output
+    assert "XTCE version: 1.3" in result.output
+    assert "Schema version: 1.3" in result.output
+
+
+def test_describe_xtce_1_3(test_data_dir):
+    """An XTCE 1.3 document can be described via the CLI"""
+    runner = CliRunner()
+
+    result = runner.invoke(cli.describe_xtce, [str(test_data_dir / "test_xtce_1_3.xml")])
+    assert result.exit_code == 0, result.output
+    assert "CCSDSPacket" in result.output

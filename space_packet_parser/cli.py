@@ -273,10 +273,12 @@ def validate(
     else:
         console.print(f"[bold red]✗ INVALID[/bold red] ({result.validation_level.value} level)")
 
+    if result.xtce_version:
+        console.print(f"XTCE version: {result.xtce_version}")
     if result.schema_location:
         console.print(f"Schema: {result.schema_location}")
     if result.schema_version:
-        console.print(f"Version: {result.schema_version}")
+        console.print(f"Schema version: {result.schema_version}")
 
     if result.validation_time_ms:
         console.print(f"Validation time: {result.validation_time_ms:.1f}ms")
