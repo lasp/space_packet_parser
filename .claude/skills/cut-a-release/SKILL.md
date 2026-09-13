@@ -177,5 +177,11 @@ and the finalized changelog land on `main` and are carried into the next release
   support, issue #47) that had shipped to `main` unrecorded.
 - **Release notes on GitHub are generated from commit messages** since the last non-prerelease
   release, independently of `CHANGELOG.md`. The changelog is for humans reading the repo; both matter.
+- **Expect the generated release notes to over-report**, and don't try to fix it. They are built by
+  walking commits from the previous tag, and because that tag sits on a `release/X.Y` branch holding
+  only cherry-picked fixes, everything that landed on `main` in the meantime looks new — so PRs
+  already shipped in earlier patch releases get listed again. This is the same topology quirk as the
+  Step 1 trap. The `Full Changelog` compare link is still correct, and `CHANGELOG.md` is the accurate
+  record. The 6.2.0 notes listed PRs back to #234 for this reason.
 - The related [`update-changelog`](../update-changelog/SKILL.md) skill handles routine changelog
   maintenance between releases.
