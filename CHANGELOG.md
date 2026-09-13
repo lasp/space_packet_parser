@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Make `CITATION.cff` conform to CFF 1.2.0 so citation exports work, and update the
+  metadata consistency check to use CFF contacts while keeping package descriptions
+  separate from the citation abstract. [#285](https://github.com/lasp/space_packet_parser/issues/285)
+
 ## [6.2.0] - 2026-09-13
 
 ### Security
