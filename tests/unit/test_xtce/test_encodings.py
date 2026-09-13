@@ -597,3 +597,14 @@ def test_string_encoding_termination_scan_respects_max_size_in_bits():
     packet = spp.SpacePacket(binary_data=b"ABCDEF\x00")
     with pytest.raises(ValueError, match="without finding the termination character"):
         encoding.parse_value(packet)
+
+
+def test_termination_scan_does_not_match_across_character_boundaries():
+    """A multi-byte terminator must be found on a character boundary, not anywhere in the bytes
+
+    b"\\x41\\x00\\x00\\x42" in UTF-16BE is the two characters U+4100 U+0042 and contains no
+    terminator, even though the byte sequence b"\\x00\\x00" appears inside it.
+    """
+    encoding = encodings.StringDataEncoding(encoding="UTF-16BE", termination_character="0000", max_size_in_bits=256)
+    packet = spp.SpacePacket(binary_data=b"\x41\x00\x00\x42" + "!".encode("utf-16-be") + b"\x00\x00")
+    assert encoding.parse_value(packet) == "䄀B!"

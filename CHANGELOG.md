@@ -64,6 +64,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   orders them the other way around (identically in 1.2 and 1.3), so written documents failed schema
   validation. Serialized documents now also declare `xsi:schemaLocation`, pointing at the schema for
   their own XTCE version, so a definition written out by this library is schema-valid as-is.
+- Search for a string's termination character on character boundaries rather than byte boundaries.
+  For a multi-byte encoding, the terminator's byte pattern can occur straddling two characters — in
+  UTF-16BE, `b"\x00\x00"` appears inside `b"\x41\x00\x00\x42"`, which is the two characters U+4100
+  and U+0042 and contains no terminator. Such a string previously terminated early and could fail to
+  decode.
 - Write the `maxSizeInBits` attribute when serializing a variable-length string. The XTCE schema
   requires it on a `Variable` element in both 1.2 and 1.3, so every variable-length string this
   library wrote previously failed schema validation.
