@@ -31,17 +31,17 @@ async function processPackets() {
     // Execute Python code to simulate opening a binary file
     await pyodide.runPythonAsync(`
         import io
-        from space_packet_parser import ccsds
-        from space_packet_parser.definitions import XtcePacketDefinition
+        import space_packet_parser as spp
 
         # Create an in-memory binary file using io.BytesIO
         packet_file_obj = io.BytesIO(packet_content.to_py())
         xtce_file_obj = io.BytesIO(xtce_content.to_py())
-        packet_def = XtcePacketDefinition(xtce_file_obj)
+        packet_def = spp.load_xtce(xtce_file_obj)
 
-        count = 0
-        ccsds_generator = ccsds.ccsds_generator(packet_file_obj)
-        packets = [packet_def.parse_bytes(binary_data) for binary_data in ccsds_generator]
+        packets = [
+            packet_def.parse_bytes(binary_data)
+            for binary_data in spp.ccsds_generator(packet_file_obj)
+        ]
         npackets = len(packets)
         print(f"Total packets: {npackets}")
     `);

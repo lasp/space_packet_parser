@@ -421,8 +421,10 @@ class XtcePacketDefinition(common.AttrComparable):
             Binary representation of the packet used to get the coming bits and any previously parsed data items to
             infer field lengths.
         root_container_name : Optional[str]
-            Default is taken from the XtcePacketDefinition object. Any root container may be specified, but it must
-            begin with the definition of a CCSDS header in order to parse correctly.
+            Name of the SequenceContainer to begin parsing from. Default is taken from the XtcePacketDefinition
+            object, which uses "CCSDSPacket" unless configured otherwise. Any container in the definition may be
+            used as the root; it does not need to begin with a CCSDS header, as XTCE has no notion of the CCSDS
+            standard. Raises KeyError if the definition contains no container by this name.
 
         Returns
         -------
@@ -480,8 +482,10 @@ class XtcePacketDefinition(common.AttrComparable):
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
         root_container_name : Optional[str]
-            Default is taken from the XtcePacketDefinition object. Any root container may be specified, but it must
-            begin with the definition of a CCSDS header in order to parse correctly.
+            Name of the SequenceContainer to begin parsing from. Default is taken from the XtcePacketDefinition
+            object, which uses "CCSDSPacket" unless configured otherwise. Any container in the definition may be
+            used as the root; it does not need to begin with a CCSDS header, as XTCE has no notion of the CCSDS
+            standard. Raises KeyError if the definition contains no container by this name.
 
         Returns
         -------
@@ -505,8 +509,10 @@ class XtcePacketDefinition(common.AttrComparable):
             Binary representation of the packet used to get the coming bits and any
             previously parsed data items to infer field lengths.
         root_container_name : Optional[str]
-            Default is taken from the XtcePacketDefinition object. Any root container may be specified, but it must
-            begin with the definition of a CCSDS header in order to parse correctly.
+            Name of the SequenceContainer to begin parsing from. Default is taken from the XtcePacketDefinition
+            object, which uses "CCSDSPacket" unless configured otherwise. Any container in the definition may be
+            used as the root; it does not need to begin with a CCSDS header, as XTCE has no notion of the CCSDS
+            standard. Raises KeyError if the definition contains no container by this name.
 
         Returns
         -------

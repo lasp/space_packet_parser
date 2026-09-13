@@ -16,16 +16,24 @@ pytest tests
 ## Building Documentation with Sphinx
 
 Documentation is automatically built on ReadTheDocs in response to every PR and release,
-but you can also build it locally with:
+but you can also build it locally. Install the `docs` extra (and `xarray`, since the API
+reference imports it) and run Sphinx via `make`:
 
 ```bash
-# From docs directory
-make html
+uv sync --extra docs --extra xarray
 
+# From the docs directory
+cd docs
+make html
+```
+
+`make` is preinstalled in the devcontainer. The built site is written to `docs/build/html/index.html`:
+
+```bash
 # macOS
 open build/html/index.html
 
-# Linux / WSL (devcontainer)
+# Linux / WSL
 sudo apt install wslu
 wslview build/html/index.html
 ```

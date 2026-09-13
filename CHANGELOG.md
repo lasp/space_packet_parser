@@ -28,8 +28,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `SPP_ALLOWED_SCHEMA_HOSTS` environment variable, and insecure http via `SPP_ALLOW_INSECURE_HTTP`.
   The default allowlist is exported as `DEFAULT_ALLOWED_SCHEMA_HOSTS`.
 
+### Changed
+
+- Reorganize the user documentation. The single `users.md` page is split into a `Getting Started`
+  page (installation, the parsing workflow, and a self-contained runnable quickstart) and a
+  `User Guide` section with one page per topic: packet bytes generators, packet and parameter
+  objects, xarray datasets, variable length fields, XTCE validation, error handling and
+  troubleshooting, socket parsing, and performance tuning. The Sphinx toctree is now defined in
+  MyST Markdown rather than reStructuredText, and pages cross-link to one another.
+  [#192](https://github.com/lasp/space_packet_parser/issues/192)
+- Refresh the benchmarking documentation against the current benchmark suite. All nine benchmarks
+  are now covered, including complex (IDEX) packet parsing and XTCE definition load times, which
+  were previously unreported. Removes a progress-printing comparison that was not reproducible from
+  the committed test suite, and fixes a GitHub-style `[!NOTE]` callout that rendered as literal text
+  in the built documentation. Documents packet filtering on muxed streams as a performance lever,
+  and corrects the explanation of what drives parsing cost: dynamic evaluation work, not packet
+  size or definition-wide parameter count.
+
 ### Fixed
 
+- Correct the documented meaning of `root_container_name` on `parse_bytes`, `parse_packet`, and
+  `parse_ccsds_packet`. All three stated that a specified root container "must begin with the
+  definition of a CCSDS header in order to parse correctly", which is not true — any container in
+  the definition may be used as the root, and XTCE has no notion of the CCSDS standard (as the
+  deprecated methods' own warnings point out). `"CCSDSPacket"` is the default container name, not a
+  structural requirement.
+- Remove the duplicated table of contents from the User Guide landing page, and describe the packet
+  filtering example on the Examples page alongside the others.
+- Fix the navigation sidebar on the in-browser demo page. The demo's standalone HTML document was
+  spliced into the middle of the documentation page, so its Materialize stylesheet applied to the
+  whole page: `nav { height: 56px; width: 100%; background-color: #ee6e73; position: fixed }` and
+  `nav ul li { float: left }` collapsed the theme's `<nav class="wy-nav-side">` sidebar, and the
+  demo's `body { display: flex; max-width: 900px }` rule constrained the page layout. The demo is
+  now embedded in an iframe, which isolates its styles while leaving the demo itself unchanged.
+- Correct several longstanding inaccuracies in the user documentation, surfaced while
+  reorganizing it. The Getting Started workflow now imports `space_packet_parser` and opens the
+  packet file in binary mode (`ccsds_generator` takes a file-like object, not a path, and raised
+  `OSError` as previously written); `udp_generator` is imported from `space_packet_parser.generators`
+  rather than the package root, which does not export it; the removed
+  `yield_unrecognized_packet_errors` option is no longer referenced; the socket page no longer
+  claims `ccsds_generator` yields parsed packets rather than `CCSDSPacketBytes`; `BoolParameter` is
+  documented as subclassing `int` rather than `bool` (Python forbids subclassing `bool`, so
+  `isinstance(param, bool)` is `False`); and the `validate_xtce` examples pass
+  `raise_on_error=False`, without which the documented `result.errors` inspection was unreachable.
+- Fix `CLAUDE_CONFIG_DIR` and persist the IPv6 localhost workaround for MCP OAuth in the
+  devcontainer configuration.
 - `validate_xtce(local_xsd=...)` and `spp validate --local-xsd` again accept absolute paths from
   any working directory (a regression that silently rewrote them to a bare filename in the current
   directory). Schema-fetch failures are now reported with accurate error codes
