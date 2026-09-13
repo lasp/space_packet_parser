@@ -529,22 +529,45 @@ def test_validation_resolves_bundled_schema_per_version_offline(test_data_dir, x
     assert result.xtce_version == expected_version
 
 
-def test_xtce_1_3_document_uses_1_3_only_construct(test_data_dir):
-    """The 1.3 test document is genuinely 1.3, not a 1.2 document wearing a 1.3 namespace
-
-    ``SpaceSystem/@systemType`` was added in XTCE 1.3, so validating this document against the 1.2
-    schema must fail. Without this, a test that only swapped namespace URIs would pass even if the
-    1.3 schema were never consulted.
-    """
+def test_xtce_1_3_only_features_validate_against_the_1_3_schema(test_data_dir):
+    """A document using XTCE 1.3-only constructs validates against the bundled 1.3 schema"""
     result = validate_xtce(
-        test_data_dir / "test_xtce_1_3.xml",
+        test_data_dir / "test_xtce_1_3_only_features.xml",
+        level="all",
+        print_results=False,
+        allow_schema_download=False,
+    )
+    assert result.valid
+    assert result.schema_version == "1.3"
+    assert result.xtce_version == "1.3"
+
+
+def test_xtce_1_3_only_features_are_rejected_by_the_1_2_schema(test_data_dir):
+    """The 1.3-only fixture is genuinely 1.3, not a 1.2 document wearing a 1.3 namespace
+
+    Rewritten into the *1.2* namespace and validated against the 1.2 schema, it must still fail —
+    and fail on its content, not on a namespace mismatch. Otherwise a test could pass without the
+    1.3 schema ever being consulted, simply because the URIs did not match.
+    """
+    as_xtce_1_2 = (test_data_dir / "test_xtce_1_3_only_features.xml").read_bytes().replace(b"20250214", b"20180204")
+
+    result = validate_xtce(
+        io.BytesIO(as_xtce_1_2),
         level="schema",
         print_results=False,
         raise_on_error=False,
-        local_xsd=test_data_dir / "SpaceSystem.xsd",  # the 1.2 schema
+        allow_schema_download=False,
     )
+
     assert not result.valid
-    assert any(error.error_code == "INVALID_XTCE_NAMESPACE" for error in result.errors)
+    # A namespace mismatch would mask the real errors, so assert it is *not* what happened.
+    assert not any(error.error_code == "INVALID_XTCE_NAMESPACE" for error in result.errors)
+    messages = " ".join(error.message for error in result.errors)
+    # SpaceSystem/@systemType is new in 1.3.
+    assert "systemType" in messages
+    # So is a variable-length string with no declared buffer length.
+    assert "LeadingSize" in messages
+    assert "TerminationChar" in messages
 
 
 def test_validation_with_1_3_local_xsd(test_data_dir, bundled_xsd_path):

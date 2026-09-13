@@ -57,6 +57,14 @@ XTCE_XMLNS_BY_VERSION: dict[str, str] = {
 #: pre-1.2 namespace is shared by 1.0 and 1.1 and is reported as 1.1.
 XTCE_VERSION_BY_XMLNS: dict[str, str] = {uri: version for version, uri in XTCE_XMLNS_BY_VERSION.items()}
 
+#: Non-canonical namespace URIs that are nonetheless recognized, mapped to the version they mean.
+#: ``space_packet_parser`` <= 6.2 serialized documents with an ``https`` XTCE 1.2 namespace URI, which
+#: no XTCE schema declares. Such documents are still read as XTCE 1.2, and are normalized to the
+#: canonical URI (with a warning) when written back out. These URIs are never *written*.
+LEGACY_XTCE_XMLNS_ALIASES: dict[str, str] = {
+    "https://www.omg.org/spec/XTCE/20180204": "1.2",
+}
+
 #: XTCE standard version -> canonical OMG XSD URL.
 XTCE_XSD_URL_BY_VERSION: dict[str, str] = {
     "1.1": XTCE_1_1_XSD_URL,
@@ -88,10 +96,18 @@ def xtce_version_from_uri(uri: str | None) -> str | None:
         The XTCE version string (e.g. ``"1.3"``) if the URI is a recognized standard XTCE
         namespace, otherwise None. A None return does not mean the document cannot be parsed;
         documents routinely use non-standard namespace URIs.
+
+    Notes
+    -----
+    A legacy URI from :data:`LEGACY_XTCE_XMLNS_ALIASES` resolves to the version it stands for, so
+    that documents written by older versions of this library are still recognized.
     """
     if uri is None:
         return None
-    return XTCE_VERSION_BY_XMLNS.get(uri)
+    version = XTCE_VERSION_BY_XMLNS.get(uri)
+    if version is None:
+        version = LEGACY_XTCE_XMLNS_ALIASES.get(uri)
+    return version
 
 
 def xtce_uri_for_version(version: str) -> str:

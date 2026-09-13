@@ -3,6 +3,7 @@
 import lxml.etree as ElementTree
 import pytest
 
+import space_packet_parser as spp
 from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, encodings
 
 
@@ -51,6 +52,7 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
                 dynamic_length_reference="SizeFromThisParameter",
                 length_linear_adjuster=object(),
                 termination_character="58",
+                max_size_in_bits=32,
             ),
         ),
         (
@@ -66,7 +68,10 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
 </xtce:StringDataEncoding>
 """,
             encodings.StringDataEncoding(
-                dynamic_length_reference="SizeFromThisParameter", length_linear_adjuster=object(), leading_length_size=3
+                dynamic_length_reference="SizeFromThisParameter",
+                length_linear_adjuster=object(),
+                leading_length_size=3,
+                max_size_in_bits=32,
             ),
         ),
         (
@@ -91,6 +96,7 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
                     comparisons.DiscreteLookup([comparisons.Comparison("2", "P1")], 25),
                 ],
                 termination_character="58",
+                max_size_in_bits=32,
             ),
         ),
         (
@@ -115,6 +121,7 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, comparisons, e
                     comparisons.DiscreteLookup([comparisons.Comparison("2", "P1")], 25),
                 ],
                 leading_length_size=3,
+                max_size_in_bits=32,
             ),
         ),
         (
@@ -163,7 +170,7 @@ def test_string_data_encoding(elmaker, xtce_parser, xml_string: str, expectation
             (),
             {},
             ValueError,
-            "Expected exactly one of dynamic length reference, discrete length lookup, or fixed length",
+            "Expected one of dynamic length reference, discrete length lookup, or fixed length",
         ),
         (
             (),
@@ -548,3 +555,45 @@ def test_binary_data_encoding_validation(args, kwargs, expected_error, expected_
     """Test initialization errors for BinaryDataEncoding"""
     with pytest.raises(expected_error, match=expected_error_msg):
         encodings.BinaryDataEncoding(*args, **kwargs)
+
+
+def test_variable_string_without_max_size_warns_on_serialization(elmaker):
+    """maxSizeInBits is required on Variable by both XTCE schemas, so its absence is surfaced
+
+    An encoding read from a document always has it (the schema requires it), but one built in
+    Python may not, in which case there is no way to infer an upper bound. Warn rather than guess.
+    """
+    encoding = encodings.StringDataEncoding(dynamic_length_reference="LEN")
+    with pytest.warns(UserWarning, match="no max_size_in_bits"):
+        element = encoding.to_xml(elmaker=elmaker)
+    assert "maxSizeInBits" not in element.find(f"{{{XTCE_1_2_XMLNS}}}Variable").attrib
+
+    encoding = encodings.StringDataEncoding(dynamic_length_reference="LEN", max_size_in_bits=128)
+    element = encoding.to_xml(elmaker=elmaker)
+    assert element.find(f"{{{XTCE_1_2_XMLNS}}}Variable").attrib["maxSizeInBits"] == "128"
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "raw_data", "expected"),
+    [
+        # XTCE 1.3 Pascal string: buffer is the 8-bit size tag plus the 24 bits it reports.
+        ({"leading_length_size": 8, "max_size_in_bits": 256}, bytes([24]) + b"ABCtrailing", "ABC"),
+        # XTCE 1.3 C string: buffer runs up to and including the terminator.
+        ({"termination_character": "00", "max_size_in_bits": 256}, b"ABC\x00trailing", "ABC"),
+    ],
+)
+def test_string_encoding_derives_buffer_length_from_delimiter(kwargs, raw_data, expected):
+    """With no declared buffer length (XTCE 1.3), the delimiter determines how much to read"""
+    encoding = encodings.StringDataEncoding(**kwargs)
+    packet = spp.SpacePacket(binary_data=raw_data)
+    assert encoding.parse_value(packet) == expected
+    # Only the delimited buffer is consumed; the trailing bytes are left for the next field.
+    assert packet._parsing_pos == (len(expected) + 1) * 8
+
+
+def test_string_encoding_termination_scan_respects_max_size_in_bits():
+    """The scan for a termination character is bounded by maxSizeInBits, per the XTCE schema"""
+    encoding = encodings.StringDataEncoding(termination_character="00", max_size_in_bits=16)
+    packet = spp.SpacePacket(binary_data=b"ABCDEF\x00")
+    with pytest.raises(ValueError, match="without finding the termination character"):
+        encoding.parse_value(packet)
