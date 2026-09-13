@@ -47,6 +47,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Correct the documented meaning of `root_container_name` on `parse_bytes`, `parse_packet`, and
+  `parse_ccsds_packet`. All three stated that a specified root container "must begin with the
+  definition of a CCSDS header in order to parse correctly", which is not true — any container in
+  the definition may be used as the root, and XTCE has no notion of the CCSDS standard (as the
+  deprecated methods' own warnings point out). `"CCSDSPacket"` is the default container name, not a
+  structural requirement.
+- Remove the duplicated table of contents from the User Guide landing page, and describe the packet
+  filtering example on the Examples page alongside the others.
 - Fix the navigation sidebar on the in-browser demo page. The demo's standalone HTML document was
   spliced into the middle of the documentation page, so its Materialize stylesheet applied to the
   whole page: `nav { height: 56px; width: 100%; background-color: #ee6e73; position: fixed }` and

@@ -5,6 +5,7 @@ with [Getting Started](../getting_started.md) first.
 
 ```{toctree}
 :maxdepth: 1
+:hidden:
 
 generators
 packets_and_parameters
