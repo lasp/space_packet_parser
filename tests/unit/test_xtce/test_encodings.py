@@ -608,3 +608,51 @@ def test_termination_scan_does_not_match_across_character_boundaries():
     encoding = encodings.StringDataEncoding(encoding="UTF-16BE", termination_character="0000", max_size_in_bits=256)
     packet = spp.SpacePacket(binary_data=b"\x41\x00\x00\x42" + "!".encode("utf-16-be") + b"\x00\x00")
     assert encoding.parse_value(packet) == "䄀B!"
+
+
+@pytest.mark.parametrize(
+    ("encoding_name", "termination_character", "raw_data", "expected"),
+    [
+        # UTF-8 is variable-width, so a multi-byte terminator (U+00A5) sits at a byte offset that is
+        # not a multiple of its own length. Scanning by a fixed stride would step straight over it.
+        ("UTF-8", "c2a5", b"A\xc2\xa5XX", "A"),
+        ("UTF-8", "00", b"AB\x00XX", "AB"),
+        # Fixed-width encodings are scanned a character at a time.
+        ("UTF-16BE", "0000", "AB".encode("utf-16-be") + b"\x00\x00", "AB"),
+    ],
+)
+def test_termination_character_search_handles_variable_width_encodings(
+    encoding_name, termination_character, raw_data, expected
+):
+    """Finding the terminator must work for variable-width encodings as well as fixed-width ones"""
+    encoding = encodings.StringDataEncoding(
+        encoding=encoding_name,
+        termination_character=termination_character,
+        fixed_raw_length=len(raw_data) * 8,
+    )
+    assert encoding.parse_value(spp.SpacePacket(binary_data=raw_data)) == expected
+
+
+@pytest.mark.parametrize(
+    ("attributes", "expected"),
+    [
+        # XTCE 1.3 defaults slope to 1 and intercept to 0, so an omitted attribute leaves the value
+        # untouched rather than collapsing the adjustment to a constant.
+        ({"intercept": "8"}, 24.0),
+        ({"slope": "8"}, 128.0),
+        ({}, 16.0),
+        ({"slope": "8", "intercept": "25"}, 153.0),
+    ],
+)
+def test_linear_adjustment_attribute_defaults(xtce_parser, attributes, expected):
+    """An omitted LinearAdjustment slope means 1, not 0"""
+    rendered = " ".join(f'{name}="{value}"' for name, value in attributes.items())
+    element = ElementTree.fromstring(
+        f'<xtce:DynamicValue xmlns:xtce="{XTCE_1_2_XMLNS}">'
+        f'<xtce:ParameterInstanceRef parameterRef="P1"/>'
+        f"<xtce:LinearAdjustment {rendered}/>"
+        f"</xtce:DynamicValue>",
+        parser=xtce_parser,
+    )
+    adjuster = encodings.DataEncoding._get_linear_adjuster(element)
+    assert adjuster(16) == expected

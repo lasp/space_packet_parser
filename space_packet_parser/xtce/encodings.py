@@ -84,7 +84,10 @@ class DataEncoding(common.AttrComparable, common.XmlObject, metaclass=ABCMeta):
             # The XTCE XSD defines slope and intercept as "doubles" so we treat them as floats
             # Often, the result of this adjustment is assumed to be an integer number of bits, for adjusting a size
             # (e.g. from bytes to bits) but it's not necessarily the case
-            slope = float(linear_adjustment_element.attrib.get("slope", 0))
+            # The XTCE 1.3 XSD gives slope a default of 1 and intercept a default of 0, i.e. an omitted
+            # attribute leaves the value untouched. XTCE 1.2 declares no default for slope, but defaulting
+            # it to 0 would collapse the adjustment to a constant, which is never the intent.
+            slope = float(linear_adjustment_element.attrib.get("slope", 1))
             intercept = float(linear_adjustment_element.attrib.get("intercept", 0))
 
             def adjuster(x: float) -> float:
@@ -153,6 +156,17 @@ class StringDataEncoding(DataEncoding):
         "UTF-32BE",
     )
 
+    # Byte width of one character, for the encodings that have a fixed one. Encodings absent from
+    # this mapping are variable-width (UTF-8) or single-byte, and are scanned a byte at a time.
+    _FIXED_CHARACTER_WIDTH_BYTES = {
+        "UTF-16": 2,
+        "UTF-16LE": 2,
+        "UTF-16BE": 2,
+        "UTF-32": 4,
+        "UTF-32LE": 4,
+        "UTF-32BE": 4,
+    }
+
     def __init__(
         self,
         *,
@@ -197,6 +211,10 @@ class StringDataEncoding(DataEncoding):
             Fixed length of the raw string, in bits. Comes from a SizeInBits/Fixed/FixedValue element.
         leading_length_size : Optional[int]
             Fixed size in bits of a leading field that contains the length of the subsequent derived string.
+            Note that the *value* held in that leading field is interpreted as a number of **bits**, and must
+            therefore be a multiple of 8. The XTCE specification fixes the size of the tag but does not state
+            the units of its value, and "Pascal string" implementations elsewhere commonly count bytes, so a
+            document written against the other reading will misparse.
         dynamic_length_reference : Optional[str]
             Name of referenced parameter for dynamic raw length, in bits. May be combined with a linear_adjuster.
         use_calibrated_value: Optional[bool]
@@ -366,16 +384,18 @@ class StringDataEncoding(DataEncoding):
     def _find_termination_character(self, buffer: bytes) -> int:
         """Return the byte index of the termination character in a buffer, or -1 if it is absent.
 
-        The terminator is a single character in this encoding, so its byte length is the character
-        width. The search steps by that width rather than scanning byte by byte, so that a multi-byte
-        terminator cannot be "found" straddling two characters: b"\\x00\\x00" appears inside
+        In a *fixed*-width multi-byte encoding the terminator's byte pattern can occur straddling two
+        characters, so the search must step a character at a time: b"\\x00\\x00" appears inside
         b"\\x41\\x00\\x00\\x42", but in UTF-16BE that is the two characters U+4100 and U+0042 and
-        contains no terminator. (Variable-width encodings are not supported, as documented on this
-        class, so a fixed character width is a safe assumption.)
+        contains no terminator.
+
+        Variable-width encodings (UTF-8, and the single-byte encodings) are searched byte by byte
+        instead, which is both necessary — there is no fixed stride to take — and safe, because UTF-8
+        is self-synchronizing: a validly encoded character can never appear misaligned inside another.
         """
-        char_width = len(self.termination_character)
-        for index in range(0, len(buffer) - char_width + 1, char_width):
-            if buffer[index : index + char_width] == self.termination_character:
+        char_width = self._FIXED_CHARACTER_WIDTH_BYTES.get(self.encoding, 1)
+        for index in range(0, len(buffer) - len(self.termination_character) + 1, char_width):
+            if buffer[index : index + len(self.termination_character)] == self.termination_character:
                 return index
         return -1
 
