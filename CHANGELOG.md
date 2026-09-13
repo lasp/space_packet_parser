@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Raise `UnrecognizedPacketTypeError` (with `partial_data` populated) when an abstract container has
+  no valid inheritors, even if the definition has no `PKT_APID` parameter. Previously the error
+  message was built by subscripting `packet['PKT_APID']`, so definitions that do not use CCSDS
+  naming got a `KeyError` from inside the library instead of the documented exception. The message
+  still reports the APID when the packet has one.
+  [#276](https://github.com/lasp/space_packet_parser/issues/276)
+
 ## [6.2.0] - 2026-09-13
 
 ### Security
