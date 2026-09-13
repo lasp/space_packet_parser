@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add a runnable example, `examples/parsing_non_ccsds_packets.py`, demonstrating how to parse a
+  packet format that has no CCSDS header by supplying a custom packet bytes generator that locates
+  packets by a sync marker and reads a packet-defined length field. The Packet Bytes Generators
+  page of the user guide now states the contract a custom generator must satisfy, notes that
+  non-CCSDS definitions must pass `root_container_name` (the default is `CCSDSPacket`), and shows
+  how a custom generator is passed to `create_dataset`. The Examples page links to the new script.
+  [#190](https://github.com/lasp/space_packet_parser/issues/190)
+
 ### Fixed
 
 - Make `CITATION.cff` conform to CFF 1.2.0 so citation exports work, and update the
