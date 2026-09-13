@@ -450,12 +450,19 @@ class XtcePacketDefinition(common.AttrComparable):
 
             if len(valid_inheritors) == 0:
                 if current_container.abstract:
-                    raise UnrecognizedPacketTypeError(
-                        f"Detected an abstract container with no valid inheritors by restriction criteria. "
-                        f"This might mean this packet type is not accounted for in the provided packet definition. "
-                        f"APID={packet['PKT_APID']}.",
-                        partial_data=packet,
+                    message = (
+                        f"Detected an abstract container ({current_container.name}) with no valid inheritors by "
+                        f"restriction criteria. This might mean this packet type is not accounted for in the "
+                        f"provided packet definition."
                     )
+                    # XTCE has no notion of the CCSDS standard, so a PKT_APID parameter is not guaranteed to exist.
+                    # Report the APID when it is available because it is the most useful diagnostic for CCSDS
+                    # packets, but never let the error report itself fail on a non-CCSDS definition.
+                    if "PKT_APID" in packet:
+                        message += f" APID={packet['PKT_APID']}."
+                    elif isinstance(packet.binary_data, ccsds.CCSDSPacketBytes):
+                        message += f" {packet.binary_data}."
+                    raise UnrecognizedPacketTypeError(message, partial_data=packet)
                 break
 
             raise UnrecognizedPacketTypeError(
