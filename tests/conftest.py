@@ -49,12 +49,6 @@ def jpss_test_data_dir(test_data_dir):
 
 
 @pytest.fixture
-def clarreo_test_data_dir(test_data_dir):
-    """CLARREO test data directory"""
-    return test_data_dir / "clarreo"
-
-
-@pytest.fixture
 def suda_test_data_dir(test_data_dir):
     """SUDA test data directory"""
     return test_data_dir / "suda"
@@ -70,9 +64,11 @@ def idex_test_data_dir(test_data_dir):
 def mock_schema_download(test_data_dir):
     """Mock urlopen to return local XSD content instead of downloading from the network.
 
-    Shared by unit and integration tests. Note: documents that reference the standard OMG
-    schema URL are now served from the bundled schema without any network call, so this mock
-    is only exercised for non-bundled URLs.
+    Shared by unit and integration tests. Documents that reference the standard OMG schema URL
+    are served from the bundled schema without any network call, so this mock only actually
+    serves content for non-bundled URLs (see
+    ``test_validation.test_schema_validation_downloads_non_bundled_schema``). For documents that
+    resolve from the bundle it acts as a guard that no network call is attempted.
     """
     local_xsd_path = test_data_dir / "SpaceSystem.xsd"
 

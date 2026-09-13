@@ -294,6 +294,12 @@ def test_string_data_encoding_validation(args, kwargs, expected_error, expected_
                 ],
             ),
         ),
+        (
+            f"""
+<xtce:IntegerDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}" sizeInBits="16" encoding="notARealEncoding"/>
+""",
+            ValueError(),
+        ),
     ],
 )
 def test_integer_data_encoding(elmaker, xtce_parser, xml_string: str, expectation):
@@ -519,6 +525,16 @@ def test_float_data_encoding_validation(args, kwargs, expected_error, expected_e
                     comparisons.DiscreteLookup([comparisons.Comparison("2", "P1")], 25),
                 ]
             ),
+        ),
+        (
+            f"""
+<xtce:BinaryDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:SizeInBits>
+        <xtce:InvalidTag>9000</xtce:InvalidTag>
+    </xtce:SizeInBits>
+</xtce:BinaryDataEncoding>
+""",
+            ValueError(),
         ),
     ],
 )
