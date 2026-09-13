@@ -354,7 +354,7 @@ class StringDataEncoding(DataEncoding):
         # maxSizeInBits bounds the scan, per its definition in the XTCE schema. Without it, scan to
         # the end of the packet.
         search_bytes = remaining if self.max_size_in_bits is None else remaining[: self.max_size_in_bits // 8]
-        index = search_bytes.find(self.termination_character)
+        index = self._find_termination_character(search_bytes)
         if index == -1:
             raise ValueError(
                 f"Reached the end of the string buffer without finding the termination character "
@@ -362,6 +362,22 @@ class StringDataEncoding(DataEncoding):
                 + (f" (bounded by maxSizeInBits={self.max_size_in_bits})." if self.max_size_in_bits else ".")
             )
         return (index + len(self.termination_character)) * 8
+
+    def _find_termination_character(self, buffer: bytes) -> int:
+        """Return the byte index of the termination character in a buffer, or -1 if it is absent.
+
+        The terminator is a single character in this encoding, so its byte length is the character
+        width. The search steps by that width rather than scanning byte by byte, so that a multi-byte
+        terminator cannot be "found" straddling two characters: b"\\x00\\x00" appears inside
+        b"\\x41\\x00\\x00\\x42", but in UTF-16BE that is the two characters U+4100 and U+0042 and
+        contains no terminator. (Variable-width encodings are not supported, as documented on this
+        class, so a fixed character width is a safe assumption.)
+        """
+        char_width = len(self.termination_character)
+        for index in range(0, len(buffer) - char_width + 1, char_width):
+            if buffer[index : index + char_width] == self.termination_character:
+                return index
+        return -1
 
     def _get_raw_buffer(self, packet: spp.SpacePacket) -> bytes:
         """Get the raw string buffer as bytes. This will include any leading size or termination characters.
@@ -423,13 +439,12 @@ class StringDataEncoding(DataEncoding):
                 )
             parsed_string = readable_buffer._read_from_binary_as_bytes(strlen_bits).decode(self.encoding)
         elif self.termination_character is not None:
-            try:
-                tchar_byte_index = raw_string_buffer.index(self.termination_character)
-            except ValueError as exc:
+            tchar_byte_index = self._find_termination_character(raw_string_buffer)
+            if tchar_byte_index == -1:
                 raise ValueError(
                     f"Reached the end of the raw string buffer {raw_string_buffer} without finding the "
                     f"termination character {self.termination_character}"
-                ) from exc
+                )
             parsed_string = readable_buffer._read_from_binary_as_bytes(tchar_byte_index * 8).decode(self.encoding)
         else:
             # Indicates there is no further parsing. The raw string value is the whole string value.
