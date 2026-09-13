@@ -7,7 +7,8 @@ description: Cut a release of space_packet_parser — create the release branch,
 
 The authoritative process lives in [`docs/source/developers.md`](../../../docs/source/developers.md)
 under "Release Process". This skill is the operational version of it, plus the repo-specific traps
-that are easy to hit. If the two ever disagree, `developers.md` wins — and fix this file.
+that are easy to hit. If the two ever disagree, `developers.md` wins — and fix this file. The single exception is
+flagged inline in Step 7.
 
 Releases are published by a GitHub Actions workflow that fires on **pushed annotated tags**, not on
 merges. Nothing is published until a tag is pushed.
@@ -128,19 +129,26 @@ If `main` moves while the PR is open, rebase the release branch onto it and reso
 
 ## Step 7 — Tag to publish
 
-Only once the maintainer is satisfied with the branch. The tag must be **annotated**.
+Only once the maintainer is satisfied with the branch. The tag must be annotated **and signed**.
 
 ```bash
 git checkout release/X.Y && git pull
-git tag -a X.Y.Z -m "Version X.Y.Z"
+git tag -s X.Y.Z -m "Version X.Y.Z"
 git push origin X.Y.Z
 ```
+
+> **Deliberate deviation from `developers.md`.** The docs say `git tag -a`, which produces an
+> _unsigned_ tag, but every release tag since `6.0.0rc3` is signed. `-s` here is correct and is the
+> one place this skill knowingly departs from the docs — do not "fix" it back to `-a`. Tracked in
+> [issue #279](https://github.com/lasp/space_packet_parser/issues/279); once that lands, the docs
+> and this file agree again and this note can go. Note that `commit.gpgsign` does not sign tags —
+> that needs `tag.gpgsign` or an explicit `-s`, which is how the two drifted apart.
 
 For a TestPyPI dry run, prefix the tag with `test-release/`. This publishes to TestPyPI only and
 skips the public PyPI and the GitHub Release entirely:
 
 ```bash
-git tag -a test-release/X.Y.Zrc1 -m "Test Release Candidate X.Y.Zrc1"
+git tag -s test-release/X.Y.Zrc1 -m "Test Release Candidate X.Y.Zrc1"
 git push origin test-release/X.Y.Zrc1
 ```
 
