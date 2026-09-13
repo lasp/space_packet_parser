@@ -47,6 +47,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix the navigation sidebar on the in-browser demo page. The demo's standalone HTML document was
+  spliced into the middle of the documentation page, so its Materialize stylesheet applied to the
+  whole page: `nav { height: 56px; width: 100%; background-color: #ee6e73; position: fixed }` and
+  `nav ul li { float: left }` collapsed the theme's `<nav class="wy-nav-side">` sidebar, and the
+  demo's `body { display: flex; max-width: 900px }` rule constrained the page layout. The demo is
+  now embedded in an iframe, which isolates its styles while leaving the demo itself unchanged.
 - Correct several longstanding inaccuracies in the user documentation, surfaced while
   reorganizing it. The Getting Started workflow now imports `space_packet_parser` and opens the
   packet file in binary mode (`ccsds_generator` takes a file-like object, not a path, and raised

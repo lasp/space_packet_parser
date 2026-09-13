@@ -6,5 +6,10 @@ and an XTCE definition file, and it will parse the packets locally — no data i
 
 ```{eval-rst}
 .. raw:: html
-   :file: _static/browser-parsing.html
+
+   <iframe src="_static/browser-parsing.html"
+           title="Space Packet Parser in-browser demo"
+           loading="lazy"
+           style="width: 100%; height: 620px; border: 1px solid #e1e4e5; border-radius: 4px;">
+   </iframe>
 ```
