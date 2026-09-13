@@ -17,11 +17,16 @@ Space Packet Parser is a package for decoding CCSDS telemetry packets according 
 It is based on the UML model of the XTCE spec and aims to support all but the most esoteric elements of the
 XTCE telemetry packet specification.
 
+Both **XTCE 1.2 and XTCE 1.3** are supported, for parsing, serialization, and offline schema
+validation. See [XTCE Validation](https://space-packet-parser.readthedocs.io/en/latest/user_guide/xtce_validation.html)
+for how a document declares its version.
+
 Resources:
 
 - [XTCE (Green Book - Informational Report)](https://public.ccsds.org/Pubs/660x2g2.pdf)
 - [XTCE Element Description (Green Book - Informational Report)](https://public.ccsds.org/Pubs/660x1g2.pdf)
 - [XTCE (Blue Book - Recommended Standard)](https://public.ccsds.org/Pubs/660x0b2.pdf)
+- [XTCE 1.3 specification (OMG)](https://www.omg.org/spec/XTCE/1.3)
 
 ## Installation
 

@@ -500,3 +500,123 @@ def test_validate_xtce_absolute_local_xsd_is_used_directly(test_data_dir):
     assert result.schema_location == str(absolute_xsd_path)
     assert Path(result.schema_location) == absolute_xsd_path
     assert result.valid
+
+
+# --------------------------------------------------------------------------------------
+# XTCE version awareness (1.2 and 1.3)
+# --------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("xml_file", "expected_version"),
+    [("test_xtce.xml", "1.2"), ("test_xtce_1_3.xml", "1.3")],
+)
+def test_validation_resolves_bundled_schema_per_version_offline(test_data_dir, xml_file, expected_version):
+    """Documents in either supported XTCE version validate offline against their bundled XSD
+
+    ``allow_schema_download=False`` proves no network request is involved: the schema named by the
+    document's ``xsi:schemaLocation`` must have been resolved from the copy bundled in the package.
+    """
+    result = validate_xtce(
+        test_data_dir / xml_file,
+        level="all",
+        print_results=False,
+        allow_schema_download=False,
+    )
+    assert result.valid
+    assert result.errors == []
+    assert result.schema_version == expected_version
+    assert result.xtce_version == expected_version
+
+
+def test_xtce_1_3_document_uses_1_3_only_construct(test_data_dir):
+    """The 1.3 test document is genuinely 1.3, not a 1.2 document wearing a 1.3 namespace
+
+    ``SpaceSystem/@systemType`` was added in XTCE 1.3, so validating this document against the 1.2
+    schema must fail. Without this, a test that only swapped namespace URIs would pass even if the
+    1.3 schema were never consulted.
+    """
+    result = validate_xtce(
+        test_data_dir / "test_xtce_1_3.xml",
+        level="schema",
+        print_results=False,
+        raise_on_error=False,
+        local_xsd=test_data_dir / "SpaceSystem.xsd",  # the 1.2 schema
+    )
+    assert not result.valid
+    assert any(error.error_code == "INVALID_XTCE_NAMESPACE" for error in result.errors)
+
+
+def test_validation_with_1_3_local_xsd(test_data_dir, bundled_xsd_path):
+    """A 1.3 document validates against an explicitly supplied 1.3 schema"""
+    result = validate_xtce(
+        test_data_dir / "test_xtce_1_3.xml",
+        level="schema",
+        print_results=False,
+        local_xsd=bundled_xsd_path("1.3"),
+    )
+    assert result.valid
+    assert result.schema_version == "1.3"
+
+
+def test_schema_version_mismatch_is_reported(test_data_dir):
+    """A document whose namespace URI does not match its schema's targetNamespace is flagged
+
+    This is the failure mode of pointing a 1.3 document at the 1.2 schema (or vice versa), so the
+    error message must name the standard URI for each supported version.
+    """
+    mismatched = (
+        (test_data_dir / "test_xtce_1_3.xml")
+        .read_bytes()
+        .replace(b"20250214/SpaceSystem.xsd", b"20180204/SpaceSystem.xsd")
+    )
+
+    result = validate_xtce(
+        io.BytesIO(mismatched),
+        level="schema",
+        print_results=False,
+        raise_on_error=False,
+        allow_schema_download=False,
+    )
+    assert not result.valid
+    namespace_error = next(error for error in result.errors if error.error_code == "INVALID_XTCE_NAMESPACE")
+    assert "http://www.omg.org/spec/XTCE/20250214" in namespace_error.message
+    assert "http://www.omg.org/spec/XTCE/20180204" in namespace_error.message
+    # The document's own namespace URI is reported so the reader can see which side is wrong.
+    assert namespace_error.context["document_xtce_uri"] == "http://www.omg.org/spec/XTCE/20250214"
+    assert result.xtce_version == "1.3"
+
+
+@pytest.mark.parametrize(
+    "xml_file",
+    ["test_xtce.xml", "test_xtce_1_3.xml", "test_xtce_default_namespace.xml", "test_xtce_no_namespace.xml"],
+)
+def test_structural_validation_is_namespace_agnostic(test_data_dir, xml_file):
+    """Structural validation finds references in whatever namespace the document declares
+
+    Previously the XPath queries hardcoded the XTCE 1.2 namespace URI, so a 1.3 document (or one
+    with no namespace) matched nothing and vacuously "passed". Breaking a reference must therefore
+    produce an error for every namespace style, otherwise the checks are not running at all.
+    """
+    source = (test_data_dir / xml_file).read_bytes()
+    broken = source.replace(b'parameterTypeRef="USEC_Type"', b'parameterTypeRef="NOT_A_REAL_TYPE"', 1)
+    assert broken != source, "test fixture no longer contains the parameter reference this test breaks"
+
+    result = validate_xtce(io.BytesIO(broken), level="structure", print_results=False, raise_on_error=False)
+
+    assert not result.valid
+    assert any(error.error_code == "MISSING_PARAMETER_TYPE_REFERENCE" for error in result.errors)
+
+
+@pytest.mark.parametrize(
+    ("xml_file", "expected_version"),
+    [
+        ("test_xtce.xml", "1.2"),
+        ("test_xtce_1_3.xml", "1.3"),
+        ("test_xtce_no_namespace.xml", None),
+    ],
+)
+def test_structural_validation_reports_xtce_version(test_data_dir, xml_file, expected_version):
+    """Structural validation reports the XTCE version implied by the document's namespace URI"""
+    result = validate_xtce(test_data_dir / xml_file, level="structure", print_results=False)
+    assert result.xtce_version == expected_version

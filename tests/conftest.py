@@ -9,7 +9,12 @@ from lxml import etree
 from lxml.builder import ElementMaker
 
 from space_packet_parser import common
-from space_packet_parser.xtce import STANDARD_XTCE_NS_PREFIX, STANDARD_XTCE_NSMAP, XTCE_1_2_XMLNS
+from space_packet_parser.xtce import (
+    BUNDLED_XSD_FILENAME_BY_VERSION,
+    STANDARD_XTCE_NS_PREFIX,
+    STANDARD_XTCE_NSMAP,
+    XTCE_1_2_XMLNS,
+)
 
 
 @pytest.fixture(scope="session")
@@ -64,6 +69,21 @@ def suda_test_data_dir(test_data_dir):
 def idex_test_data_dir(test_data_dir):
     """IDEX test data directory"""
     return test_data_dir / "idex"
+
+
+@pytest.fixture(scope="session")
+def bundled_xsd_path():
+    """Returns a callable mapping an XTCE version string to the XSD bundled with the package.
+
+    Lets tests exercise a specific XTCE version's schema (e.g. as ``local_xsd``) without
+    committing another multi-hundred-KB copy of it to the test data directory.
+    """
+    schema_dir = Path(common.__file__).parent / "xtce" / "schemas"
+
+    def _path(version: str) -> Path:
+        return schema_dir / BUNDLED_XSD_FILENAME_BY_VERSION[version]
+
+    return _path
 
 
 @pytest.fixture

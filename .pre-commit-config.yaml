@@ -12,7 +12,11 @@ repos:
         args: [--allow-missing-credentials]
       - id: detect-private-key
       - id: mixed-line-ending
+        exclude: ^space_packet_parser/xtce/schemas/.*\.xsd$
       - id: trailing-whitespace
+        # Bundled OMG schemas are redistributed byte-for-byte as published, so that the
+        # copy shipped in the wheel can be checksummed against the upstream download.
+        exclude: ^space_packet_parser/xtce/schemas/.*\.xsd$
       - id: no-commit-to-branch
         args: [--branch, main, --branch, dev]
   - repo: https://github.com/pre-commit/mirrors-prettier

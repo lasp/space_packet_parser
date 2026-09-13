@@ -8,6 +8,7 @@ from lxml import etree as ElementTree
 import space_packet_parser as spp
 import space_packet_parser.generators.ccsds
 import space_packet_parser.xtce.parameter_types
+from space_packet_parser import xtce
 from space_packet_parser.exceptions import UnrecognizedPacketTypeError
 from space_packet_parser.xtce import comparisons, containers, definitions, encodings, parameters
 
@@ -733,3 +734,161 @@ def test_parse_bytes_unrecognized_packet_ccsds_bytes_without_pkt_apid():
     with pytest.raises(UnrecognizedPacketTypeError, match="incomplete, 1 of 6 bytes") as exc_info:
         xdef.parse_bytes(space_packet_parser.generators.ccsds.CCSDSPacketBytes(b"\x07"))
     assert exc_info.value.partial_data["COUNTER"] == 7
+
+
+# --------------------------------------------------------------------------------------
+# XTCE version awareness (1.2 and 1.3)
+# --------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("xml_file", "expected_uri", "expected_version"),
+    [
+        ("test_xtce.xml", xtce.XTCE_1_2_XMLNS, "1.2"),
+        ("test_xtce_1_3.xml", xtce.XTCE_1_3_XMLNS, "1.3"),
+    ],
+)
+def test_definition_reports_xtce_standard_version(test_data_dir, xml_file, expected_uri, expected_version):
+    """A parsed definition reports the XTCE version implied by its namespace URI"""
+    xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / xml_file)
+    assert xdef.xtce_ns_uri == expected_uri
+    assert xdef.xtce_standard_version == expected_version
+
+
+def test_definition_xtce_standard_version_is_none_for_nonstandard_namespace(test_data_dir):
+    """A document using a namespace URI that is not a standard XTCE one parses with no version
+
+    The library has always accepted non-standard namespace URIs, so an unrecognized URI must not
+    be an error; the version is simply unknown.
+    """
+    with pytest.warns(UserWarning, match="No XTCE namespace found in the document."):
+        no_ns = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce_no_namespace.xml")
+    assert no_ns.xtce_standard_version is None
+
+    custom_ns = definitions.XtcePacketDefinition.from_xtce(
+        io.BytesIO(
+            b'<SpaceSystem xmlns="http://www.fake-test.org/space/xtce" name="custom">'
+            b'<Header date="2024-03-05T13:36:00MST" version="1.0"/>'
+            b"<TelemetryMetaData><ParameterTypeSet/><ParameterSet/><ContainerSet/></TelemetryMetaData>"
+            b"</SpaceSystem>"
+        )
+    )
+    assert custom_ns.xtce_ns_uri == "http://www.fake-test.org/space/xtce"
+    assert custom_ns.xtce_standard_version is None
+
+
+def test_xtce_1_2_and_1_3_definitions_parse_identically(test_data_dir):
+    """The same definition in XTCE 1.2 and 1.3 produces the same parsed objects
+
+    The telemetry elements this library reads are unchanged between the two versions, so apart
+    from the namespace the two documents must yield identical parameter types, parameters, and
+    containers.
+    """
+    xdef_12 = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
+    xdef_13 = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce_1_3.xml")
+
+    assert xdef_13.parameter_types == xdef_12.parameter_types
+    assert xdef_13.parameters == xdef_12.parameters
+    assert xdef_13.containers == xdef_12.containers
+
+
+def test_xtce_1_2_and_1_3_definitions_parse_packets_identically(test_data_dir, jpss_test_data_dir):
+    """Packets parse to the same values whether the definition is XTCE 1.2 or 1.3"""
+    xdef_12 = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
+    xdef_13 = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce_1_3.xml")
+
+    with open(jpss_test_data_dir / "J01_G011_LZ_2021-04-09T00-00-00Z_V01.DAT1", "rb") as f:
+        packet_bytes = list(spp.ccsds_generator(f))[:5]
+
+    assert [dict(xdef_12.parse_bytes(b)) for b in packet_bytes] == [dict(xdef_13.parse_bytes(b)) for b in packet_bytes]
+
+
+def test_definition_round_trip_preserves_header_and_version(test_data_dir):
+    """Reading a 1.3 document and writing it back out preserves its version and header data"""
+    xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce_1_3.xml")
+    # Header/@version and @validationStatus describe the document, and must survive a round trip.
+    assert xdef.xtce_version == "1.0"
+    assert xdef.validation_status == "Working"
+    assert xdef.date == "2024-03-05T13:36:00MST"
+
+    tree = xdef.to_xml_tree()
+    root = tree.getroot()
+    assert ElementTree.QName(root).namespace == xtce.XTCE_1_3_XMLNS
+
+    header = root.find(f"{{{xtce.XTCE_1_3_XMLNS}}}Header")
+    assert header.attrib["version"] == "1.0"
+    assert header.attrib["validationStatus"] == "Working"
+    assert header.attrib["date"] == "2024-03-05T13:36:00MST"
+
+
+@pytest.mark.parametrize(
+    ("xml_file", "expected_uri", "expected_xsd_url"),
+    [
+        ("test_xtce.xml", xtce.XTCE_1_2_XMLNS, xtce.XTCE_1_2_XSD_URL),
+        ("test_xtce_1_3.xml", xtce.XTCE_1_3_XMLNS, xtce.XTCE_1_3_XSD_URL),
+    ],
+)
+def test_serialization_writes_matching_schema_location(test_data_dir, xml_file, expected_uri, expected_xsd_url):
+    """Serialized output names the XSD for its own XTCE version, so it is self-validating"""
+    xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / xml_file)
+    root = xdef.to_xml_tree().getroot()
+
+    schema_location = root.attrib[f"{{{xtce.XSI_XMLNS}}}schemaLocation"]
+    assert schema_location == f"{expected_uri} {expected_xsd_url}"
+    assert xtce.XSI_XMLNS in root.nsmap.values()
+
+
+def test_serialization_omits_schema_location_for_nonstandard_namespace():
+    """A definition in a non-standard namespace names no XSD, since we do not know one for it"""
+    xdef = definitions.XtcePacketDefinition(
+        ns={"custom": "http://www.fake-test.org/space/xtce"}, xtce_ns_prefix="custom"
+    )
+    root = xdef.to_xml_tree().getroot()
+    assert f"{{{xtce.XSI_XMLNS}}}schemaLocation" not in root.attrib
+    # The namespace mapping is left exactly as the caller specified it.
+    assert root.nsmap == {"custom": "http://www.fake-test.org/space/xtce"}
+
+
+@pytest.mark.parametrize("version", xtce.SUPPORTED_XTCE_VERSIONS)
+def test_construct_definition_for_version(version):
+    """xtce_standard_version selects the namespace URI used when serializing"""
+    xdef = definitions.XtcePacketDefinition(xtce_standard_version=version)
+    assert xdef.xtce_standard_version == version
+    assert xdef.xtce_ns_uri == xtce.xtce_uri_for_version(version)
+    assert ElementTree.QName(xdef.to_xml_tree().getroot()).namespace == xtce.xtce_uri_for_version(version)
+
+
+def test_construct_definition_defaults_to_default_version():
+    """Constructing without a version keeps the historical default (1.2) namespace"""
+    xdef = definitions.XtcePacketDefinition()
+    assert xdef.xtce_standard_version == xtce.DEFAULT_XTCE_VERSION
+    assert xdef.ns == xtce.STANDARD_XTCE_NSMAP
+
+
+def test_construct_definition_rejects_ns_and_version_together():
+    """Specifying both a namespace mapping and a version is ambiguous and is rejected"""
+    with pytest.raises(ValueError, match="Pass either ns or xtce_standard_version"):
+        definitions.XtcePacketDefinition(ns=xtce.STANDARD_XTCE_NSMAP, xtce_standard_version="1.3")
+
+
+def test_convert_definition_between_xtce_versions(test_data_dir):
+    """Setting xtce_standard_version retargets a definition at another version of the standard"""
+    xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
+    assert xdef.xtce_standard_version == "1.2"
+
+    xdef.xtce_standard_version = "1.3"
+
+    assert xdef.xtce_standard_version == "1.3"
+    assert xdef.ns[xdef.xtce_ns_prefix] == xtce.XTCE_1_3_XMLNS
+    root = xdef.to_xml_tree().getroot()
+    assert ElementTree.QName(root).namespace == xtce.XTCE_1_3_XMLNS
+    assert root.attrib[f"{{{xtce.XSI_XMLNS}}}schemaLocation"].endswith(xtce.XTCE_1_3_XSD_URL)
+    # Every element, not just the root, moves to the new namespace.
+    assert {ElementTree.QName(el).namespace for el in root.iter()} == {xtce.XTCE_1_3_XMLNS}
+
+
+def test_convert_definition_to_unknown_version_raises(test_data_dir):
+    """Retargeting at a version this library does not know about is an error"""
+    xdef = definitions.XtcePacketDefinition.from_xtce(test_data_dir / "test_xtce.xml")
+    with pytest.raises(ValueError, match="Unrecognized XTCE version"):
+        xdef.xtce_standard_version = "9.9"
