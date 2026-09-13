@@ -13,6 +13,25 @@ To run all tests, run
 pytest tests
 ```
 
+### Benchmarks
+
+`tests/benchmark/` holds a [pytest-benchmark](https://pytest-benchmark.readthedocs.io/) suite
+covering XTCE definition loading, full packet parsing, and the low level bit-reading primitives.
+These run as part of the normal test suite and in CI, but no timing threshold is enforced anywhere —
+a performance regression will not fail a build.
+
+If you are changing anything under `space_packet_parser/xtce/` or `space_packet_parser/packets.py`,
+save a baseline before your change and compare after it:
+
+```bash
+pytest tests/benchmark/ --benchmark-autosave   # before, on main
+pytest tests/benchmark/ --benchmark-compare    # after, on your branch
+```
+
+Baselines are written to the gitignored `.benchmarks/` directory and are only comparable against
+runs from the same machine. See [Benchmarking Performance](benchmarking.md) for the measured
+numbers and for the performance budgets these benchmarks are meant to protect.
+
 ## Building Documentation with Sphinx
 
 Documentation is automatically built on ReadTheDocs in response to every PR and release,

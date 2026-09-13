@@ -215,6 +215,84 @@ The practical advice holds either way: load a definition once and reuse the resu
 {py:class}`~space_packet_parser.xtce.definitions.XtcePacketDefinition` across all the files you
 parse, rather than re-reading the XTCE document per file or per process.
 
+### The CTIM Definition as a Regression Guard
+
+The CTIM row in the table above is not just another data point. That benchmark
+(`test_benchmark_ctim_xtce_parsing`) exists to keep a specific, already-fixed performance bug from
+coming back.
+
+CTIM's definition is the largest one in the test suite, and its shape is what makes it a useful
+canary:
+
+| Property                        | Value                              |
+| ------------------------------- | ---------------------------------- |
+| Document size                   | 1668 kB, 19,283 XML elements       |
+| `Parameter` declarations        | 9,493                              |
+| Distinct parameter types        | 15 (13 integer, 1 float, 1 string) |
+| `SequenceContainer` definitions | 39 (1 abstract, 38 concrete)       |
+| Container inheritance depth     | 1                                  |
+| `ParameterRefEntry` references  | 9,559                              |
+
+All 38 concrete containers declare a `BaseContainer` pointing at the same abstract
+`CCSDSTelemetryPacket`, and eight of them (APIDs 41 through 48) carry 994 entries each. One heavily
+shared base container plus several very large entry lists is precisely the shape that exposes
+redundant work: anything that re-does per-reference what it could do once shows up here immediately,
+while a small definition would hide it in the noise.
+
+That is exactly what happened. Early versions resolved a `BaseContainer` by searching the whole
+`ContainerSet` by name and then parsing the referenced container from scratch — entry list and all —
+with nothing remembering that it had already done so. With 38 containers sharing one base, the base
+was re-parsed 38 times, and the same pattern applied to `ContainerRefEntry`. Loading this one
+document took **on the order of twelve seconds**. Threading a container lookup table through
+`SequenceContainer.from_xml` so that containers are parsed once and reused dropped that by more than
+two orders of magnitude, and this benchmark was added as part of the same change. The bug was
+invisible to the correctness tests, which passed the entire time it was present.
+
+#### The budget
+
+**Loading `ctim_xtce_v1.xml` should take tens of milliseconds. If it approaches 100 ms, something
+has regressed.**
+
+The 100 ms figure is a deliberately loose alarm line, not a target. Current runs on the devcontainer
+described above land around 34 ms, with individual rounds spread across roughly 33–41 ms, so there
+is comfortable headroom — enough to absorb slower CI runners, colder caches, and shared-machine
+noise without crying wolf. What that headroom will not absorb is another accidental reintroduction
+of per-reference re-parsing, which cost two orders of magnitude, not twenty percent.
+
+So treat 40–60 ms on unfamiliar hardware as uninformative rather than alarming, and compare against a
+saved baseline from the same machine instead. Treat seconds as a bug.
+
+#### Checking for a Regression
+
+pytest-benchmark only detects a regression if you give it something to compare against:
+
+```bash
+# On main, before your change: save a baseline on this machine
+pytest tests/benchmark/ --benchmark-autosave
+
+# After your change: compare against the most recent saved run
+pytest tests/benchmark/ --benchmark-compare
+
+# Or make the comparison fail the test run outright
+pytest tests/benchmark/ --benchmark-compare --benchmark-compare-fail=mean:25%
+```
+
+Saved runs go to `.benchmarks/`, which is gitignored. Compare only against baselines recorded on the
+same machine — cross-machine comparisons of absolute timings are meaningless. To run just this one
+benchmark:
+
+```bash
+pytest tests/benchmark/test_xtce_parsing_benchmarks.py
+```
+
+```{note}
+The benchmarks run in CI as part of the normal test suite, but their timings are **not** checked
+against any threshold there — a CI run will not fail because parsing got slower. Baselines are
+machine-specific and CI runners are too variable for a meaningful comparison, so guarding this
+budget is currently a manual step. If you are touching `space_packet_parser/xtce/`, run the
+comparison above before opening a PR.
+```
+
 ## Parsing Individual Values Benchmarking
 
 In addition to the benchmarks discussed above, we also benchmarked the low level operations that

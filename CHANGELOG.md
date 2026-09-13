@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Document the CTIM XTCE definition parsing benchmark as a performance regression guard. Loading
+  this 1668 kB, 9493-parameter definition once took on the order of twelve seconds because each of
+  its 38 containers re-parsed their shared base container from scratch; it now loads in tens of
+  milliseconds. The benchmarking page now records that history, states the 100 ms budget the
+  benchmark exists to protect, notes that the budget is not enforced by CI, and documents the
+  `--benchmark-autosave` / `--benchmark-compare` workflow for detecting regressions. The developer
+  documentation now points at the benchmark suite from its testing section.
+  [#147](https://github.com/lasp/space_packet_parser/issues/147)
+
 ## [6.2.0] - 2026-09-13
 
 ### Security
