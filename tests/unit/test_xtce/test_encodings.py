@@ -619,6 +619,8 @@ def test_termination_scan_does_not_match_across_character_boundaries():
         ("UTF-8", "00", b"AB\x00XX", "AB"),
         # Fixed-width encodings are scanned a character at a time.
         ("UTF-16BE", "0000", "AB".encode("utf-16-be") + b"\x00\x00", "AB"),
+        ("UTF-16LE", "0000", "AB".encode("utf-16-le") + b"\x00\x00", "AB"),
+        ("UTF-32BE", "00000000", "AB".encode("utf-32-be") + b"\x00" * 4, "AB"),
     ],
 )
 def test_termination_character_search_handles_variable_width_encodings(
@@ -656,3 +658,36 @@ def test_linear_adjustment_attribute_defaults(xtce_parser, attributes, expected)
     )
     adjuster = encodings.DataEncoding._get_linear_adjuster(element)
     assert adjuster(16) == expected
+
+
+@pytest.mark.parametrize(
+    ("encoding_name", "char_width"),
+    [
+        ("UTF-16", 2),
+        ("UTF-16LE", 2),
+        ("UTF-16BE", 2),
+        ("UTF-32", 4),
+        ("UTF-32LE", 4),
+        ("UTF-32BE", 4),
+    ],
+)
+def test_fixed_width_encodings_do_not_match_a_straddling_terminator(encoding_name, char_width):
+    """Every fixed-width encoding is scanned a character at a time, not byte by byte
+
+    Covers the bare `UTF-16`/`UTF-32` spellings as well as the explicitly endian ones, so that a
+    missing entry in the character-width table is caught rather than silently falling back to a
+    byte-by-byte scan. The expected widths are written out here rather than read from the table
+    under test.
+    """
+    encoding = encodings.StringDataEncoding(
+        encoding=encoding_name,
+        byte_order="mostSignificantByteFirst",
+        termination_character="00" * char_width,
+        max_size_in_bits=256,
+    )
+    # Two non-null characters whose bytes nonetheless contain a run of nulls as long as the
+    # terminator, straddling the boundary between them. There is no terminator in this buffer.
+    straddling = (b"\x41" + b"\x00" * (char_width - 1)) + (b"\x00" * (char_width - 1) + b"\x42")
+    assert encoding._find_termination_character(straddling) == -1
+    # The same buffer with a real, character-aligned terminator appended.
+    assert encoding._find_termination_character(straddling + b"\x00" * char_width) == len(straddling)
