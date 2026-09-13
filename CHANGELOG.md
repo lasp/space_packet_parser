@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.0] - 2026-09-13
+
 ### Security
 
 - Fix a local file read vulnerability (CWE-73) and a Server-Side Request Forgery vulnerability
@@ -27,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--no-schema-download` flags to `spp validate`). The allowlist may also be set via the
   `SPP_ALLOWED_SCHEMA_HOSTS` environment variable, and insecure http via `SPP_ALLOW_INSECURE_HTTP`.
   The default allowlist is exported as `DEFAULT_ALLOWED_SCHEMA_HOSTS`.
+- Support multiple `<xtce:Unit>` elements within an `<xtce:UnitSet>`, so parameter types can declare
+  compound units. Applies to every parameter type, both when reading an XTCE document and when
+  serializing one back out.
+  [#47](https://github.com/lasp/space_packet_parser/issues/47)
 
 ### Changed
 
@@ -44,6 +50,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in the built documentation. Documents packet filtering on muxed streams as a performance lever,
   and corrects the explanation of what drives parsing cost: dynamic evaluation work, not packet
   size or definition-wide parameter count.
+- Widen the `unit` attribute of parameter types from `str | None` to `str | tuple[str, ...] | None`.
+  An `<xtce:UnitSet>` containing more than one `<xtce:Unit>` previously emitted a warning and joined
+  the units into a single space-separated string; it now yields a tuple of the individual unit
+  strings. Definitions declaring a single unit are unaffected.
+  [#47](https://github.com/lasp/space_packet_parser/issues/47)
 
 ### Fixed
 
@@ -357,7 +368,8 @@ in preparation for the move to GitHub to prevent accidental release of non-publi
 - Add support for variable length binary data fields in utf-8, utf-16-le, and utf-16-be.
 - Add build and release documentation to readme.
 
-[unreleased]: https://github.com/lasp/space_packet_parser/compare/6.1.2...HEAD
+[unreleased]: https://github.com/lasp/space_packet_parser/compare/6.2.0...HEAD
+[6.2.0]: https://github.com/lasp/space_packet_parser/compare/6.1.2...6.2.0
 [6.1.2]: https://github.com/lasp/space_packet_parser/compare/6.1.1...6.1.2
 [6.1.1]: https://github.com/lasp/space_packet_parser/compare/6.1.0...6.1.1
 [6.1.0]: https://github.com/lasp/space_packet_parser/compare/6.0.1...6.1.0
