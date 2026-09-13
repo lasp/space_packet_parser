@@ -75,7 +75,8 @@ That is,
 
 2. Bump the version of the package to the version you are about to release by manually editing the `version` field in the `[project]` section of `pyproject.toml`.
 
-3. Update the version identifier in `CITATION.cff` and `meta.yaml`.
+3. Update the version identifier in `CITATION.cff` and `meta.yaml`, and set `date-released` in
+   `CITATION.cff` to the release date (`YYYY-MM-DD`, quoted).
 
 4. Update `CHANGELOG.md` to ensure the release notes for the version to be published is at the top
    and revisit `README.md` to keep it up to date.
