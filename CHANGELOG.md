@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add the Zenodo concept DOI (`10.5281/zenodo.7735001`) and `date-released` to `CITATION.cff`, so the
+  citation metadata carries a persistent identifier and a release year rather than only the
+  repository URL. GitHub's "Cite this repository" widget reads both. The concept DOI is
+  version-agnostic and always resolves to the latest release, so it needs no maintenance at release
+  time. [#280](https://github.com/lasp/space_packet_parser/issues/280)
+
 ## [6.2.0] - 2026-09-13
 
 ### Security
