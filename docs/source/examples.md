@@ -16,3 +16,6 @@ Examples on GitHub include:
   using realtime packet parsing from a streaming socket
 - [CSV to XTCE](https://github.com/lasp/space_packet_parser/blob/main/examples/csv_to_xtce_conversion.py)
   packet definition conversion and parsing
+- [Parsing non-CCSDS packets](https://github.com/lasp/space_packet_parser/blob/main/examples/parsing_non_ccsds_packets.py)
+  defining a custom packet bytes generator that finds packets by a sync marker and a
+  packet-defined length field, for a format with no CCSDS header

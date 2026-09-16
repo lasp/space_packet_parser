@@ -11,6 +11,8 @@ yield packet bytes one at a time. The built-in generator implementations in
 generators. Custom generators allow you to adapt Space Packet Parser to work with any binary
 packet format.
 
+## XTCE Is Not CCSDS-Specific
+
 While XTCE is commonly used with CCSDS packets, the XTCE standard is not limited to representing
 CCSDS packet structures. The CCSDS header information (`VERSION`, `TYPE`, `APID`, etc.) is not
 required by XTCE. You can define XTCE packet structures for any binary format and use a custom or
@@ -70,10 +72,26 @@ for udp_packet in udp_generator(binary_data):
 
 ## Writing Custom Generators
 
-A minimal custom generator follows this pattern:
+### The Generator Contract
+
+A packet bytes generator must satisfy a short contract:
+
+- It accepts a binary data source as its first positional argument. The built-in generators accept
+  a file-like object, a socket, or raw `bytes`; any options beyond the data source are keyword-only
+  by convention.
+- It yields exactly one packet's worth of bytes per iteration.
+- Each yielded chunk must contain **every** byte that the XTCE container describes, including
+  leading fields such as a sync marker or a length field. `parse_bytes` issues a warning when the
+  number of bits it parses does not match the number of bits it was handed, which is the usual
+  symptom of a generator whose packet boundaries disagree with the XTCE definition.
+- It may yield a subclass of `bytes` that exposes packet metadata as properties, the way
+  `CCSDSPacketBytes` exposes `apid` and `UDPPacketBytes` exposes `source_port`. Such metadata is
+  what a `packet_filter` inspects to reject packets before they are parsed.
+
+A minimal fixed-length generator follows this pattern:
 
 ```python
-def custom_generator(binary_data, packet_length):
+def custom_generator(binary_data, *, packet_length):
     """Yields fixed-length packets from binary data."""
     while True:
         packet_bytes = binary_data.read(packet_length)
@@ -81,6 +99,62 @@ def custom_generator(binary_data, packet_length):
             break
         yield packet_bytes
 ```
+
+### Determining Packet Length from the Packet Itself
+
+Many formats carry their own length. The generator below locates packets by a sync marker and
+reads a packet-defined length field to find the end of each packet:
+
+```python
+def sync_marker_generator(binary_data, *, sync_marker=b"\xde\xad\xbe\xef"):
+    """Yields sync-marker-delimited, length-prefixed packets from binary data."""
+    buffer = binary_data.read() if hasattr(binary_data, "read") else binary_data
+    header_length = len(sync_marker) + 1  # sync marker plus the one-byte length field
+    position = 0
+    while True:
+        start = buffer.find(sync_marker, position)
+        if start == -1:
+            break
+        if start + header_length > len(buffer):
+            break  # Truncated packet: the length field itself was cut off
+        payload_length = buffer[start + len(sync_marker)]
+        end = start + header_length + payload_length
+        if end > len(buffer):
+            break  # Truncated packet at the end of the stream
+        # The sync marker and length field are described by the XTCE container, so they are
+        # included in the yielded chunk.
+        yield buffer[start:end]
+        position = end
+```
+
+This example reads a file-like object or raw `bytes`; it does not support parsing directly from a
+socket. For an example that does, see the
+[IDEX waveform socket example](https://github.com/lasp/space_packet_parser/blob/main/examples/parsing_and_plotting_idex_waveforms_from_socket.py).
+Note that socket reading is built into the default CCSDS packet generator; see
+`space_packet_parser/generators/ccsds.py`.
+
+A definition for a format like this has no `CCSDSPacket` container, so the root container to parse
+from must be named explicitly. Note that `load_xtce` does not accept this argument; pass it to
+`parse_bytes` (or to `XtcePacketDefinition.from_xtce`) instead:
+
+```python
+from space_packet_parser import load_xtce
+
+packet_definition = load_xtce("my_sensor_packets.xml")
+for packet_bytes in sync_marker_generator(binary_data):
+    parsed = packet_definition.parse_bytes(packet_bytes, root_container_name="SensorPacket")
+    print(parsed)
+```
+
+A custom generator also works with the Xarray interface. Pass it to `create_dataset` as
+`packet_bytes_generator`, with any generator options in `generator_kwargs`. `create_dataset` keys
+its result by the `apid` property on the `bytes` object each generator yields (as `CCSDSPacketBytes`
+and `UDPPacketBytes` expose), falling back to `0` when that property is absent — so packets from a
+generator that yields plain `bytes`, like `sync_marker_generator` above, are all grouped under key
+`0`.
+
+For a complete, runnable demonstration of all of the above, see the
+[non-CCSDS parsing example](https://github.com/lasp/space_packet_parser/blob/main/examples/parsing_non_ccsds_packets.py).
 
 For more sophisticated generators that handle multiple input types (files, sockets, bytes) and
 provide progress tracking, see the implementations of the built-in generators in
