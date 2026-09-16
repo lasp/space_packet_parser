@@ -18,6 +18,15 @@ from urllib.request import urlopen
 
 import lxml.etree as ElementTree
 
+from space_packet_parser.xtce import (
+    BUNDLED_XSD_FILENAME_BY_VERSION,
+    LEGACY_XTCE_XMLNS_ALIASES,
+    SUPPORTED_XTCE_VERSIONS,
+    XTCE_XMLNS_BY_VERSION,
+    XTCE_XSD_URL_BY_VERSION,
+    xtce_version_from_uri,
+)
+
 logger = logging.getLogger(__name__)
 
 # Directory holding XSD schemas bundled with the package. Bundled schemas are
@@ -25,10 +34,19 @@ logger = logging.getLogger(__name__)
 # SSRF/LFI surface for the common case of validating against the standard XTCE schema.
 _BUNDLED_SCHEMA_DIR = Path(__file__).parent / "schemas"
 
+
+def _bundled_schema_key(xsd_url: str) -> str:
+    """Build the scheme-insensitive "host/path" lookup key for a canonical XSD URL."""
+    parsed = urlparse(xsd_url)
+    return f"{parsed.netloc.lower()}{parsed.path}"
+
+
 # Maps a scheme-insensitive "host/path" key to a bundled schema filename. Any
 # schemaLocation URL (http or https) whose host+path matches is served from disk.
+# One entry per XTCE version whose XSD ships with the package.
 _BUNDLED_SCHEMAS: dict[str, str] = {
-    "www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd": "SpaceSystem.xsd",
+    _bundled_schema_key(XTCE_XSD_URL_BY_VERSION[version]): filename
+    for version, filename in BUNDLED_XSD_FILENAME_BY_VERSION.items()
 }
 
 # Default allowlist of hosts that schema URLs may point at. Exported so callers
@@ -87,6 +105,9 @@ class ValidationResult:
     schema_version: str | None = None
     schema_location: str | None = None
     validation_time_ms: float | None = None
+    #: XTCE standard version implied by the document root's XML namespace URI, e.g. "1.3".
+    #: None if the document uses no namespace or a namespace URI that is not a standard XTCE one.
+    xtce_version: str | None = None
 
     def __bool__(self):
         return self.valid and not self.errors
@@ -515,6 +536,18 @@ def _load_schema(
     return _parse_schema_content(content, location)
 
 
+def _document_xtce_uri(xml_tree: ElementTree.ElementTree) -> str | None:
+    """Return the XML namespace URI of an XTCE document's root element.
+
+    The XTCE namespace URI is what identifies the version of the XTCE standard a document is
+    written against, so it must be read out of the document rather than assumed. Returns None
+    for a document that declares no namespace at all (invalid per XSD, but parseable).
+    """
+    root = xml_tree.getroot() if hasattr(xml_tree, "getroot") else xml_tree
+    qname = ElementTree.QName(root.tag)
+    return qname.namespace
+
+
 def _find_schema_url(xml_tree: ElementTree.ElementTree) -> str:
     """Find the XSD location from the root attributes of the document
 
@@ -596,6 +629,8 @@ def _validate_xtce_schema(
     """
     start_time = time.perf_counter()
     result = ValidationResult(valid=True, validation_level=ValidationLevel.SCHEMA)
+    document_xtce_uri = _document_xtce_uri(xml_tree)
+    result.xtce_version = xtce_version_from_uri(document_xtce_uri)
 
     try:
         if local_xsd:
@@ -639,11 +674,32 @@ def _validate_xtce_schema(
             result.valid = False
             for error in schema.error_log:
                 if "No matching global declaration available for the validation root." in error.message:
+                    standard_uris = ", ".join(f"{v}: {XTCE_XMLNS_BY_VERSION[v]}" for v in SUPPORTED_XTCE_VERSIONS)
+                    # A legacy URI has a specific, actionable cause, and the generic "does your xmlns
+                    # match your XSD?" text does not help: the answer is that an older release of this
+                    # library wrote the document, which the reader has no way to guess.
+                    if document_xtce_uri in LEGACY_XTCE_XMLNS_ALIASES:
+                        canonical = XTCE_XMLNS_BY_VERSION[LEGACY_XTCE_XMLNS_ALIASES[document_xtce_uri]]
+                        namespace_message = (
+                            f"The document's XTCE namespace URI {document_xtce_uri} is not the targetNamespace of "
+                            f"any XTCE schema. It was written by space_packet_parser 6.2 or earlier, which used an "
+                            f"incorrect URI; the correct one is {canonical}. Reading the document with "
+                            f"XtcePacketDefinition.from_xtce and writing it back out repairs it."
+                        )
+                    else:
+                        namespace_message = (
+                            "Namespace issue detected. Does the `xmlns[:xtce]=<chosen_xtce_uri>` URI on your "
+                            "document root element match the `targetNamespace` URI in your XSD? The standard "
+                            f"XTCE namespace URIs are ({standard_uris}), and the URI must match the XTCE version "
+                            "of the XSD you are validating against."
+                        )
                     result.add_error(
-                        message="Namespace issue detected. Does the `xmlns[:xtce]=<chosen_xtce_uri>` URI on your document root element match the `targetNamespace` URI in your XSD? Typically this is http://www.omg.org/spec/XTCE/20180204",
+                        message=namespace_message,
                         error_code="INVALID_XTCE_NAMESPACE",
                         context={
                             "nsmap": xml_tree.getroot().nsmap,
+                            "document_xtce_uri": document_xtce_uri,
+                            "schema_version": result.schema_version,
                         },
                     )
                 result.add_error(
@@ -687,25 +743,38 @@ def _validate_xtce_structure(xml_tree: ElementTree.ElementTree) -> ValidationRes
     try:
         root = xml_tree.getroot() if hasattr(xml_tree, "getroot") else xml_tree
 
-        # Define namespaces for XPath queries
-        namespaces = {"xtce": "http://www.omg.org/spec/XTCE/20180204"}
+        # XTCE element names must be matched in whatever namespace the document actually
+        # declares, not in an assumed one. The namespace URI is version-specific (XTCE 1.2 and
+        # 1.3 use different URIs) and documents may also use a non-standard URI or none at all,
+        # so bind the document's own URI here rather than hardcoding a version.
+        xtce_uri = _document_xtce_uri(xml_tree)
+        result.xtce_version = xtce_version_from_uri(xtce_uri)
+        namespaces = {"xtce": xtce_uri} if xtce_uri else {}
+
+        def q(*element_names: str) -> str:
+            """Build a descendant XPath for XTCE element names in the document's namespace."""
+            if xtce_uri:
+                return "//" + "/".join(f"xtce:{name}" for name in element_names)
+            # A document with no namespace at all is invalid per XSD but is still parsed by
+            # this library, so match on local name to give it useful structural validation.
+            return "//" + "/".join(f'*[local-name()="{name}"]' for name in element_names)
 
         # Extract all ParameterTypes
         parameter_types = set()
-        parameter_type_elements = root.xpath("//xtce:ParameterTypeSet//*[@name]", namespaces=namespaces)
+        parameter_type_elements = root.xpath(f"{q('ParameterTypeSet')}//*[@name]", namespaces=namespaces)
         for elem in parameter_type_elements:
             if elem.tag.endswith("ParameterType"):
                 parameter_types.add(elem.get("name"))
 
         # Extract all Parameters
         parameters = set()
-        parameter_elements = root.xpath("//xtce:ParameterSet/xtce:Parameter", namespaces=namespaces)
+        parameter_elements = root.xpath(q("ParameterSet", "Parameter"), namespaces=namespaces)
         for elem in parameter_elements:
             parameters.add(elem.get("name"))
 
         # Extract all SequenceContainers
         containers = set()
-        container_elements = root.xpath("//xtce:ContainerSet/xtce:SequenceContainer", namespaces=namespaces)
+        container_elements = root.xpath(q("ContainerSet", "SequenceContainer"), namespaces=namespaces)
         for elem in container_elements:
             containers.add(elem.get("name"))
 
@@ -728,7 +797,7 @@ def _validate_xtce_structure(xml_tree: ElementTree.ElementTree) -> ValidationRes
                     )
 
         # Check ParameterRefEntry references in SequenceContainers
-        param_ref_entries = root.xpath("//xtce:ParameterRefEntry", namespaces=namespaces)
+        param_ref_entries = root.xpath(q("ParameterRefEntry"), namespaces=namespaces)
         for entry in param_ref_entries:
             param_ref = entry.get("parameterRef")
             if param_ref:
@@ -741,7 +810,7 @@ def _validate_xtce_structure(xml_tree: ElementTree.ElementTree) -> ValidationRes
                     )
 
         # Check BaseContainer references to SequenceContainers
-        base_containers = root.xpath("//xtce:BaseContainer", namespaces=namespaces)
+        base_containers = root.xpath(q("BaseContainer"), namespaces=namespaces)
         for base_container in base_containers:
             container_ref = base_container.get("containerRef")
             if container_ref and container_ref not in containers:
@@ -886,6 +955,7 @@ def validate_xtce(
             validation_level=ValidationLevel.ALL,
             schema_location=schema_result.schema_location,
             schema_version=schema_result.schema_version,
+            xtce_version=schema_result.xtce_version or structure_result.xtce_version,
         )
 
         combined.errors.extend(schema_result.errors)

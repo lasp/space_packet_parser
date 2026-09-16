@@ -9,15 +9,97 @@ validation).
   schema
 - **Structural Validation**: Validates XTCE-specific structure and reference integrity
 
+## Supported XTCE Versions
+
+Space Packet Parser supports **XTCE 1.2 and XTCE 1.3**. Which version a document uses is
+determined entirely by the XML namespace URI on its root `SpaceSystem` element, which must match
+the `targetNamespace` of the corresponding OMG schema:
+
+| XTCE version | Namespace URI (`xmlns`)                 | Schema URL (`xsi:schemaLocation`)                        |
+| ------------ | --------------------------------------- | -------------------------------------------------------- |
+| 1.2          | `http://www.omg.org/spec/XTCE/20180204` | <https://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd> |
+| 1.3          | `http://www.omg.org/spec/XTCE/20250214` | <https://www.omg.org/spec/XTCE/20250214/SpaceSystem.xsd> |
+
+```{note}
+The `version` attribute on an XTCE `Header` element is *not* the version of the XTCE standard —
+per the XSD it is a free-form version descriptor for the document itself. Only the namespace URI
+identifies the standard version.
+```
+
+Nearly all of the schema this library reads — parameter types, data encodings, calibrators,
+comparisons and sequence containers — is unchanged between XTCE 1.2 and 1.3, so the same definition
+generally parses identically under either version. The library also accepts documents that use a
+non-standard namespace URI (many mission definitions do); those simply have no detectable XTCE
+version.
+
+```{note}
+Documents written by `space_packet_parser` 6.2 and earlier declare an `https` XTCE 1.2 namespace URI,
+which is not the `targetNamespace` of any XTCE schema and so cannot be schema validated. Such
+documents are still read as XTCE 1.2, and are rewritten with the canonical `http` URI (with a
+warning) when serialized — so loading one and writing it back out repairs it.
+```
+
 Schema validation requires correct namespacing declarations at the top of your XTCE document, e.g.
 
 ```xml
 <xtce:SpaceSystem name="SpacePacketParser"
-                  xmlns:xtce="http://www.omg.org/spec/XTCE/20180204"
+                  xmlns:xtce="http://www.omg.org/spec/XTCE/20250214"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204
-                                      https://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd">
+                  xsi:schemaLocation="http://www.omg.org/spec/XTCE/20250214
+                                      https://www.omg.org/spec/XTCE/20250214/SpaceSystem.xsd">
 ```
+
+The namespace URI and the schema URL must name the _same_ version. Mixing them (for example, a
+1.3 namespace pointing at the 1.2 schema) produces an `INVALID_XTCE_NAMESPACE` error.
+
+The detected version is reported on the validation result as `result.xtce_version`, and by the
+`spp validate` CLI as `XTCE version:`. On a definition object it is available as
+`XtcePacketDefinition.xtce_standard_version`.
+
+## Choosing a Version When Writing XTCE
+
+Pass `xtce_standard_version` when building a definition, or assign it to convert an existing one:
+
+```python
+from space_packet_parser import XtcePacketDefinition, load_xtce
+
+# Build a new definition targeting XTCE 1.3
+definition = XtcePacketDefinition(container_set, xtce_standard_version="1.3")
+
+# Or convert a definition read from a 1.2 document
+definition = load_xtce("my_xtce_1_2.xml")
+definition.xtce_standard_version = "1.3"
+definition.write_xml("my_xtce_1_3.xml")
+```
+
+Serialized documents name the schema for their own version in `xsi:schemaLocation`, so they
+validate without you having to supply an XSD. Definitions built from scratch default to XTCE 1.2,
+so that upgrading the library does not silently change the version of documents you write.
+
+### Version-specific content
+
+Converting between versions rewrites namespaces, not element content, and a few constructs differ
+between 1.2 and 1.3:
+
+- **Variable-length strings.** XTCE 1.2 requires a `DynamicValue` or `DiscreteLookupList` to declare
+  the raw buffer length, and treats `LeadingSize`/`TerminationChar` as optional. XTCE 1.3 inverts
+  this: the declared length is optional and exactly one of `LeadingSize`/`TerminationChar` is
+  required, so a Pascal string or C string can be described without a separate length parameter.
+  Both forms are parsed. Serializing a definition whose string encodings are not valid in the target
+  version emits a `UserWarning` naming the parameter types involved.
+- **Time units.** The `units` attribute of a time parameter type's `Encoding` element is drawn from a
+  version-specific enumeration: XTCE 1.2 spells it `picoSeconds`, while 1.3 spells it `picoseconds`
+  and adds values such as `milliseconds`, `minutes` and `hours`. A unit is document content, so it is
+  written through verbatim rather than translated — serializing a definition whose time units the
+  target version does not define emits a `UserWarning` naming the parameter types and units involved.
+- **`SpaceSystem` metadata.** `systemType` and `assetType` were added to the root element in XTCE
+  1.3. They are read into `space_system_type` and `asset_type` and written back out for 1.3;
+  serializing as 1.2, where they do not exist, drops them with a `UserWarning`.
+- **Name references.** Parameter _names_ could never contain a space, in either version — XTCE 1.2's
+  `NameType` pattern is `[^./:\[\] ]+` and 1.3's adds tab to the exclusions. What changed is the
+  _reference_ patterns: 1.2's single `NameReferenceType` permitted space and tab inside a reference
+  path, while 1.3 replaces it with four reference types that exclude both and add `[n]` array
+  subscript syntax. A reference containing a space is valid XTCE 1.2 but not valid XTCE 1.3.
 
 ## Schema Resolution and Network Security
 
@@ -26,10 +108,10 @@ document from an untrusted source, schema resolution is deliberately locked down
 advisories addressed in the [changelog](../changelog.md): local file read / CWE-73 and SSRF /
 CWE-918). Schema validation resolves a schema in this order:
 
-1. **Bundled schema (offline).** The standard OMG XTCE schema ships with the package. A document
-   referencing `https://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd` (or the `http` variant)
-   validates against the bundled copy with **no network request** — this is the common case and
-   requires no configuration.
+1. **Bundled schema (offline).** The standard OMG XTCE schemas for every supported version ship
+   with the package. A document referencing the 1.2 or 1.3 schema URL from the table above (or the
+   `http` variant of either) validates against the bundled copy with **no network request** — this
+   is the common case and requires no configuration.
 2. **`local_xsd` (trusted).** A schema path you pass explicitly is trusted and opened directly,
    from anywhere on the filesystem (absolute or relative).
 3. **Allowlisted download.** Any other `xsi:schemaLocation` URL is fetched **only** if it is an

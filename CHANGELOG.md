@@ -7,7 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support XTCE 1.3 (OMG, July 2025) alongside XTCE 1.2. Documents in the XTCE 1.3 namespace
+  (`http://www.omg.org/spec/XTCE/20250214`) are parsed, serialized, and schema validated, and the
+  OMG 1.3 schema is bundled with the package so validation works offline with no network request.
+  Nearly all of the schema this library reads is unchanged between 1.2 and 1.3, so a definition
+  generally parses identically under either version; the version-specific constructs are covered by
+  the entries below and are documented in the XTCE validation user guide.
+  [#184](https://github.com/lasp/space_packet_parser/issues/184)
+- Add a registry of supported XTCE versions in `space_packet_parser.xtce`: `SUPPORTED_XTCE_VERSIONS`,
+  `LATEST_XTCE_VERSION`, `DEFAULT_XTCE_VERSION`, the per-version namespace URI and schema URL
+  mappings, and the `xtce_version_from_uri`, `xtce_uri_for_version`, and `xtce_nsmap` helpers.
+- Add `XtcePacketDefinition.xtce_standard_version`, reporting the version of the XTCE standard
+  implied by a definition's namespace URI. Assigning to it retargets the definition at another
+  version, and the matching `xtce_standard_version` keyword argument selects a version when
+  constructing a definition from scratch. Definitions built from scratch continue to default to
+  XTCE 1.2 so that upgrading does not silently change the version of documents you write.
+- Report the detected XTCE version on validation results as `ValidationResult.xtce_version`, and in
+  the `spp validate` CLI output.
+- Support the XTCE 1.3 form of a variable-length string, in which the raw buffer length is not
+  declared and is instead derived from the string's own delimiter. XTCE 1.2 requires a `DynamicValue`
+  or `DiscreteLookupList` and treats `LeadingSize`/`TerminationChar` as optional; XTCE 1.3 inverts
+  this, making the declared length optional and one of the delimiters required. Parsing now derives
+  the buffer length from a `LeadingSize` (the size tag plus the content length it reports) or a
+  `TerminationChar` (up to and including the terminator, bounded by `maxSizeInBits`).
+  [#184](https://github.com/lasp/space_packet_parser/issues/184)
+- Warn when serializing a definition whose variable-length string encodings are not valid in the
+  XTCE version being written, rather than silently producing a document that fails schema validation.
+- Preserve the XTCE 1.3 `SpaceSystem` attributes `systemType` and `assetType`, as the new
+  `XtcePacketDefinition.space_system_type` and `asset_type` fields and constructor keyword arguments.
+  They were previously read past and dropped, so round-tripping a 1.3 document silently replaced them
+  with the schema default. Serializing as XTCE 1.2, where the attributes do not exist, drops them with
+  a warning.
+- Warn when serializing a definition whose time parameter type units the target XTCE version does not
+  define, e.g. converting a 1.2 definition using `picoSeconds` to 1.3, which spells it `picoseconds`.
+  Units are document content and are written through unchanged rather than translated.
+- Add `StringDataEncoding.max_size_in_bits`, read from and written to the `maxSizeInBits` attribute of a
+  `Variable` element. It bounds the buffer a leading size tag may declare and how far parsing scans for a
+  termination character.
+
+### Changed
+
+- `XtcePacketDefinition(xtce_ns_prefix=None)` now binds the XTCE namespace as the document's default
+  namespace (unprefixed element names) rather than producing a document with no namespace at all.
+  Pass `ns={}` for the latter.
+- Serializing a definition now writes the canonical OMG schema URL in `xsi:schemaLocation`, replacing
+  whatever URL the source document named. Anyone pointing documents at an internal schema mirror will
+  need to rewrite the attribute after serializing.
+
 ### Fixed
+
+- Correct the values of `XTCE_1_2_XMLNS` and `XTCE_1_1_XMLNS`, which did not match the
+  `targetNamespace` of the schemas they name, and of `STANDARD_XTCE_NSMAP` and `XTCE_URI`, which are
+  derived from them. `XTCE_1_2_XMLNS` used an `https` scheme where the XTCE 1.2 `targetNamespace` is
+  `http://www.omg.org/spec/XTCE/20180204`, and `XTCE_1_1_XMLNS` named a URI that no XTCE schema
+  declares (XTCE 1.1 uses `http://www.omg.org/space/xtce`). As a result, a definition built from
+  scratch and serialized used a namespace URI that no schema recognized, and the document failed
+  schema validation. Code that imports these constants, or that string-compares namespace URIs, will
+  see the new values; reading documents that use the old URI keeps working, as below.
+
+  Documents written by earlier versions of this library carry the old `https` URI. They are still
+  recognized as XTCE 1.2 (see `LEGACY_XTCE_XMLNS_ALIASES`) and are rewritten to the canonical URI,
+  with a warning, when serialized — so reading such a document and writing it back out repairs it.
 
 - Make `CITATION.cff` conform to CFF 1.2.0 so citation exports work, and update the
   metadata consistency check to use CFF contacts while keeping package descriptions
@@ -20,6 +82,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   raises `IndexError` for inputs shorter than a full six-byte primary header and instead renders the
   bytes it has, so it is safe to use in diagnostic messages.
   [#276](https://github.com/lasp/space_packet_parser/issues/276)
+- Make structural validation namespace-aware. Its XPath queries hardcoded the XTCE 1.2 namespace
+  URI, so reference-integrity checks silently matched nothing — and therefore reported no errors —
+  for documents using any other namespace, including XTCE 1.3, a non-standard namespace URI, or no
+  namespace at all.
+  [#184](https://github.com/lasp/space_packet_parser/issues/184)
+- Emit `BaseContainer` after `EntryList` when serializing a `SequenceContainer`. The XTCE schema
+  orders them the other way around (identically in 1.2 and 1.3), so written documents failed schema
+  validation. Serialized documents now also declare `xsi:schemaLocation`, pointing at the schema for
+  their own XTCE version, so a definition written out by this library is schema-valid as-is.
+- Search for a string's termination character on character boundaries rather than byte boundaries in
+  fixed-width encodings. In UTF-16BE the terminator `b"\x00\x00"` appears inside
+  `b"\x41\x00\x00\x42"`, which is the two characters U+4100 and U+0042 and contains no terminator,
+  so such a string previously terminated early and could fail to decode. Variable-width (UTF-8) and
+  single-byte encodings are unaffected, and continue to be searched byte by byte.
+- Default an omitted `LinearAdjustment` `slope` attribute to 1 rather than 0. The XTCE 1.3 schema
+  declares a default of 1 (XTCE 1.2 declares none), so `<LinearAdjustment intercept="8"/>` means
+  `f(x) = x + 8`. Defaulting the slope to 0 collapsed the adjustment to a constant, which silently
+  produced the wrong length for a dynamically sized string or binary field and corrupted every
+  subsequent field in the packet.
+- Write the `maxSizeInBits` attribute when serializing a variable-length string. The XTCE schema
+  requires it on a `Variable` element in both 1.2 and 1.3, so every variable-length string this
+  library wrote previously failed schema validation.
+- Bound the XTCE 1.3 leading-size string path by `maxSizeInBits`. The size tag comes from the packet, so
+  an oversized tag would consume bytes belonging to later fields instead of being rejected.
+- Read an empty `<TerminationChar/>` as the null terminator the XTCE schema declares as its default,
+  in both 1.2 and 1.3, rather than treating the delimiter as absent and rejecting a valid C string.
+- Refuse to select an XTCE version whose schema is not bundled (e.g. 1.1) as a serialization target.
+  Such a document named a schema that could not be resolved offline, so validating it silently fell
+  back to a network download. Detecting the version of such a document is unaffected.
+- Name the cause in the `INVALID_XTCE_NAMESPACE` error when a document uses the `https` XTCE 1.2
+  namespace URI written by `space_packet_parser` 6.2 and earlier, instead of the generic
+  "does your namespace match your schema?" message, and say that re-serializing the document repairs it.
+- Preserve the XTCE `Header` `version` and `validationStatus` attributes when reading a document, so
+  that reading a definition and writing it back out no longer replaces them with defaults.
+- Determine a document's XTCE namespace from the namespace of its root element rather than by
+  searching the namespace mapping for a URI containing "xtce". Documents that bind more than one
+  namespace whose URI contains "xtce" previously raised `ValueError` instead of parsing.
 
 ## [6.2.0] - 2026-09-13
 
