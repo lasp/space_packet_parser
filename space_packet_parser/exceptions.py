@@ -38,7 +38,7 @@ class InvalidParameterTypeError(Exception):
 
 
 class UnrecognizedPacketTypeError(Exception):
-    """Error raised when we can't figure out which kind of packet we are dealing with based on the header"""
+    """Error raised when the packet type cannot be determined from the parsed data and the container restriction criteria"""
 
     def __init__(self, *args, partial_data: dict = None):
         """

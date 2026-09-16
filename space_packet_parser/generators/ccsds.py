@@ -40,6 +40,10 @@ class CCSDSPacketBytes(bytes):
     HEADER_LENGTH_BYTES = 6
 
     def __str__(self) -> str:
+        if len(self) < self.HEADER_LENGTH_BYTES:
+            # Too short to hold a full primary header. Render what we have rather than raising an IndexError
+            # from the header properties so this stays usable in diagnostic messages.
+            return f"CCSDSPacket Header: (incomplete, {len(self)} of {self.HEADER_LENGTH_BYTES} bytes: {self.hex()})"
         return (
             f"CCSDSPacket Header: ({self.version_number=}, {self.type=}, "
             f"{self.secondary_header_flag=}, {self.apid=}, {self.sequence_flags=}, "
