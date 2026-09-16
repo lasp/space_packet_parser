@@ -27,7 +27,6 @@ memory, so it requires no external data files.
 """
 
 import io
-import socket
 import struct
 from collections.abc import Iterator
 from typing import BinaryIO
@@ -84,7 +83,7 @@ XTCE_DEFINITION = """<?xml version="1.0" encoding="UTF-8"?>
 
 
 def sync_marker_generator(
-    binary_data: BinaryIO | socket.socket | bytes,
+    binary_data: BinaryIO | bytes,
     *,
     sync_marker: bytes = SYNC_MARKER,
 ) -> Iterator[bytes]:
@@ -94,14 +93,16 @@ def sync_marker_generator(
     of payload bytes that follow it. The yielded chunk spans the whole packet, sync marker
     included, because the XTCE container describes those bytes too.
 
-    The built-in generators in `space_packet_parser/generators/` use
-    `space_packet_parser.generators.utils._setup_binary_reader` so they can read incrementally from
-    files and sockets. This simplified version reads the entire source up front, which keeps the
-    packet-boundary logic easy to follow.
+    This simplified version reads the entire source up front, which keeps the packet-boundary
+    logic easy to follow, and only supports a file-like object or raw `bytes`. It does not support
+    reading directly from a socket. The built-in generators in `space_packet_parser/generators/` use
+    `space_packet_parser.generators.utils._setup_binary_reader` to read incrementally from files and
+    sockets alike; for a custom generator that parses directly from a socket, see
+    `examples/parsing_and_plotting_idex_waveforms_from_socket.py`.
 
     Parameters
     ----------
-    binary_data : Union[BinaryIO, socket.socket, bytes]
+    binary_data : Union[BinaryIO, bytes]
         Binary data source.
     sync_marker : bytes
         Byte string that marks the start of each packet.
@@ -161,12 +162,22 @@ if __name__ == "__main__":
 
     # Parsing packet by packet. `root_container_name` is required here because the default,
     # "CCSDSPacket", does not exist in this definition.
+    parsed_packets = []
     for packet_bytes in sync_marker_generator(stream):
         packet = packet_definition.parse_bytes(packet_bytes, root_container_name=ROOT_CONTAINER_NAME)
         print(packet)
+        parsed_packets.append(packet)
 
-    # The same custom generator can drive the xarray interface. Note that `create_dataset` keys its
-    # result by APID; packets with no PKT_APID field are all grouped under key 0.
+    # Regression-check the documented boundary behavior: build_example_stream(n_packets=5) produces
+    # COUNTER 0..4 and TEMPERATURE 300..304, so a generator whose sync marker or length handling is
+    # broken (silently dropping or misreading a packet) is caught here instead of only being printed.
+    assert len(parsed_packets) == 5  # noqa S101
+    assert [p["COUNTER"].raw_value for p in parsed_packets] == list(range(5))  # noqa S101
+    assert [p["TEMPERATURE"].raw_value for p in parsed_packets] == [300 + i for i in range(5)]  # noqa S101
+
+    # The same custom generator can drive the xarray interface. `create_dataset` keys its result by
+    # the `apid` property on the yielded bytes object, falling back to 0 when that property is
+    # absent — so these packets, yielded as plain bytes, are all grouped under key 0.
     datasets = create_dataset(
         packet_files=stream,
         xtce_packet_definition=packet_definition,
@@ -176,3 +187,6 @@ if __name__ == "__main__":
 
     print("\nAs an xarray Dataset:")
     print(datasets[0])
+
+    assert len(datasets) == 1  # noqa S101
+    assert len(datasets[0].packet) == 5  # noqa S101

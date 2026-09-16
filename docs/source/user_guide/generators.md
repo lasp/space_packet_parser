@@ -115,6 +115,8 @@ def sync_marker_generator(binary_data, *, sync_marker=b"\xde\xad\xbe\xef"):
         start = buffer.find(sync_marker, position)
         if start == -1:
             break
+        if start + header_length > len(buffer):
+            break  # Truncated packet: the length field itself was cut off
         payload_length = buffer[start + len(sync_marker)]
         end = start + header_length + payload_length
         if end > len(buffer):
@@ -124,6 +126,12 @@ def sync_marker_generator(binary_data, *, sync_marker=b"\xde\xad\xbe\xef"):
         yield buffer[start:end]
         position = end
 ```
+
+This example reads a file-like object or raw `bytes`; it does not support parsing directly from a
+socket. For an example that does, see the
+[IDEX waveform socket example](https://github.com/lasp/space_packet_parser/blob/main/examples/parsing_and_plotting_idex_waveforms_from_socket.py).
+Note that socket reading is built into the default CCSDS packet generator; see
+`space_packet_parser/generators/ccsds.py`.
 
 A definition for a format like this has no `CCSDSPacket` container, so the root container to parse
 from must be named explicitly. Note that `load_xtce` does not accept this argument; pass it to
@@ -139,9 +147,11 @@ for packet_bytes in sync_marker_generator(binary_data):
 ```
 
 A custom generator also works with the Xarray interface. Pass it to `create_dataset` as
-`packet_bytes_generator`, with any generator options in `generator_kwargs`. `create_dataset`
-returns its Datasets keyed by APID, so packets that have no `PKT_APID` field are all grouped under
-key `0`.
+`packet_bytes_generator`, with any generator options in `generator_kwargs`. `create_dataset` keys
+its result by the `apid` property on the `bytes` object each generator yields (as `CCSDSPacketBytes`
+and `UDPPacketBytes` expose), falling back to `0` when that property is absent — so packets from a
+generator that yields plain `bytes`, like `sync_marker_generator` above, are all grouped under key
+`0`.
 
 For a complete, runnable demonstration of all of the above, see the
 [non-CCSDS parsing example](https://github.com/lasp/space_packet_parser/blob/main/examples/parsing_non_ccsds_packets.py).
