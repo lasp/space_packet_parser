@@ -20,6 +20,7 @@ import lxml.etree as ElementTree
 
 from space_packet_parser.xtce import (
     BUNDLED_XSD_FILENAME_BY_VERSION,
+    LEGACY_XTCE_XMLNS_ALIASES,
     SUPPORTED_XTCE_VERSIONS,
     XTCE_XMLNS_BY_VERSION,
     XTCE_XSD_URL_BY_VERSION,
@@ -674,13 +675,26 @@ def _validate_xtce_schema(
             for error in schema.error_log:
                 if "No matching global declaration available for the validation root." in error.message:
                     standard_uris = ", ".join(f"{v}: {XTCE_XMLNS_BY_VERSION[v]}" for v in SUPPORTED_XTCE_VERSIONS)
-                    result.add_error(
-                        message=(
+                    # A legacy URI has a specific, actionable cause, and the generic "does your xmlns
+                    # match your XSD?" text does not help: the answer is that an older release of this
+                    # library wrote the document, which the reader has no way to guess.
+                    if document_xtce_uri in LEGACY_XTCE_XMLNS_ALIASES:
+                        canonical = XTCE_XMLNS_BY_VERSION[LEGACY_XTCE_XMLNS_ALIASES[document_xtce_uri]]
+                        namespace_message = (
+                            f"The document's XTCE namespace URI {document_xtce_uri} is not the targetNamespace of "
+                            f"any XTCE schema. It was written by space_packet_parser 6.2 or earlier, which used an "
+                            f"incorrect URI; the correct one is {canonical}. Reading the document with "
+                            f"XtcePacketDefinition.from_xtce and writing it back out repairs it."
+                        )
+                    else:
+                        namespace_message = (
                             "Namespace issue detected. Does the `xmlns[:xtce]=<chosen_xtce_uri>` URI on your "
                             "document root element match the `targetNamespace` URI in your XSD? The standard "
                             f"XTCE namespace URIs are ({standard_uris}), and the URI must match the XTCE version "
                             "of the XSD you are validating against."
-                        ),
+                        )
+                    result.add_error(
+                        message=namespace_message,
                         error_code="INVALID_XTCE_NAMESPACE",
                         context={
                             "nsmap": xml_tree.getroot().nsmap,

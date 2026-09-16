@@ -72,6 +72,28 @@ XTCE_XSD_URL_BY_VERSION: dict[str, str] = {
     "1.3": XTCE_1_3_XSD_URL,
 }
 
+#: Supported XTCE version -> the values its ``TimeUnitsType`` enumeration permits, which is what a
+#: time parameter type's ``Encoding/@units`` attribute must be drawn from. The spellings differ
+#: between versions (1.2 ``picoSeconds`` vs 1.3 ``picoseconds``) and 1.3 adds several values, so a
+#: unit that is valid in one version may be invalid in the other.
+TIME_UNITS_BY_VERSION: dict[str, frozenset[str]] = {
+    "1.2": frozenset({"seconds", "picoSeconds", "days", "months", "years"}),
+    "1.3": frozenset(
+        {
+            "seconds",
+            "milliseconds",
+            "microseconds",
+            "nanoseconds",
+            "picoseconds",
+            "minutes",
+            "hours",
+            "days",
+            "months",
+            "years",
+        }
+    ),
+}
+
 #: Supported XTCE version -> filename of the XSD bundled in ``space_packet_parser/xtce/schemas``.
 BUNDLED_XSD_FILENAME_BY_VERSION: dict[str, str] = {
     "1.2": "SpaceSystem-20180204.xsd",
