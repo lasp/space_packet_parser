@@ -182,8 +182,9 @@ class StringDataEncoding(DataEncoding):
         max_size_in_bits: int | None = None,
     ):
         f"""Constructor
-        Only one of termination_character, fixed_length, or leading_length_size should be set. Setting more than one
-        is nonsensical.
+        termination_character and leading_length_size are mutually exclusive: they are two ways of
+        delimiting the string content within its buffer, and setting both is nonsensical. Either may
+        be combined with a declared buffer length.
 
         The raw string buffer ("memory allocation") length may be given by exactly one of
         fixed_raw_length, dynamic_length_reference, or discrete_lookup_length. XTCE 1.3 additionally
@@ -337,6 +338,17 @@ class StringDataEncoding(DataEncoding):
             # XTCE 1.3 permits a Variable string with no declared buffer length, in which case the
             # leading size tag delimits the buffer: the tag itself, plus the content length it reports.
             buflen_bits = self.leading_length_size + self._peek_leading_size(packet)
+            # The size tag comes from the packet, so it is untrusted. maxSizeInBits is the declared
+            # upper bound on this buffer; without this check an oversized tag would consume bytes
+            # belonging to later fields. Only the derived (XTCE 1.3) path is bounded here — applying
+            # the same check to the declared-length paths below would start rejecting documents that
+            # parse today.
+            if self.max_size_in_bits is not None and buflen_bits > self.max_size_in_bits:
+                raise ValueError(
+                    f"String leading size tag reports a {buflen_bits}b buffer (a {self.leading_length_size}b size "
+                    f"tag plus {buflen_bits - self.leading_length_size}b of content), which exceeds the declared "
+                    f"maxSizeInBits={self.max_size_in_bits}."
+                )
         elif self.termination_character is not None:
             # As above, but delimited by a terminator: the buffer runs up to and including it.
             buflen_bits = self._scan_to_termination_character(packet)
@@ -389,14 +401,20 @@ class StringDataEncoding(DataEncoding):
         b"\\x41\\x00\\x00\\x42", but in UTF-16BE that is the two characters U+4100 and U+0042 and
         contains no terminator.
 
-        Variable-width encodings (UTF-8, and the single-byte encodings) are searched byte by byte
-        instead, which is both necessary — there is no fixed stride to take — and safe, because UTF-8
-        is self-synchronizing: a validly encoded character can never appear misaligned inside another.
+        Variable-width encodings (UTF-8, and the single-byte encodings) accept a hit at any byte
+        offset instead, which is both necessary — there is no fixed stride to take — and safe,
+        because UTF-8 is self-synchronizing: a validly encoded character can never appear misaligned
+        inside another.
         """
         char_width = self._FIXED_CHARACTER_WIDTH_BYTES.get(self.encoding, 1)
-        for index in range(0, len(buffer) - len(self.termination_character) + 1, char_width):
-            if buffer[index : index + len(self.termination_character)] == self.termination_character:
+        # bytes.find does the scanning in C. For a single-byte character width every hit is
+        # necessarily aligned, so the first find returns and this costs one C call; only the
+        # fixed-width multi-byte encodings ever go round the loop again.
+        start = 0
+        while (index := buffer.find(self.termination_character, start)) != -1:
+            if index % char_width == 0:
                 return index
+            start = index + 1
         return -1
 
     def _get_raw_buffer(self, packet: spp.SpacePacket) -> bytes:
@@ -568,7 +586,10 @@ class StringDataEncoding(DataEncoding):
 
         # Derived string specifiers
         if (termination_char_element := size_element.find("TerminationChar")) is not None:
-            init_kwargs["termination_character"] = termination_char_element.text
+            # An empty <TerminationChar/> is schema-valid and means the XSD default, which is "00"
+            # (a null terminator) in both XTCE 1.2 and 1.3. lxml gives an empty element's text as
+            # None, and nothing in this library applies XSD defaults, so fill it in here.
+            init_kwargs["termination_character"] = termination_char_element.text or "00"
 
         if (leading_size_element := size_element.find("LeadingSize")) is not None:
             init_kwargs["leading_length_size"] = int(leading_size_element.attrib["sizeInBitsOfSizeTag"])

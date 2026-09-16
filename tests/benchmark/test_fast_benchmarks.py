@@ -3,6 +3,7 @@
 import pytest
 
 import space_packet_parser as spp
+from space_packet_parser.xtce import encodings
 
 
 @pytest.mark.benchmark
@@ -137,3 +138,38 @@ def test_benchmark__read_as_bytes__partial_bytes(benchmark):
     )
 
     assert value == expected_value
+
+
+@pytest.mark.benchmark
+def test_benchmark__terminated_string_parsing(benchmark):
+    """Benchmark parsing a null-terminated string, which scans the buffer for its terminator
+
+    Finding the terminator is the one part of string parsing whose cost grows with string length, and
+    it runs on the XTCE 1.2 path as well as the 1.3 one. It is benchmarked here so that a change to
+    the search (for example, replacing the C-level `bytes.find` with a Python loop) shows up as a
+    measured regression rather than being noticed in review.
+    """
+    rounds = 3
+    warmup_rounds = 1
+    n_iterations = 100
+    # A few hundred bytes of content, so the scan does real work.
+    content = b"A" * 512
+    raw_string_buffer = content + b"\x00"
+    encoding = encodings.StringDataEncoding(
+        encoding="UTF-8",
+        termination_character="00",
+        fixed_raw_length=len(raw_string_buffer) * 8,
+    )
+
+    def _parse_once():
+        """Parse from a fresh packet, since parsing advances the cursor past the string"""
+        return encoding.parse_value(spp.SpacePacket(binary_data=raw_string_buffer))
+
+    value = benchmark.pedantic(
+        _parse_once,
+        rounds=rounds,
+        iterations=n_iterations,
+        warmup_rounds=warmup_rounds,
+    )
+
+    assert value == content.decode("UTF-8")
