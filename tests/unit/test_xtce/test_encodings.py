@@ -691,3 +691,48 @@ def test_fixed_width_encodings_do_not_match_a_straddling_terminator(encoding_nam
     assert encoding._find_termination_character(straddling) == -1
     # The same buffer with a real, character-aligned terminator appended.
     assert encoding._find_termination_character(straddling + b"\x00" * char_width) == len(straddling)
+
+
+def test_empty_termination_char_element_uses_the_schema_default(xtce_parser):
+    """An empty <TerminationChar/> means the XSD default, which is a null byte in both versions
+
+    The element is declared `default="00"` in both the XTCE 1.2 and 1.3 schemas, so an empty element
+    is schema-valid and means a null terminator. lxml reports an empty element's text as None, and
+    nothing here applies XSD defaults, so reading it as "absent" would reject a valid C string.
+    """
+    element = ElementTree.fromstring(
+        f"""
+<xtce:StringDataEncoding xmlns:xtce="{XTCE_1_2_XMLNS}" encoding="UTF-8">
+    <xtce:Variable maxSizeInBits="256">
+        <xtce:DynamicValue>
+            <xtce:ParameterInstanceRef parameterRef="LEN"/>
+        </xtce:DynamicValue>
+        <xtce:TerminationChar/>
+    </xtce:Variable>
+</xtce:StringDataEncoding>
+""",
+        parser=xtce_parser,
+    )
+    encoding = encodings.StringDataEncoding.from_xml(element)
+    assert encoding.termination_character == b"\x00"
+
+
+def test_string_encoding_requires_some_length_specifier():
+    """An encoding with neither a declared buffer length nor a delimiter is rejected"""
+    with pytest.raises(ValueError, match="Expected one of dynamic length reference"):
+        encodings.StringDataEncoding()
+
+
+def test_termination_delimited_string_must_start_on_a_byte_boundary():
+    """Scanning for a terminator needs byte alignment, and says so rather than misreading
+
+    Only reachable on the XTCE 1.3 derived path, where the terminator is what determines how much of
+    the packet to consume; with a declared buffer length the scan happens inside an already-read
+    buffer and alignment is not in question.
+    """
+    encoding = encodings.StringDataEncoding(termination_character="00", max_size_in_bits=256)
+    packet = spp.SpacePacket(binary_data=b"\xff" + b"AB\x00")
+    packet._read_from_binary_as_int(3)  # leave the cursor mid-byte
+
+    with pytest.raises(ValueError, match="must begin on a byte boundary"):
+        encoding.parse_value(packet)

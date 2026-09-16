@@ -78,15 +78,18 @@ def test_mission_definitions_validate_as_xtce_1_3(mission_definition_path):
 
 
 @pytest.mark.parametrize(
-    ("definition_name", "packet_file_name", "root_container_name"),
+    ("definition_name", "packet_file_name", "parse_kwargs", "skip_header_bytes"),
     [
-        ("ctim/ctim_xtce_v1.xml", "ctim/ccsds_2021_155_14_39_51", "CCSDSTelemetryPacket"),
-        ("jpss/jpss1_geolocation_xtce_v1.xml", "jpss/J01_G011_LZ_2021-04-09T00-00-00Z_V01.DAT1", "CCSDSPacket"),
+        ("ctim/ctim_xtce_v1.xml", "ctim/ccsds_2021_155_14_39_51", {"root_container_name": "CCSDSTelemetryPacket"}, 0),
+        ("jpss/jpss1_geolocation_xtce_v1.xml", "jpss/J01_G011_LZ_2021-04-09T00-00-00Z_V01.DAT1", {}, 0),
+        # SUDA packets carry a 4-byte prefix ahead of each CCSDS packet.
+        ("suda/suda_combined_science_definition.xml", "suda/sciData_2022_130_17_41_53.spl", {}, 4),
+        ("idex/idex_combined_science_definition.xml", "idex/sciData_2023_052_14_45_05", {}, 0),
     ],
 )
 @pytest.mark.filterwarnings("ignore:Number of bits parsed")
 def test_mission_packets_decode_identically_under_xtce_1_3(
-    test_data_dir, definition_name, packet_file_name, root_container_name
+    test_data_dir, definition_name, packet_file_name, parse_kwargs, skip_header_bytes
 ):
     """Real packets decode to identical values under the 1.2 and 1.3 forms of a definition"""
     definition_path = test_data_dir / definition_name
@@ -94,11 +97,11 @@ def test_mission_packets_decode_identically_under_xtce_1_3(
     definition_13 = XtcePacketDefinition.from_xtce(_as_xtce_1_3(definition_path))
 
     with open(test_data_dir / packet_file_name, "rb") as f:
-        packet_bytes = list(spp.ccsds_generator(f))
+        packet_bytes = list(spp.ccsds_generator(f, skip_header_bytes=skip_header_bytes))
 
     assert packet_bytes, "expected at least one packet in the test data file"
-    parsed_12 = [dict(definition_12.parse_bytes(b, root_container_name=root_container_name)) for b in packet_bytes]
-    parsed_13 = [dict(definition_13.parse_bytes(b, root_container_name=root_container_name)) for b in packet_bytes]
+    parsed_12 = [dict(definition_12.parse_bytes(b, **parse_kwargs)) for b in packet_bytes]
+    parsed_13 = [dict(definition_13.parse_bytes(b, **parse_kwargs)) for b in packet_bytes]
     assert parsed_13 == parsed_12
 
 
