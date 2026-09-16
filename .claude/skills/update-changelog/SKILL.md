@@ -1,37 +1,40 @@
 ---
 name: update-changelog
-description: Update CHANGELOG.md from the git history since the last release — add Keep a Changelog entries for unreleased PRs, or turn [Unreleased] into a versioned section when the version has been bumped. Use when asked to update, fill in, or catch up the changelog, or while preparing a release.
+description: Update CHANGELOG.md from the git history since the last release — add Keep a Changelog entries for unreleased PRs, or turn [Unreleased] into a versioned section when the version has been bumped. Use when asked to update, fill in, or catch up the changelog.
 ---
 
 # Update the changelog
 
 ## Step 1 — Gather context
 
+Run this on an up-to-date `main`: the commands below read the local `HEAD` and Step 4 edits the
+local `CHANGELOG.md`. If the checkout is on another branch or behind `origin/main`, say so and stop.
+
 ```bash
 git fetch origin --tags
-LATEST_TAG=$(git tag --sort=-version:refname | head -1)
-git log "$LATEST_TAG"..HEAD --oneline
+# Skip prerelease tags: `--sort=-version:refname` ranks 6.0.0rc4 above 6.0.0.
+LATEST_TAG=$(git tag --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+(\.[0-9]+)?$' | head -1)
+git log --oneline --cherry-mark --left-right "$LATEST_TAG"...HEAD
 ```
 
-**Trap: that range lists commits that already shipped.** Release tags live on long-lived
-`release/X.Y` branches carrying cherry-picked fixes, so the tagged commit is not an ancestor of the
-tip of `main` in the usual way. Before writing an entry for a commit, confirm it is unreleased:
-
-```bash
-git merge-base --is-ancestor <sha> "$LATEST_TAG" && echo "already released" || echo "unreleased"
-```
+Read the markers, not just the subjects. `>` is on `main` only and is a candidate for an entry; `=`
+means the same patch already shipped under `$LATEST_TAG` and must be skipped; `<` is on the tag side
+only — a release-branch commit that never reached `main` — and is not yours to write up. A release
+is tagged on its `release/X.Y` branch, so a fix cherry-picked onto one ships under a different SHA
+than its copy on `main`, and `=` is what catches that. Keep merge commits — Step 3 reads PR numbers
+out of their subjects.
 
 Do not assume `[Unreleased]` is complete either — features have reached `main` without an entry.
 
 Read `CHANGELOG.md` and the version in all three metadata files: `pyproject.toml` (`[project]`
-`version`), `meta.yaml` (`version:`) and `CITATION.cff` (`version:`). The three must agree; if they
-do not, stop and tell the user.
+`version`), `meta.yaml` (`package:` → `version:`) and `CITATION.cff` (`version:`). The three must
+agree; if they do not, stop and tell the user.
 
 ## Step 2 — Pick the scenario
 
-- **Version in the files differs from `LATEST_TAG`:** ask the user "Version X.Y.Z is in
-  pyproject.toml/meta.yaml/CITATION.cff but the latest tag is LATEST_TAG. Is this a new release that
-  should get its own versioned section?" Yes → Scenario A. No → Scenario B.
+- **Version in the files differs from `LATEST_TAG`:** use `AskUserQuestion` to ask "Version X.Y.Z is
+  in pyproject.toml/meta.yaml/CITATION.cff but the latest tag is LATEST_TAG. Is this a new release
+  that should get its own versioned section?" Yes → Scenario A. No → Scenario B.
 - **Version matches `LATEST_TAG`:** Scenario B.
 
 ## Step 3 — Write entries
@@ -47,9 +50,11 @@ do not, stop and tell the user.
 
 ## Step 4 — Edit `CHANGELOG.md`
 
-**Scenario A — new release.** Rename `## [Unreleased]` to `## [NEW_VERSION] - YYYY-MM-DD` (today),
-keeping its existing entries ahead of the new ones, and add an empty `## [Unreleased]` above it.
-Then fix the footer links, which are easy to get wrong:
+**Scenario A — new release.** `NEW_VERSION` is the version read from `pyproject.toml` in Step 1.
+Rename `## [Unreleased]` to `## [NEW_VERSION] - YYYY-MM-DD` (today), keeping its existing entries
+ahead of the new ones, and add an empty `## [Unreleased]` above it.
+Then fix the footer links, which are easy to get wrong. Replace the existing `[unreleased]` line
+with the first of these, and insert the second directly below it:
 
 ```
 [unreleased]: https://github.com/lasp/space_packet_parser/compare/NEW_VERSION...HEAD
