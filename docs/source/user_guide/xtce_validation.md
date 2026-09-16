@@ -89,11 +89,17 @@ between 1.2 and 1.3:
   version emits a `UserWarning` naming the parameter types involved.
 - **Time units.** The `units` attribute of a time parameter type's `Encoding` element is drawn from a
   version-specific enumeration: XTCE 1.2 spells it `picoSeconds`, while 1.3 spells it `picoseconds`
-  and adds values such as `milliseconds`, `minutes` and `hours`. Unit strings are passed through
-  verbatim, so a unit that is valid in one version is written unchanged into the other.
-- **Name references.** XTCE 1.3 tightened the characters allowed in a parameter or container
-  reference, excluding space and tab (and adding array subscript syntax). A definition whose
-  parameter names contain spaces is valid XTCE 1.2 but not valid XTCE 1.3.
+  and adds values such as `milliseconds`, `minutes` and `hours`. A unit is document content, so it is
+  written through verbatim rather than translated — serializing a definition whose time units the
+  target version does not define emits a `UserWarning` naming the parameter types and units involved.
+- **`SpaceSystem` metadata.** `systemType` and `assetType` were added to the root element in XTCE
+  1.3. They are read into `space_system_type` and `asset_type` and written back out for 1.3;
+  serializing as 1.2, where they do not exist, drops them with a `UserWarning`.
+- **Name references.** Parameter _names_ could never contain a space, in either version — XTCE 1.2's
+  `NameType` pattern is `[^./:\[\] ]+` and 1.3's adds tab to the exclusions. What changed is the
+  _reference_ patterns: 1.2's single `NameReferenceType` permitted space and tab inside a reference
+  path, while 1.3 replaces it with four reference types that exclude both and add `[n]` array
+  subscript syntax. A reference containing a space is valid XTCE 1.2 but not valid XTCE 1.3.
 
 ## Schema Resolution and Network Security
 
