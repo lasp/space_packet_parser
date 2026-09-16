@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A small, contrived (i.e. not schema-validated) example of a CCSDS Electronic Data Sheets (EDS) document,
+  patterned after the structures described in CCSDS 876.0-B-1. It describes a single fixed-length CCSDS packet
+  containing a primary header and a handful of science fields, used by examples/eds_to_xtce_conversion.py to
+  demonstrate building an in-memory XTCE packet definition from an EDS source file.
+-->
+<PackageFile xmlns="http://www.ccsds.org/schema/sois/seds">
+  <Package name="CONTRIVED_MISSION">
+    <DataTypeSet>
+      <IntegerDataType name="uint3_type">
+        <IntegerDataEncoding sizeInBits="3" encoding="unsigned"/>
+      </IntegerDataType>
+      <IntegerDataType name="uint1_type">
+        <IntegerDataEncoding sizeInBits="1" encoding="unsigned"/>
+      </IntegerDataType>
+      <IntegerDataType name="uint11_type">
+        <IntegerDataEncoding sizeInBits="11" encoding="unsigned"/>
+      </IntegerDataType>
+      <IntegerDataType name="uint2_type">
+        <IntegerDataEncoding sizeInBits="2" encoding="unsigned"/>
+      </IntegerDataType>
+      <IntegerDataType name="uint14_type">
+        <IntegerDataEncoding sizeInBits="14" encoding="unsigned"/>
+      </IntegerDataType>
+      <IntegerDataType name="uint16_type">
+        <IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
+      </IntegerDataType>
+      <IntegerDataType name="temperature_raw_type">
+        <IntegerDataEncoding sizeInBits="16" encoding="twosComplement"/>
+      </IntegerDataType>
+      <FloatDataType name="voltage_type">
+        <FloatDataEncoding sizeInBits="32" encodingAndPrecision="IEEE754"/>
+      </FloatDataType>
+      <StringDataType name="mode_string_type">
+        <StringDataEncoding encoding="US-ASCII"/>
+        <Length fixedSizeInBits="32"/>
+      </StringDataType>
+      <ContainerDataType name="ContrivedPacket">
+        <EntryList>
+          <Entry name="VERSION" type="uint3_type"/>
+          <Entry name="TYPE" type="uint1_type"/>
+          <Entry name="SEC_HDR_FLG" type="uint1_type"/>
+          <Entry name="APID" type="uint11_type"/>
+          <Entry name="SEQ_FLGS" type="uint2_type"/>
+          <Entry name="SRC_SEQ_CTR" type="uint14_type"/>
+          <Entry name="PKT_LEN" type="uint16_type"/>
+          <Entry name="TEMPERATURE_RAW" type="temperature_raw_type"/>
+          <Entry name="VOLTAGE" type="voltage_type"/>
+          <Entry name="MODE" type="mode_string_type"/>
+        </EntryList>
+      </ContainerDataType>
+    </DataTypeSet>
+  </Package>
+</PackageFile>

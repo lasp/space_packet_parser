@@ -16,3 +16,10 @@ Examples on GitHub include:
   using realtime packet parsing from a streaming socket
 - [CSV to XTCE](https://github.com/lasp/space_packet_parser/blob/main/examples/csv_to_xtce_conversion.py)
   packet definition conversion and parsing
+- [XTCE to EDS](https://github.com/lasp/space_packet_parser/blob/main/examples/xtce_to_eds_conversion.py)
+  demonstrating conversion of an XTCE packet definition to a simplified Electronic Data Sheets (EDS) document
+- [EDS to XTCE](https://github.com/lasp/space_packet_parser/blob/main/examples/eds_to_xtce_conversion.py)
+  demonstrating building an in-memory XTCE packet definition from a contrived EDS document and parsing with it
+
+See also the [XTCE/EDS feasibility report](eds_xtce_feasibility.md) for an analysis of the complexity involved
+in supporting EDS-based configuration more broadly.
