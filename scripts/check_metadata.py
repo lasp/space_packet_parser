@@ -43,13 +43,11 @@ def verify_name(pyproject_toml, citation_cff, meta_yaml):
 
 
 def verify_description(pyproject_toml, citation_cff, meta_yaml):
-    """Verify that descriptions match"""
+    """Verify that package descriptions match; CFF carries a separate, longer abstract."""
     pyproject_description = pyproject_toml["project"]["description"]
-    citation_description = citation_cff["description"]
     meta_description = meta_yaml["about"]["description"]
-    if not (pyproject_description == citation_description == meta_description):
+    if pyproject_description != meta_description:
         print(f"pyproject.toml: {pyproject_description}")
-        print(f"CITATION.cff: {citation_description}")
         print(f"meta.yaml: {meta_description}")
         raise ValueError("Descriptions do not match")
     print("Descriptions match")
@@ -95,7 +93,7 @@ def verify_authors(pyproject_toml, citation_cff, meta_yaml):
 def verify_maintainers(pyproject_toml, citation_cff, meta_yaml):
     """Verify that maintainers match"""
     pyproject_maintainers = {(a["name"], a["email"]) for a in pyproject_toml["project"]["maintainers"]}
-    citation_maintainers = {(a["name"], a["email"]) for a in citation_cff["maintainers"]}
+    citation_maintainers = {(a["name"], a["email"]) for a in citation_cff["contact"]}
     if not pyproject_maintainers == citation_maintainers:
         print(f"pyproject.toml: {pyproject_maintainers}")
         print(f"CITATION.cff: {citation_maintainers}")
