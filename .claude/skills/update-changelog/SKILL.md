@@ -1,58 +1,62 @@
 ---
 name: update-changelog
-description: Update CHANGELOG.md from the git history since the last release — add Keep a Changelog entries for unreleased PRs, or turn [Unreleased] into a versioned section when the version has been bumped. Use when asked to update, fill in, or catch up the changelog.
+description: Add or update entries in CHANGELOG.md — a single entry for a change you just made, a catch-up across everything since the last release, or converting [Unreleased] into a versioned section. Use whenever CHANGELOG.md needs editing.
 ---
 
 # Update the changelog
 
-## Step 1 — Gather context
+Read `CHANGELOG.md` first. Entries go under `## [Unreleased]` unless Step 4 applies, and
+`[Unreleased]` is neither necessarily complete nor necessarily missing what you are about to add.
 
-Run this on an up-to-date `main`: the commands below read the local `HEAD` and Step 4 edits the
-local `CHANGELOG.md`. If the checkout is on another branch or behind `origin/main`, say so and stop.
+## Step 1 — Decide what to write up
 
-```bash
-git fetch origin --tags
-# Skip prerelease tags: `--sort=-version:refname` ranks 6.0.0rc4 above 6.0.0.
-LATEST_TAG=$(git tag --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+(\.[0-9]+)?$' | head -1)
-git log --oneline --cherry-mark --left-right "$LATEST_TAG"...HEAD
-```
+- **A change you just made.** You already know what it is. Go to Step 2.
+- **Everything since the last release.** Scan `main`. Run the scan on an up-to-date `main` — on
+  another branch, or one behind `origin/main`, it covers the wrong commits, so say so and stop.
 
-Read the markers, not just the subjects. `>` is on `main` only and is a candidate for an entry; `=`
-means the same patch already shipped under `$LATEST_TAG` and must be skipped; `<` is on the tag side
-only — a release-branch commit that never reached `main` — and is not yours to write up. A release
-is tagged on its `release/X.Y` branch, so a fix cherry-picked onto one ships under a different SHA
-than its copy on `main`, and `=` is what catches that. Keep merge commits — Step 3 reads PR numbers
-out of their subjects.
+  ```bash
+  git fetch origin --tags
+  # Skip prerelease tags: `--sort=-version:refname` ranks 6.0.0rc4 above 6.0.0.
+  LATEST_TAG=$(git tag --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+(\.[0-9]+)?$' | head -1)
+  git log --oneline --cherry-mark --left-right "$LATEST_TAG"...HEAD
+  ```
 
-Do not assume `[Unreleased]` is complete either — features have reached `main` without an entry.
+  A release is tagged on its `release/X.Y` branch, so a fix cherry-picked onto one ships under a
+  different SHA than its copy on `main`. Skip anything marked `=` — it is already released. Keep
+  merge commits; Step 2 reads PR numbers out of their subjects.
 
-Read `CHANGELOG.md` and the version in all three metadata files: `pyproject.toml` (`[project]`
-`version`), `meta.yaml` (`package:` → `version:`) and `CITATION.cff` (`version:`). The three must
-agree; if they do not, stop and tell the user.
-
-## Step 2 — Pick the scenario
-
-- **Version in the files differs from `LATEST_TAG`:** use `AskUserQuestion` to ask "Version X.Y.Z is
-  in pyproject.toml/meta.yaml/CITATION.cff but the latest tag is LATEST_TAG. Is this a new release
-  that should get its own versioned section?" Yes → Scenario A. No → Scenario B.
-- **Version matches `LATEST_TAG`:** Scenario B.
-
-## Step 3 — Write entries
+## Step 2 — Write the entries
 
 - Skip Dependabot bumps and CI/workflow-only changes with no user-visible effect.
 - Skip anything already listed under `[Unreleased]`.
 - Use the Keep a Changelog categories; prefix breaking changes and removals with `_BREAKING_:`.
-- One line per change, linked to the issue or PR number found in the commit subject:
+- One line per change, linked to the issue or PR number:
 
   ```
   - Description of the change. [#NNN](https://github.com/lasp/space_packet_parser/issues/NNN)
   ```
 
-## Step 4 — Edit `CHANGELOG.md`
+## Step 3 — Add them under `## [Unreleased]`
 
-**Scenario A — new release.** `NEW_VERSION` is the version read from `pyproject.toml` in Step 1.
-Rename `## [Unreleased]` to `## [NEW_VERSION] - YYYY-MM-DD` (today), keeping its existing entries
-ahead of the new ones, and add an empty `## [Unreleased]` above it.
+Put each entry under the right `### Category` heading, creating headings as needed. If the footer
+`[unreleased]` link does not compare from the latest release tag, update it to
+`.../compare/LATEST_TAG...HEAD`.
+
+Stop here unless you are preparing a release.
+
+## Step 4 — Only when cutting a release
+
+Release prep bumps the version before the changelog, so read it from all three metadata files:
+`pyproject.toml` (`[project]` `version`), `meta.yaml` (`package:` → `version:`) and `CITATION.cff`
+(`version:`). The three must agree; if they do not, stop and tell the user.
+
+If that version is already the latest tag, there is nothing to convert and Step 3 was the whole job.
+If it is ahead of the tag, use `AskUserQuestion` to ask "Version X.Y.Z is in
+pyproject.toml/meta.yaml/CITATION.cff but the latest tag is LATEST_TAG. Is this a new release that
+should get its own versioned section?" Convert only on a yes.
+
+`NEW_VERSION` is that version. Rename `## [Unreleased]` to `## [NEW_VERSION] - YYYY-MM-DD` (today),
+keeping its existing entries ahead of the new ones, and add an empty `## [Unreleased]` above it.
 Then fix the footer links, which are easy to get wrong. Replace the existing `[unreleased]` line
 with the first of these, and insert the second directly below it:
 
@@ -63,7 +67,3 @@ with the first of these, and insert the second directly below it:
 
 The new versioned link goes directly under `[unreleased]`, keeping versioned links in descending
 order.
-
-**Scenario B — unreleased only.** Add the entries under the right `### Category` headings in
-`## [Unreleased]`, creating headings as needed. If the footer `[unreleased]` link does not compare
-from `LATEST_TAG`, update it to `.../compare/LATEST_TAG...HEAD`.
