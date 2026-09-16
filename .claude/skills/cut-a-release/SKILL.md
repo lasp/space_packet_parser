@@ -10,24 +10,30 @@ under "Release Process". This skill is the operational version of it, plus the r
 that are easy to hit. If the two ever disagree, `developers.md` wins — and fix this file. The single exception is
 flagged inline in Step 7.
 
-Releases are published by a GitHub Actions workflow that fires on **pushed annotated tags**, not on
-merges. Nothing is published until a tag is pushed.
+Releases are published by a GitHub Actions workflow that fires when a tag matching the release
+pattern is pushed (`.github/workflows/release.yml`), not on merges. Nothing is published until a tag
+is pushed. The workflow does not check whether the tag is annotated — annotated (and signed) tags are
+a process requirement enforced by this skill, not something the workflow verifies (see Step 7).
 
 ## Step 1 — Work out what is actually unreleased
 
 **Trap: `git log <latest-tag>..HEAD` lies in this repo.** Release tags are made on long-lived
 `release/X.Y` branches, so the tagged commit is not the tip of `main` and the range includes commits
-that were already released. To find out whether a given commit is genuinely unreleased, test
-ancestry against the tag instead:
+that were already released via a cherry-pick, under a different SHA. Ancestry checks
+(`git merge-base --is-ancestor`) can't catch this — every commit in that range is by definition not
+an ancestor of the tag, so the check always says "unreleased". Compare patch content instead:
 
 ```bash
 git fetch origin --tags
-LATEST_TAG=$(git tag --sort=-version:refname | head -1)
-git log "$LATEST_TAG"..HEAD --oneline --no-merges
+LATEST_TAG=$(git tag --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+# For a patch release on an existing release/X.Y line, anchor the grep to that prefix instead
+# (e.g. `grep -E '^6\.1\.'`), so LATEST_TAG can't jump ahead to a newer, already-branched release.
 
-# For anything that looks like a real change, confirm it is not already released:
-git merge-base --is-ancestor <sha> "$LATEST_TAG" && echo "already released" || echo "unreleased"
+git log --cherry-pick --right-only "$LATEST_TAG...HEAD" --oneline --no-merges
 ```
+
+This lists only commits on `HEAD` with no patch-equivalent already on `$LATEST_TAG` — the genuinely
+unreleased ones.
 
 **Then reconcile against `CHANGELOG.md`.** Do not trust the `[Unreleased]` section to be complete —
 features do land on `main` without a changelog entry. Grep for each unreleased PR's subject matter
@@ -87,7 +93,8 @@ Add any entries you found missing in Step 1 first, then promote the section:
 
 1. Add missing entries under the correct Keep a Changelog heading in `[Unreleased]`
    (`Security` / `Added` / `Changed` / `Deprecated` / `Removed` / `Fixed`), each ending with a
-   `[#NNN](https://github.com/lasp/space_packet_parser/issues/NNN)` link.
+   `[#NNN](https://github.com/lasp/space_packet_parser/issues/NNN)` link when there is a tracked issue
+   or PR — not every entry has one (see the existing entries around `CHANGELOG.md:97-107`).
 2. Rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD` using today's date.
 3. Insert a new, empty `## [Unreleased]` heading above it.
 4. Update the footer diff links at the bottom of the file:
@@ -145,11 +152,19 @@ git push origin X.Y.Z
 > that needs `tag.gpgsign` or an explicit `-s`, which is how the two drifted apart.
 
 For a TestPyPI dry run, prefix the tag with `test-release/`. This publishes to TestPyPI only and
-skips the public PyPI and the GitHub Release entirely:
+skips the public PyPI — but `create-github-release` has no guard for `test-release/` tags, so a
+GitHub Release (marked prerelease) is still created.
+
+The workflow builds from whatever is checked out at the tag, so the artifact version comes from the
+three metadata files (Step 4), not the tag name. Bump them to `X.Y.Zrc1` and commit before tagging the
+dry run, then revert to plain `X.Y.Z` before Step 7's real tag below:
 
 ```bash
+# bump pyproject.toml / CITATION.cff / meta.yaml to X.Y.Zrc1 (per Step 4), commit, then:
 git tag -s test-release/X.Y.Zrc1 -m "Test Release Candidate X.Y.Zrc1"
 git push origin test-release/X.Y.Zrc1
+
+# revert the three metadata files back to X.Y.Z before tagging the real release below
 ```
 
 Pushing the tag is the irreversible, outward-facing step — PyPI releases cannot be replaced.
