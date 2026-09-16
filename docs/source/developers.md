@@ -85,7 +85,8 @@ That is,
    any recent changes to `main` and resolve any conflicts on a regular basis.
 
 6. When you are satisfied that the release branch is ready, tag the latest commit on the release branch with the
-   desired version `X.Y.Z` and push the tag upstream. This will kick off the automatic release process.
+   desired version `X.Y.Z` using a signed, annotated tag, and push the tag upstream. This will kick off the
+   automatic release process.
 
 7. Merge the release branch back into `main` via a PR. Resolve any conflicts normally. This ensures that all changes
    in the release are incorporated into `main` and subsequent version releases.
@@ -102,6 +103,18 @@ runs as follows:
    Pushes with a `test-release` label if tag starts with `test-release`, otherwise labels as `main`.
 4. Create a GitHub Release that includes auto-generated release notes and the source code.
 
+#### Tag Signing
+
+Release tags must be annotated **and GPG signed**. `git tag -s` does both; the `-a` flag on its own
+creates an annotated but _unsigned_ tag. Every release tag since `6.0.0rc3` is signed, and the tag
+commands below use `-s` accordingly.
+
+```{note}
+Setting `commit.gpgsign` does not sign tags. Signed tags require either `tag.gpgsign = true` or an
+explicit `-s` on each `git tag` invocation. The devcontainer sets both (`COMMIT_GPGSIGN` and
+`TAG_GPGSIGN` in `.devcontainer/devcontainer.json`), so tags created inside it are signed by default.
+```
+
 #### Official Releases
 
 Official releases are published to the public PyPI (even if they are release candidates like `1.2.3rc1`). This differs
@@ -114,7 +127,7 @@ To trigger an official release, push a tag referencing the commit you want to re
 ```bash
 git checkout release/X.Y
 git pull
-git tag -a X.Y.Z -m "Version X.Y.Z"
+git tag -s X.Y.Z -m "Version X.Y.Z"
 git push origin X.Y.Z
 ```
 
@@ -129,7 +142,7 @@ and will prevent the artifacts being published on GitHub.
 ```bash
 git checkout release/X.Y
 git pull
-git tag -a test-release/X.Y.Zrc1 -m "Test Release Candidate X.Y.Zrc1"
+git tag -s test-release/X.Y.Zrc1 -m "Test Release Candidate X.Y.Zrc1"
 git push origin test-release/X.Y.Zrc1
 ```
 
