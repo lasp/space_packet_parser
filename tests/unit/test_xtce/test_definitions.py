@@ -11,6 +11,34 @@ import space_packet_parser.xtce.parameter_types
 from space_packet_parser.exceptions import UnrecognizedPacketTypeError
 from space_packet_parser.xtce import comparisons, containers, definitions, encodings, parameters
 
+# Minimal definition with no CCSDS header and no PKT_APID parameter (see issue #276)
+NO_CCSDS_XTCE = """<xtce:SpaceSystem name="NoCcsds" xmlns:xtce="http://www.omg.org/spec/XTCE/20180204">
+  <xtce:TelemetryMetaData>
+    <xtce:ParameterTypeSet>
+      <xtce:IntegerParameterType name="U8_Type" signed="false">
+        <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
+      </xtce:IntegerParameterType>
+    </xtce:ParameterTypeSet>
+    <xtce:ParameterSet>
+      <xtce:Parameter name="COUNTER" parameterTypeRef="U8_Type"/>
+    </xtce:ParameterSet>
+    <xtce:ContainerSet>
+      <xtce:SequenceContainer name="AbstractRoot" abstract="true">
+        <xtce:EntryList><xtce:ParameterRefEntry parameterRef="COUNTER"/></xtce:EntryList>
+      </xtce:SequenceContainer>
+      <xtce:SequenceContainer name="Child">
+        <xtce:EntryList/>
+        <xtce:BaseContainer containerRef="AbstractRoot">
+          <xtce:RestrictionCriteria>
+            <xtce:Comparison parameterRef="COUNTER" value="99" useCalibratedValue="false"/>
+          </xtce:RestrictionCriteria>
+        </xtce:BaseContainer>
+      </xtce:SequenceContainer>
+    </xtce:ContainerSet>
+  </xtce:TelemetryMetaData>
+</xtce:SpaceSystem>
+"""
+
 
 def test_xtce_definition_from_xtce_inputs(test_data_dir):
     """Test that we can create an XtcePacketDefinition from various inputs"""
@@ -658,33 +686,7 @@ def test_parse_bytes_unrecognized_packet_without_pkt_apid():
     XTCE has no notion of the CCSDS standard, so the error path must not assume a parameter named PKT_APID exists.
     Regression test for https://github.com/lasp/space_packet_parser/issues/276
     """
-    xtce = """<xtce:SpaceSystem name="NoCcsds" xmlns:xtce="http://www.omg.org/spec/XTCE/20180204">
-  <xtce:TelemetryMetaData>
-    <xtce:ParameterTypeSet>
-      <xtce:IntegerParameterType name="U8_Type" signed="false">
-        <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
-      </xtce:IntegerParameterType>
-    </xtce:ParameterTypeSet>
-    <xtce:ParameterSet>
-      <xtce:Parameter name="COUNTER" parameterTypeRef="U8_Type"/>
-    </xtce:ParameterSet>
-    <xtce:ContainerSet>
-      <xtce:SequenceContainer name="AbstractRoot" abstract="true">
-        <xtce:EntryList><xtce:ParameterRefEntry parameterRef="COUNTER"/></xtce:EntryList>
-      </xtce:SequenceContainer>
-      <xtce:SequenceContainer name="Child">
-        <xtce:EntryList/>
-        <xtce:BaseContainer containerRef="AbstractRoot">
-          <xtce:RestrictionCriteria>
-            <xtce:Comparison parameterRef="COUNTER" value="99" useCalibratedValue="false"/>
-          </xtce:RestrictionCriteria>
-        </xtce:BaseContainer>
-      </xtce:SequenceContainer>
-    </xtce:ContainerSet>
-  </xtce:TelemetryMetaData>
-</xtce:SpaceSystem>
-"""
-    xdef = definitions.XtcePacketDefinition.from_xtce(io.StringIO(xtce), root_container_name="AbstractRoot")
+    xdef = definitions.XtcePacketDefinition.from_xtce(io.StringIO(NO_CCSDS_XTCE), root_container_name="AbstractRoot")
 
     # COUNTER=7, so the Child restriction criteria (COUNTER == 99) fail and AbstractRoot has no valid inheritors
     with pytest.raises(UnrecognizedPacketTypeError, match=r"abstract container \(AbstractRoot\)") as exc_info:
@@ -710,3 +712,24 @@ def test_parse_bytes_unrecognized_packet_reports_apid(test_data_dir):
         xdef.parse_bytes(unknown_apid_packet)
 
     assert exc_info.value.partial_data["PKT_APID"] == 2047
+
+
+def test_parse_bytes_unrecognized_packet_ccsds_bytes_without_pkt_apid():
+    """Test that the CCSDS header printout is used when the bytes are CCSDSPacketBytes but no PKT_APID is parsed
+
+    Regression test for the fallback branch added in https://github.com/lasp/space_packet_parser/pull/282
+    """
+    xdef = definitions.XtcePacketDefinition.from_xtce(io.StringIO(NO_CCSDS_XTCE), root_container_name="AbstractRoot")
+
+    # COUNTER=7 fails the Child restriction criteria. Pad to a full 6-byte header so the printout has real values.
+    ccsds_bytes = space_packet_parser.generators.ccsds.CCSDSPacketBytes(b"\x07" + bytes(7))
+    with pytest.raises(UnrecognizedPacketTypeError, match="CCSDSPacket Header") as exc_info:
+        xdef.parse_bytes(ccsds_bytes)
+
+    assert "APID=" not in str(exc_info.value)
+    assert exc_info.value.partial_data["COUNTER"] == 7
+
+    # Even a CCSDSPacketBytes too short for a full header must not break error reporting
+    with pytest.raises(UnrecognizedPacketTypeError, match="incomplete, 1 of 6 bytes") as exc_info:
+        xdef.parse_bytes(space_packet_parser.generators.ccsds.CCSDSPacketBytes(b"\x07"))
+    assert exc_info.value.partial_data["COUNTER"] == 7

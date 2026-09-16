@@ -16,7 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   no valid inheritors, even if the definition has no `PKT_APID` parameter. Previously the error
   message was built by subscripting `packet['PKT_APID']`, so definitions that do not use CCSDS
   naming got a `KeyError` from inside the library instead of the documented exception. The message
-  still reports the APID when the packet has one.
+  still reports the APID when the packet has one. As part of this, `str(CCSDSPacketBytes)` no longer
+  raises `IndexError` for inputs shorter than a full six-byte primary header and instead renders the
+  bytes it has, so it is safe to use in diagnostic messages.
   [#276](https://github.com/lasp/space_packet_parser/issues/276)
 
 ## [6.2.0] - 2026-09-13

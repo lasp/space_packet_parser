@@ -337,3 +337,19 @@ def test_ccsds_generator_packet_length_math(data_length_bytes):
     parsed_p = next(space_packet_parser.generators.ccsds_generator(p))
     assert len(parsed_p) == data_length_bytes + 6
     assert parsed_p.data_length == data_length_bytes - 1
+
+
+def test_ccsds_packet_bytes_str_short_input():
+    """Test that str(CCSDSPacketBytes) does not raise when there are fewer bytes than a full primary header
+
+    The string form is used in diagnostic messages, so it must never fail on the failure path.
+    """
+    short_packet = ccsds.CCSDSPacketBytes(b"\x07")
+    rendered = str(short_packet)
+    assert "incomplete" in rendered
+    assert "1 of 6 bytes" in rendered
+    assert "07" in rendered
+
+    # A full header renders the parsed fields as before
+    full_header = ccsds.create_ccsds_packet(data=b"\x00", apid=11)
+    assert "apid=11" in str(full_header)
