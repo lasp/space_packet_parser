@@ -1,99 +1,65 @@
-Update `CHANGELOG.md` based on recent git history. Follow these steps exactly.
+---
+name: update-changelog
+description: Add or update entries in CHANGELOG.md so they read consistently — after implementing a change, when checking the changelog before a release, or when catching up entries that were missed. Use whenever CHANGELOG.md needs editing.
+---
 
-## Step 1 — Gather context
+# Update the changelog
 
-Run the following commands:
+Entries go under `## [Unreleased]` in `CHANGELOG.md`. Read that section first: it may already
+cover what you are about to add, and it may be missing things that already landed.
 
-```bash
-git tag --sort=-version:refname | head -1
-```
+## Write the entry
 
-Save the output as `LATEST_TAG`. Then run:
+This is the whole job right after implementing a change, and it works on any branch.
 
-```bash
-git log <LATEST_TAG>..HEAD --oneline --no-merges
-git log <LATEST_TAG>..HEAD --oneline --merges
-```
+- One line per user-visible change, under the right Keep a Changelog `### Category` heading —
+  `Added`, `Changed`, `Fixed`, `Removed`, `Deprecated` or `Security`. Create the heading if it is
+  not already there.
+- Prefix breaking changes and removals with `_BREAKING_:`.
+- Skip Dependabot bumps and CI- or workflow-only changes with no user-visible effect.
+- Link the issue or PR number, and wrap to match the entries around it:
 
-Read these files in full:
-
-- `CHANGELOG.md`
-- `pyproject.toml` (find `version =` under `[project]`)
-- `meta.yaml` (find `version:` field)
-- `CITATION.cff` (find `version:` field)
-
-## Step 2 — Detect release scenario
-
-Compare the version in `pyproject.toml` / `meta.yaml` / `CITATION.cff` against `LATEST_TAG`.
-
-- If the version in the files **differs** from `LATEST_TAG`, use `AskUserQuestion` to confirm:
-  > "Version X.Y.Z appears in pyproject.toml/meta.yaml/CITATION.cff but the latest git tag is LATEST_TAG. Is this a new release that should be added as a versioned section in the changelog?"
-  - If the user confirms → **Scenario A** (new release)
-  - If the user declines → **Scenario B** (update unreleased only)
-- If the version already matches `LATEST_TAG` → **Scenario B** automatically.
-
-## Step 3 — Analyze git log
-
-From the combined output of both `git log` commands:
-
-- Identify meaningful changes. Look for PR numbers via patterns `(#NNN)` or `Merge pull request #NNN`.
-- **Skip**: pure Dependabot dependency bumps (e.g. "Bump X from Y to Z"), CI/workflow-only changes with no user-visible impact.
-- Classify each meaningful change into one of these Keep A Changelog categories:
-  - `Added` — new features or capabilities
-  - `Changed` — changes to existing behavior; prefix `_BREAKING_:` for breaking changes
-  - `Fixed` — bug fixes
-  - `Removed` — removed features or APIs; prefix `_BREAKING_:` for breaking removals
-  - `Deprecated` — features marked for future removal
-  - `Security` — security fixes
-- Format each entry as:
   ```
   - Description of the change. [#NNN](https://github.com/lasp/space_packet_parser/issues/NNN)
   ```
-- Check the existing `## [Unreleased]` section in the changelog — do **not** duplicate entries already present there.
 
-## Step 4 — Edit the changelog
+## Find entries that are missing
 
-### Scenario A — New release (user confirmed)
+For the check before a release, or to catch up after entries were skipped. Run this on an
+up-to-date `main` — on another branch, or one behind `origin/main`, it covers the wrong commits:
 
-Let:
+```bash
+git fetch origin --tags
+# Skip prerelease tags: `--sort=-version:refname` ranks 6.0.0rc4 above 6.0.0.
+LATEST_TAG=$(git tag --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+(\.[0-9]+)?$' | head -1)
+git log --oneline --cherry-mark --left-right "$LATEST_TAG"...HEAD
+```
 
-- `NEW_VERSION` = version from `pyproject.toml`
-- `TODAY` = today's date in `YYYY-MM-DD` format
-- `PREV_TAG` = `LATEST_TAG`
+Skip anything marked `=`. A release is tagged on its `release/X.Y` branch, so a fix cherry-picked
+onto one ships under a different SHA than its copy on `main`, and `=` is what catches that. Keep
+merge commits — their subjects carry the PR numbers.
 
-1. Rename the `## [Unreleased]` heading to `## [NEW_VERSION] - TODAY`. Populate its body with the categorized entries from Step 3, preserving any entries that were already in `[Unreleased]` before them.
-2. Insert a new empty `## [Unreleased]` section above the renamed section:
+Write up whatever is not already in `[Unreleased]`, following the rules above. Before a release,
+finding nothing is the expected result. While you are here, if the footer `[unreleased]` link does
+not compare from `$LATEST_TAG`, update it to `.../compare/LATEST_TAG...HEAD`.
 
-   ```markdown
-   ## [Unreleased]
+## Convert `[Unreleased]` into a release section
 
-   ## [NEW_VERSION] - TODAY
-   ```
+Only once the version has been bumped for a release. Read the version from all three metadata
+files: `pyproject.toml` (`[project]` `version`), `meta.yaml` (`package:` → `version:`) and
+`CITATION.cff` (`version:`). The three must agree; if they do not, stop and tell the user. If that
+version is already the latest tag, there is nothing to convert.
 
-3. Update the footer diff links at the bottom of the file:
-   - Change the `[unreleased]` link to:
-     ```
-     [unreleased]: https://github.com/lasp/space_packet_parser/compare/NEW_VERSION...HEAD
-     ```
-   - Insert a new versioned link immediately after the `[unreleased]` line:
-     ```
-     [NEW_VERSION]: https://github.com/lasp/space_packet_parser/compare/PREV_TAG...NEW_VERSION
-     ```
+Otherwise use `AskUserQuestion` to confirm: "Version X.Y.Z is in
+pyproject.toml/meta.yaml/CITATION.cff but the latest tag is LATEST_TAG. Is this a new release that
+should get its own versioned section?" Convert only on a yes, and call that version `NEW_VERSION`.
 
-### Scenario B — Update unreleased only
+Rename `## [Unreleased]` to `## [NEW_VERSION] - YYYY-MM-DD` (today) and add an empty
+`## [Unreleased]` above it. Then fix the footer links, which are easy to get wrong. Replace the
+existing `[unreleased]` line with the first of these and insert the second directly below it,
+keeping the versioned links in descending order:
 
-1. Add the categorized entries from Step 3 under the appropriate `### Category` headings within the existing `## [Unreleased]` section. Create any missing `### Category` headings as needed.
-2. Footer: if `[unreleased]` currently points to a tag other than `LATEST_TAG`, update it to:
-   ```
-   [unreleased]: https://github.com/lasp/space_packet_parser/compare/LATEST_TAG...HEAD
-   ```
-
-## Step 5 — Verify
-
-After editing, confirm:
-
-- `## [Unreleased]` is the first version section in the file.
-- All new entries are under the correct `### Category` heading.
-- The footer `[unreleased]` link ends with `...HEAD`.
-- No duplicate entries exist.
-- Footer versioned links are in descending version order.
+```
+[unreleased]: https://github.com/lasp/space_packet_parser/compare/NEW_VERSION...HEAD
+[NEW_VERSION]: https://github.com/lasp/space_packet_parser/compare/LATEST_TAG...NEW_VERSION
+```
