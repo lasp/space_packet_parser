@@ -89,6 +89,25 @@ def test_describe_xtce_suda(suda_test_data_dir):
     assert result.exit_code == 0
 
 
+def test_describe_xtce_ctim_root_container(ctim_test_data_dir):
+    """The CTIM definition has no `CCSDSPacket` container, so the root must be overridden."""
+    runner = CliRunner()
+    print()
+    definition_file = str(ctim_test_data_dir / "ctim_xtce_v1.xml")
+
+    result = runner.invoke(cli.describe_xtce, [definition_file])
+    print(result.output)
+    assert result.exit_code == 2
+    assert "No SequenceContainer named 'CCSDSPacket'" in result.output
+    assert "possible roots" in result.output
+    assert "CCSDSTelemetryPacket" in result.output
+
+    result = runner.invoke(cli.describe_xtce, [definition_file, "--root-container", "CCSDSTelemetryPacket"])
+    print(result.output)
+    assert result.exit_code == 0
+    assert "APID_1_Packet" in result.output
+
+
 def test_describe_packets_jpss(jpss_test_data_dir):
     runner = CliRunner()
     print()
@@ -127,6 +146,27 @@ def test_parse_jpss_out_of_range_packet(jpss_test_data_dir):
     print(result.output)
     assert result.exit_code == 2
     assert "Packet index -1 out of range" in result.output
+
+
+@pytest.mark.filterwarnings("ignore:Number of bits parsed")
+def test_parse_ctim_root_container(ctim_test_data_dir):
+    """The CTIM definition has no `CCSDSPacket` container, so the root must be overridden."""
+    runner = CliRunner()
+    print()
+    packet_file = str(ctim_test_data_dir / "ccsds_2021_155_14_39_51")
+    definition_file = str(ctim_test_data_dir / "ctim_xtce_v1.xml")
+
+    result = runner.invoke(cli.parse, [packet_file, definition_file, "--packet=0"])
+    print(result.output)
+    assert result.exit_code == 2
+    assert "No SequenceContainer named 'CCSDSPacket'" in result.output
+    assert "CCSDSTelemetryPacket" in result.output
+
+    result = runner.invoke(
+        cli.parse, [packet_file, definition_file, "--packet=0", "--root-container", "CCSDSTelemetryPacket"]
+    )
+    print(result.output)
+    assert result.exit_code == 0
 
 
 def test_parse_suda(suda_test_data_dir):

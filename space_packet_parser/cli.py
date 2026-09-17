@@ -42,6 +42,47 @@ HEAD_ROWS = 5
 # Standard names for header field values when inspecting packets without an XTCE definition
 DISPLAY_HEADER_FIELDS = ("VER", "TYPE", "SHFLG", "APID", "SEQFLG", "SEQCNT", "PKTLEN")
 
+# Shared --root-container option for commands that load an XTCE definition
+root_container_option = click.option(
+    "--root-container",
+    default=DEFAULT_ROOT_CONTAINER,
+    help="Name of the root SequenceContainer element of the packet inheritance tree.",
+)
+
+
+def _load_definition(definition_file: Path, root_container: str) -> XtcePacketDefinition:
+    """Load an XTCE definition, failing as a usage error if the root container is not defined in it.
+
+    Parameters
+    ----------
+    definition_file : Path
+        XTCE document to load.
+    root_container : str
+        Name of the SequenceContainer to treat as the root of the inheritance tree.
+
+    Returns
+    -------
+    : XtcePacketDefinition
+        The loaded definition.
+
+    Raises
+    ------
+    click.BadParameter
+        If no SequenceContainer named `root_container` exists in the document. The message lists the
+        containers that have no BaseContainer, which are the possible roots.
+    """
+    definition = XtcePacketDefinition.from_xtce(definition_file, root_container_name=root_container)
+    if root_container not in definition.containers:
+        candidates = sorted(
+            name for name, container in definition.containers.items() if container.base_container_name is None
+        )
+        raise click.BadParameter(
+            f"No SequenceContainer named '{root_container}' in {definition_file}. "
+            f"Containers with no BaseContainer (possible roots): {', '.join(candidates) or 'none found'}",
+            param_hint="--root-container",
+        )
+    return definition
+
 
 @click.group(context_settings={"show_default": True})
 @click.version_option(message="Space Packet Parser CLI (%(prog)s) v%(version)s")
@@ -82,17 +123,13 @@ def spp(verbose, quiet, log_level):
 @click.option("--sequence-containers", is_flag=True, help="Display sequence containers")
 @click.option("--parameters", is_flag=True, help="Display parameters")
 @click.option("--parameter-types", is_flag=True, help="Display parameter types")
-@click.option(
-    "--root-container",
-    default=DEFAULT_ROOT_CONTAINER,
-    help=f"Name of root SequenceContainer element. Default is {DEFAULT_ROOT_CONTAINER}.",
-)
+@root_container_option
 def describe_xtce(
     file_path: Path, sequence_containers: bool, parameters: bool, parameter_types: bool, root_container: str
 ) -> None:
     """Describe the contents and structure of an XTCE packet definition file."""
     logging.debug(f"Describing XTCE file: {file_path}")
-    definition = XtcePacketDefinition.from_xtce(file_path, root_container_name=root_container)
+    definition = _load_definition(file_path, root_container)
     tree = Tree(definition.root_container_name)
 
     # Recursively add nodes based on the inheritors of each container
@@ -190,6 +227,7 @@ def describe_packets(file_path: Path) -> None:
 @click.option("--max-items", type=int, default=20, help="Maximum number of items to display")
 @click.option("--max-string", type=int, default=40, help="Maximum length of string data")
 @click.option("--skip-header-bytes", type=int, default=0, help="Number of bytes to skip before each packet")
+@root_container_option
 def parse(
     packet_file: Path,
     definition_file: Path,
@@ -197,11 +235,12 @@ def parse(
     max_items: int,
     max_string: int,
     skip_header_bytes: int,
+    root_container: str,
 ) -> None:
     """Parse a packet file using the provided XTCE definition."""
     logging.debug(f"Parsing packet file: {packet_file}")
     logging.debug(f"Using packet definition file: {definition_file}")
-    packet_definition = XtcePacketDefinition.from_xtce(definition_file)
+    packet_definition = _load_definition(definition_file, root_container)
     with open(packet_file, "rb") as f:
         ccsds_generator = generators.ccsds_generator(f, skip_header_bytes=skip_header_bytes)
         packets = [packet_definition.parse_bytes(binary_data) for binary_data in ccsds_generator]
