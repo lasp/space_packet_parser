@@ -66,7 +66,7 @@ git checkout -b release/X.Y
 
 For a patch release on an existing line, check out the existing `release/X.Y` instead of creating one.
 
-## Step 4 — Bump the version in all three metadata files
+## Step 4 — Bump the version in all three metadata files, and refresh `date-released`
 
 The version is duplicated in three places and they must match exactly:
 
@@ -77,10 +77,18 @@ The version is duplicated in three places and they must match exactly:
 | `meta.yaml`      | `version` under `package`   |
 
 There is no `__version__` in the package source — the version is read from package metadata, so
-these three files are the whole job.
+these three files are most of the job.
+
+Also set `CITATION.cff`'s `date-released` to the actual release date (`YYYY-MM-DD`, **quoted** — an
+unquoted value parses as a YAML date rather than a string and fails CFF validation), i.e. the date
+Step 7 will push the tag, not the date the release branch was created. If the branch sits open for a
+few days before tagging, come back and correct it just before tagging rather than leaving the
+branch-creation date. This field is easy to forget because it lives right next to the fields in the
+table above but isn't one of the three cross-checked versions below — nothing catches it going stale.
 
 `scripts/check_metadata.py` runs as an `always_run` pre-commit hook and verifies that the name,
-description, and version all agree across the three files. It is your safety net here, but run it
+description, and version all agree across the three files — it does **not** check `date-released`,
+so it will not catch a stale or missing one. It is your safety net for the version fields; run it
 deliberately rather than discovering a mismatch at commit time:
 
 ```bash
@@ -137,6 +145,10 @@ If `main` moves while the PR is open, rebase the release branch onto it and reso
 ## Step 7 — Tag to publish
 
 Only once the maintainer is satisfied with the branch. The tag must be annotated **and signed**.
+
+Before tagging, check `CITATION.cff`'s `date-released` still matches today — the release branch may
+have sat open for days since Step 4 set it. If it's stale, fix it, commit, and re-run
+`pre-commit run --all-files` before tagging.
 
 ```bash
 git checkout release/X.Y && git pull
