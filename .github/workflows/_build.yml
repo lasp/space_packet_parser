@@ -37,19 +37,21 @@ jobs:
         run: twine check dist/*
 
       - name: Verify installation of built wheel
+        # A fresh venv so the result depends only on the wheel: the job environment already has
+        # `rich` via twine, which would otherwise mask whether the wheel pulls in the cli deps.
         run: |
-          python -m pip install dist/*.whl
-          python -c "import space_packet_parser"
-          which spp
-          cat $(which spp)
+          python -m venv wheel-check
+          wheel-check/bin/python -m pip install dist/*.whl
+          wheel-check/bin/python -c "import space_packet_parser"
+          cat wheel-check/bin/spp
           # Without the cli extra, spp must exit non-zero with an install hint rather than a traceback
-          if spp --version; then
+          if wheel-check/bin/spp --version; then
             echo "spp --version succeeded without the cli extra"
             exit 1
           fi
-          spp --version 2>&1 | grep -F "pip install space_packet_parser[cli]"
-          python -m pip install "$(ls dist/*.whl)[cli]"
-          spp --version
+          wheel-check/bin/spp --version 2>&1 | grep -F "pip install space_packet_parser[cli]"
+          wheel-check/bin/python -m pip install "$(ls dist/*.whl)[cli]"
+          wheel-check/bin/spp --version
 
       # Save ("upload") the distribution artifacts for use by downstream Actions jobs
       - name: Upload distribution artifacts
