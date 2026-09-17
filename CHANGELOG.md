@@ -27,7 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - _BREAKING_: Move the `click` and `rich` dependencies behind a new `cli` extra. Install
   `space_packet_parser[cli]` to use the `spp` command-line interface. Because Python package
   metadata does not support extra-conditional console scripts, the `spp` entry point is still
-  installed but now exits with a friendly install hint when the `cli` extra is missing.
+  installed but now exits with an install hint when the `cli` extra is missing, and importing
+  `space_packet_parser.cli` without the extra raises an `ImportError` carrying the same hint.
+  [#274](https://github.com/lasp/space_packet_parser/issues/274)
+- `spp parse --packet N` now rejects an out-of-range index as a usage error (exit code 2). Previously
+  `N` equal to the packet count produced an `IndexError` traceback and any other out-of-range value
+  printed a message but exited 0. [#274](https://github.com/lasp/space_packet_parser/issues/274)
 
 ### Fixed
 

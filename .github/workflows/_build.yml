@@ -42,6 +42,13 @@ jobs:
           python -c "import space_packet_parser"
           which spp
           cat $(which spp)
+          # Without the cli extra, spp must exit non-zero with an install hint rather than a traceback
+          if spp --version; then
+            echo "spp --version succeeded without the cli extra"
+            exit 1
+          fi
+          spp --version 2>&1 | grep -F "pip install space_packet_parser[cli]"
+          python -m pip install "$(ls dist/*.whl)[cli]"
           spp --version
 
       # Save ("upload") the distribution artifacts for use by downstream Actions jobs

@@ -1,18 +1,19 @@
 """Unit tests for the Space Packet Parser `spp` CLI"""
 
 import builtins
+import importlib
 import importlib.metadata
 import sys
 
 import pytest
-from click import UsageError
 from click.testing import CliRunner
 
-from space_packet_parser import cli
+from space_packet_parser import _spp_entry, cli
 from space_packet_parser.generators import ccsds_generator
 
 
 def _block_cli_dependency_imports(monkeypatch):
+    """Make `import click` and `import rich` fail and force `space_packet_parser.cli` to be re-imported."""
     real_import = builtins.__import__
 
     def blocked_import(name, globals=None, locals=None, fromlist=(), level=0):
@@ -21,7 +22,8 @@ def _block_cli_dependency_imports(monkeypatch):
         return real_import(name, globals, locals, fromlist, level)
 
     monkeypatch.setattr(builtins, "__import__", blocked_import)
-    sys.modules.pop("space_packet_parser._cli_impl", None)
+    # monkeypatch restores the already-imported module after the test
+    monkeypatch.delitem(sys.modules, "space_packet_parser.cli", raising=False)
 
 
 def test_cli():
@@ -36,42 +38,35 @@ def test_cli():
     assert expected_version in result.output
 
 
-def test_cli_main(capsys):
-    expected_version = importlib.metadata.version("space_packet_parser")
+def test_spp_entry_point_version(monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", ["spp", "--version"])
 
     with pytest.raises(SystemExit) as excinfo:
-        cli.main(args=["--version"], prog_name="spp")
+        _spp_entry.main()
 
     assert excinfo.value.code == 0
-    captured = capsys.readouterr()
-    assert expected_version in captured.out
+    assert importlib.metadata.version("space_packet_parser") in capsys.readouterr().out
 
 
-def test_cli_main_subcommand(monkeypatch, capsys):
+def test_spp_entry_point_subcommand(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["spp", "describe-packets", "--help"])
 
     with pytest.raises(SystemExit) as excinfo:
-        cli.main()
+        _spp_entry.main()
 
     assert excinfo.value.code == 0
-    captured = capsys.readouterr()
-    assert "Describe the header contents of a packet file" in captured.out
+    assert "Describe the header contents of a packet file" in capsys.readouterr().out
 
 
-def test_cli_main_invalid_subcommand(monkeypatch, capsys):
+def test_spp_entry_point_invalid_subcommand(monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["spp", "not-a-command"])
 
     with pytest.raises(SystemExit) as excinfo:
-        cli.main()
+        _spp_entry.main()
 
     assert excinfo.value.code == 2
     captured = capsys.readouterr()
     assert "No such command 'not-a-command'" in f"{captured.out}{captured.err}"
-
-
-def test_cli_main_invalid_subcommand_nonstandalone():
-    with pytest.raises(UsageError, match="No such command 'not-a-command'"):
-        cli.main(args=["not-a-command"], prog_name="spp", standalone_mode=False)
 
 
 def test_describe_xtce_jpss(jpss_test_data_dir):
@@ -125,8 +120,13 @@ def test_parse_jpss_out_of_range_packet(jpss_test_data_dir):
 
     result = runner.invoke(cli.parse, [str(packet_file), str(definition_file), f"--packet={packet_count}"])
     print(result.output)
-    assert result.exit_code == 0
+    assert result.exit_code == 2
     assert f"Packet index {packet_count} out of range" in result.output
+
+    result = runner.invoke(cli.parse, [str(packet_file), str(definition_file), "--packet=-1"])
+    print(result.output)
+    assert result.exit_code == 2
+    assert "Packet index -1 out of range" in result.output
 
 
 def test_parse_suda(suda_test_data_dir):
@@ -222,19 +222,18 @@ def test_validate_xtce_failure(test_data_dir):
     assert result.exit_code == 1
 
 
-def test_cli_attribute_error_message_without_cli_extra(monkeypatch):
+def test_cli_import_raises_without_cli_extra(monkeypatch):
     _block_cli_dependency_imports(monkeypatch)
 
-    with pytest.raises(cli.MissingCliExtraError, match="requires the `cli` extra"):
-        cli.spp(standalone_mode=False)
+    with pytest.raises(ImportError, match="requires the `cli` extra"):
+        importlib.import_module("space_packet_parser.cli")
 
 
-def test_cli_main_exits_cleanly_without_cli_extra(monkeypatch, capsys):
+def test_spp_entry_point_exits_with_hint_without_cli_extra(monkeypatch, capsys):
     _block_cli_dependency_imports(monkeypatch)
 
     with pytest.raises(SystemExit) as excinfo:
-        cli.main()
+        _spp_entry.main()
 
-    captured = capsys.readouterr()
     assert excinfo.value.code == 1
-    assert cli.CLI_EXTRA_INSTALL_MESSAGE in captured.err
+    assert "pip install space_packet_parser[cli]" in capsys.readouterr().err

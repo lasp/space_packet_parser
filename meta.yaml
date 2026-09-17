@@ -12,7 +12,7 @@ build:
     pip install .
   noarch: python
   entry_points:
-    - spp = space_packet_parser.cli:spp
+    - spp = space_packet_parser._spp_entry:main
 
 requirements:
   build:
@@ -31,12 +31,14 @@ test:
   imports:
     - space_packet_parser
   requires:
+    - click>=8.0
     - pre-commit
     - pytest
     - pytest-benchmark
     - pytest-randomly
     - pytest-cov
     - pyyaml
+    - rich>=13.0
     - ruff
     - tomli
     - xarray

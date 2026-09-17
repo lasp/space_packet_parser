@@ -52,9 +52,9 @@ homepage = "https://github.com/lasp/space_packet_parser"
 documentation = "https://space-packet-parser.readthedocs.io"
 
 [project.scripts]
-# Entry points cannot be conditioned on extras in PEP 621 metadata, so `spp`
-# is always installed and fails with a friendly message if `cli` extras are missing.
-spp = "space_packet_parser.cli:spp"
+# Entry points cannot be conditioned on extras in PEP 621 metadata, so `spp` is always installed.
+# The entry module imports click/rich lazily and exits with an install hint if the `cli` extra is missing.
+spp = "space_packet_parser._spp_entry:main"
 
 # These are the project extras used for metadata when building the project
 [project.optional-dependencies]

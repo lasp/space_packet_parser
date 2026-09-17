@@ -105,10 +105,11 @@ def verify_run_dependencies(pyproject_toml, citation_cff, meta_yaml):
     """Verify that run dependencies match"""
     pyproject_dependencies = set(pyproject_toml["project"]["dependencies"])
     pyproject_dependencies.add(f"python{pyproject_toml['project']['requires-python']}")
-    # Conda doesn't have the concept of extras, so we list the xarray extras as explicit deps for conda package
-    pyproject_dependencies = pyproject_dependencies.union(
-        set(pyproject_toml["project"]["optional-dependencies"]["xarray"])
-    )
+    # Conda doesn't have the concept of extras, so the conda package lists the cli and xarray extras as run deps
+    for extra in ("cli", "xarray"):
+        pyproject_dependencies = pyproject_dependencies.union(
+            set(pyproject_toml["project"]["optional-dependencies"][extra])
+        )
     meta_dependencies = set(meta_yaml["requirements"]["run"])
     if not pyproject_dependencies == meta_dependencies:
         print(f"pyproject.toml: {pyproject_dependencies}")
