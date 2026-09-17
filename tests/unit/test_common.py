@@ -26,6 +26,7 @@ def test_attr_comparable():
             return 2 * x
 
     a = TestClass(1, 2, 9)
+    assert a.ignored(1) == 2  # Methods are callable but are not part of the comparison
     a.__doc__ = "foobar"  # Ignored dunder method
     b = TestClass(1, 2, 10)
     assert a == b

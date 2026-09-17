@@ -50,6 +50,51 @@ def test_schema_validation_nonstandard_namespace_string(mock_schema_download):
     validate_xtce(io.StringIO(xtce_str), level="schema", raise_on_error=False)
 
 
+def test_schema_validation_downloads_non_bundled_schema(tmp_path, mock_schema_download):
+    """Test schema validation of a document pointing at a non-bundled (but allowlisted) schema URL
+
+    The standard OMG schema URL is served from the schema bundled with the package, so it never
+    reaches the download code path. A URL on an allowlisted host that is *not* bundled does, which
+    is what ``mock_schema_download`` stands in for. The cache directory is redirected at a tmp path
+    so the download is actually attempted rather than served from a previous run's cache.
+    """
+    _ = mock_schema_download  # Used for side effect (mocking urlopen)
+    xtce_str = """<xtce:SpaceSystem name="NonBundledSchemaTest"
+                  xmlns:xtce="http://www.omg.org/spec/XTCE/20180204"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204
+                                      https://www.omg.org/spec/XTCE/20180204/mirror/SpaceSystem.xsd">
+    <xtce:Header date="2024-03-05T13:36:00MST" version="1.0" validationStatus="Working"/>
+    <xtce:TelemetryMetaData>
+        <xtce:ParameterTypeSet>
+            <xtce:IntegerParameterType name="TEST_Type" signed="false">
+                <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+        </xtce:ParameterTypeSet>
+        <xtce:ParameterSet>
+            <xtce:Parameter name="TEST_PARAM" parameterTypeRef="TEST_Type"/>
+        </xtce:ParameterSet>
+        <xtce:ContainerSet>
+            <xtce:SequenceContainer name="TEST_CONTAINER">
+                <xtce:EntryList>
+                    <xtce:ParameterRefEntry parameterRef="TEST_PARAM"/>
+                </xtce:EntryList>
+            </xtce:SequenceContainer>
+        </xtce:ContainerSet>
+    </xtce:TelemetryMetaData>
+</xtce:SpaceSystem>"""
+
+    with patch("space_packet_parser.xtce.validation._get_cache_dir", return_value=tmp_path):
+        result = validate_xtce(io.StringIO(xtce_str), level="schema", raise_on_error=False)
+
+    assert result.valid
+    assert result.errors == []
+    assert result.schema_location == "https://www.omg.org/spec/XTCE/20180204/mirror/SpaceSystem.xsd"
+    assert result.schema_version == "1.2"
+    # The downloaded schema validated as an XSD, so it was written to the (redirected) cache.
+    assert len(list((tmp_path / "schemas").glob("*.xsd"))) == 1
+
+
 def test_schema_validation_missing_schema_location(test_data_dir):
     """Test schema validation fails for document without XTCE namespace"""
     result = validate_xtce(test_data_dir / "test_xtce_no_namespace.xml", level="schema", raise_on_error=False)

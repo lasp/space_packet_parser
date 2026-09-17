@@ -327,6 +327,16 @@ def test_context_calibrator_calibrate(context_calibrator, parsed_data, parsed_va
                 ],
             ),
         ),
+        (
+            # Spline orders above 1 are explicitly not implemented
+            f"""
+<xtce:SplineCalibrator xmlns:xtce="{XTCE_1_2_XMLNS}" order="2" extrapolate="true">
+    <xtce:SplinePoint raw="1" calibrated="10"/>
+    <xtce:SplinePoint raw="2" calibrated="100"/>
+</xtce:SplineCalibrator>
+""",
+            NotImplementedError(),
+        ),
     ],
 )
 def test_spline_calibrator(elmaker, xtce_parser, xml_string: str, expectation):
@@ -406,6 +416,15 @@ def test_spline_calibrator_calibrate(xq, order, extrapolate, expectation):
                 ]
             ),
         ),
+        (
+            # A Term whose coefficient is not a number cannot be parsed
+            f"""
+<xtce:PolynomialCalibrator xmlns:xtce="{XTCE_1_2_XMLNS}">
+    <xtce:Term exponent="0" coefficient="not-a-number"/>
+</xtce:PolynomialCalibrator>
+""",
+            ValueError(),
+        ),
     ],
 )
 def test_polynomial_calibrator(elmaker, xtce_parser, xml_string: str, expectation):
@@ -428,7 +447,8 @@ def test_polynomial_calibrator(elmaker, xtce_parser, xml_string: str, expectatio
 
 @pytest.mark.parametrize(
     ("xq", "expectation"),
-    [(-10.0, 101.5), (0.0, 1.5), (50, 2501.5)],
+    # The final case is a non-numeric query point, which cannot be raised to a power.
+    [(-10.0, 101.5), (0.0, 1.5), (50, 2501.5), ("not-a-number", TypeError())],
 )
 def test_polynomial_calibrator_calibrate(xq, expectation):
     """Test polynomial default_calibrator interpolation routines"""

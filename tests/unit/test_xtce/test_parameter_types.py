@@ -62,6 +62,15 @@ from space_packet_parser.xtce import XTCE_1_2_XMLNS, calibrators, encodings, par
                 encoding=encodings.StringDataEncoding(fixed_raw_length=40, termination_character="00"),
             ),
         ),
+        (
+            # A StringParameterType whose encoding is not a StringDataEncoding is rejected
+            f"""
+<xtce:StringParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_STRING_Type">
+    <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
+</xtce:StringParameterType>
+""",
+            ValueError(),
+        ),
     ],
 )
 def test_string_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
@@ -199,6 +208,15 @@ def test_string_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
                 encoding=encodings.IntegerDataEncoding(size_in_bits=16, encoding="unsigned"),
             ),
         ),
+        (
+            # A parameter type with no data encoding element at all is rejected
+            f"""
+<xtce:IntegerParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_INT_Type">
+    <xtce:UnitSet/>
+</xtce:IntegerParameterType>
+""",
+            ValueError(),
+        ),
     ],
 )
 def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
@@ -335,6 +353,15 @@ def test_integer_parameter_type(elmaker, xtce_parser, xml_string: str, expectati
                 unit=("m", "s"),
                 encoding=encodings.FloatDataEncoding(size_in_bits=16, encoding="IEEE754"),
             ),
+        ),
+        (
+            # A parameter type with no data encoding element at all is rejected
+            f"""
+<xtce:FloatParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_FLOAT_Type">
+    <xtce:UnitSet/>
+</xtce:FloatParameterType>
+""",
+            ValueError(),
         ),
     ],
 )
@@ -508,6 +535,15 @@ def test_float_parameter_type(elmaker, xtce_parser, xml_string: str, expectation
                 enumeration={0: "BOOT_POR", 1: "BOOT_RETURN"},
             ),
         ),
+        (
+            # An EnumeratedParameterType without an EnumerationList is rejected
+            f"""
+<xtce:EnumeratedParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_ENUM_Type">
+    <xtce:IntegerDataEncoding sizeInBits="2" encoding="unsigned"/>
+</xtce:EnumeratedParameterType>
+""",
+            ValueError(),
+        ),
     ],
 )
 def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
@@ -625,6 +661,15 @@ def test_enumerated_parameter_type(elmaker, xtce_parser, xml_string: str, expect
                 encoding=encodings.BinaryDataEncoding(fixed_size_in_bits=128),
             ),
         ),
+        (
+            # A BinaryParameterType whose encoding is not a BinaryDataEncoding is rejected
+            f"""
+<xtce:BinaryParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
+    <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
+</xtce:BinaryParameterType>
+""",
+            ValueError(),
+        ),
     ],
 )
 def test_binary_parameter_type(elmaker, xtce_parser, xml_string: str, expectation):
@@ -701,6 +746,15 @@ def test_binary_parameter_type(elmaker, xtce_parser, xml_string: str, expectatio
                 unit="m/s",
                 encoding=encodings.StringDataEncoding(fixed_raw_length=40, termination_character="00"),
             ),
+        ),
+        (
+            # A parameter type with no data encoding element at all is rejected
+            f"""
+<xtce:BooleanParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_PARAM_Type">
+    <xtce:UnitSet/>
+</xtce:BooleanParameterType>
+""",
+            ValueError(),
         ),
     ],
 )
@@ -839,6 +893,15 @@ def test_boolean_parameter_type(elmaker, xtce_parser, xml_string, expectation):
                     ),
                 ),
             ),
+        ),
+        (
+            # A time parameter type with no data encoding element at all is rejected
+            f"""
+<xtce:AbsoluteTimeParameterType xmlns:xtce="{XTCE_1_2_XMLNS}" name="TEST_TIME_Type">
+    <xtce:Encoding units="s"/>
+</xtce:AbsoluteTimeParameterType>
+""",
+            ValueError(),
         ),
     ],
 )
