@@ -22,7 +22,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   version-agnostic and always resolves to the latest release, so it needs no maintenance at release
   time. [#280](https://github.com/lasp/space_packet_parser/issues/280)
 
+### Changed
+
+- _BREAKING_: Move the `click` and `rich` dependencies behind a new `cli` extra. Install
+  `space_packet_parser[cli]` to use the `spp` command-line interface. Because Python package
+  metadata does not support extra-conditional console scripts, the `spp` entry point is still
+  installed but now exits with an install hint when the `cli` extra is missing, and importing
+  `space_packet_parser.cli` without the extra raises a new `MissingExtraError` (a subclass of
+  `ImportError`) carrying the same hint. [#274](https://github.com/lasp/space_packet_parser/issues/274)
+- `spp parse --packet N` now rejects an out-of-range index as a usage error (exit code 2). Previously
+  `N` equal to the packet count produced an `IndexError` traceback and any other out-of-range value
+  printed a message but exited 0. [#274](https://github.com/lasp/space_packet_parser/issues/274)
+- `spp parse` accepts `--root-container` to name the root `SequenceContainer`, as `spp describe-xtce`
+  already did, so definitions whose root is not called `CCSDSPacket` can be parsed from the CLI.
+  [#275](https://github.com/lasp/space_packet_parser/pull/275)
+
 ### Fixed
+
+- `spp describe-xtce` and `spp parse` now fail as a usage error (exit code 2) when the XTCE document has
+  no `SequenceContainer` matching `--root-container`, listing the containers that have no
+  `BaseContainer` as the possible roots. Previously they raised a `KeyError` traceback.
+  [#275](https://github.com/lasp/space_packet_parser/pull/275)
 
 - Make `CITATION.cff` conform to CFF 1.2.0 so citation exports work, and update the
   metadata consistency check to use CFF contacts while keeping package descriptions

@@ -61,6 +61,12 @@ result = validate_xtce(
 
 ## CLI Validation
 
+Install the CLI extra before using `spp`:
+
+```shell
+pip install "space_packet_parser[cli]"
+```
+
 ```shell
 # Validate against the schema referenced in the document (bundled/allowlisted)
 spp --log-level=DEBUG validate my_xtce.xml --level all

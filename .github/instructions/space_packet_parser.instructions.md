@@ -15,8 +15,8 @@ Space Packet Parser is a Python library for decoding CCSDS telemetry packets acc
 - **pip** - Standard Python package installer (fallback)
 - **XTCE/CCSDS Standards** - Packet format specifications
 - **lxml** - XML parsing for XTCE definitions
-- **Click** - CLI interface
-- **Rich** - Terminal output formatting
+- **Click** - CLI interface (optional `cli` extra)
+- **Rich** - Terminal output formatting (optional `cli` extra)
 - **XArray** - Optional data array support
 - **pytest** - Testing framework
 - **Ruff** - Linting and formatting
