@@ -9,6 +9,8 @@ Use
     spp --describe <packet_file>
 """
 
+from space_packet_parser.exceptions import MissingExtraError
+
 # Extras import first since it might fail
 try:
     import click
@@ -19,7 +21,7 @@ try:
     from rich.table import Table
     from rich.tree import Tree
 except ImportError as ie:
-    raise ImportError(
+    raise MissingExtraError(
         "The `spp` CLI requires the `cli` extra. Install it with `pip install space_packet_parser[cli]`."
     ) from ie
 

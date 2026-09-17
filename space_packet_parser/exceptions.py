@@ -1,6 +1,12 @@
 """Space Packet Parser Exceptions"""
 
 
+class MissingExtraError(ImportError):
+    """Raised when a module that belongs to an optional extra is imported without that extra installed"""
+
+    pass
+
+
 class ElementNotFoundError(Exception):
     """Exception for missing XML element"""
 

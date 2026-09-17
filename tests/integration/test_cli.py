@@ -8,7 +8,7 @@ import sys
 import pytest
 from click.testing import CliRunner
 
-from space_packet_parser import _spp_entry, cli
+from space_packet_parser import _spp_entry, cli, exceptions
 from space_packet_parser.generators import ccsds_generator
 
 
@@ -237,3 +237,21 @@ def test_spp_entry_point_exits_with_hint_without_cli_extra(monkeypatch, capsys):
 
     assert excinfo.value.code == 1
     assert "pip install space_packet_parser[cli]" in capsys.readouterr().err
+
+
+def test_spp_entry_point_propagates_unrelated_import_error(monkeypatch):
+    """An ImportError that is not the missing `cli` extra must not be converted into the install hint."""
+    real_import = builtins.__import__
+
+    def blocked_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "space_packet_parser.xtce.validation":
+            raise ModuleNotFoundError(f"No module named '{name}'", name=name)
+        return real_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", blocked_import)
+    monkeypatch.delitem(sys.modules, "space_packet_parser.cli", raising=False)
+
+    with pytest.raises(ModuleNotFoundError, match="space_packet_parser.xtce.validation") as excinfo:
+        _spp_entry.main()
+
+    assert not isinstance(excinfo.value, exceptions.MissingExtraError)
