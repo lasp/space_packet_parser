@@ -8,9 +8,11 @@ import pytest
 from space_packet_parser import generators
 from space_packet_parser.xtce import definitions
 
+COMPLEX_XTCE_DEFINITION_PARSING_THRESHOLDS_SECONDS = {"default": 0.0184}
+
 
 @pytest.mark.benchmark(warmup=True)
-def test_benchmark_complex_xtce_definition_parsing(benchmark, suda_test_data_dir):
+def test_benchmark_complex_xtce_definition_parsing(benchmark, suda_test_data_dir, assert_within_threshold):
     """Benchmark the time it takes to parse a specific, relatively complex XTCE packet definition document"""
     definition: definitions.XtcePacketDefinition = benchmark(
         definitions.XtcePacketDefinition.from_xtce, suda_test_data_dir / "suda_combined_science_definition.xml"
@@ -18,10 +20,16 @@ def test_benchmark_complex_xtce_definition_parsing(benchmark, suda_test_data_dir
     assert len(definition.parameters) == 207
     assert len(definition.parameter_types) == 207
     assert len(definition.containers) == 9
+    assert_within_threshold(COMPLEX_XTCE_DEFINITION_PARSING_THRESHOLDS_SECONDS)
+
+
+# This test's normalized mean depends on the runner hardware class more than the others do,
+# so its margin is wider.
+SIMPLE_PACKET_PARSING_THRESHOLDS_SECONDS = {"default": 0.8}
 
 
 @pytest.mark.benchmark
-def test_benchmark_simple_packet_parsing(benchmark, jpss_test_data_dir):
+def test_benchmark_simple_packet_parsing(benchmark, jpss_test_data_dir, assert_within_threshold):
     """Benchmark the time it takes to parse 7200 simple JPSS geolocation packets from a flat packet definition"""
     packet_definition = definitions.XtcePacketDefinition.from_xtce(jpss_test_data_dir / "jpss1_geolocation_xtce_v1.xml")
     packet_data = jpss_test_data_dir / "J01_G011_LZ_2021-04-09T00-00-00Z_V01.DAT1"
@@ -31,28 +39,27 @@ def test_benchmark_simple_packet_parsing(benchmark, jpss_test_data_dir):
 
     try:
 
-        def _setup():
-            """Function that sets up for each benchmark round"""
+        def _parse_all_packets():
+            """Re-seek and re-create the generator each call, so this is safe to call repeatedly"""
             packet_fh.seek(0)
             ccsds_generator = generators.ccsds_generator(packet_fh)
-            return (), {"generator": ccsds_generator}  # args, kwargs for benchmarked function
+            return [packet_definition.parse_bytes(binary_data) for binary_data in ccsds_generator]
 
-        def _make_packet_list(generator):
-            """Function wrapper for list that takes the generator as a kwarg"""
-            return [packet_definition.parse_bytes(binary_data) for binary_data in generator]
-
-        # The setup function is run before each "round" so "iterations" is automatically set to 1 and cannot be changed
-        packet_list: list = benchmark.pedantic(_make_packet_list, setup=_setup, rounds=20, warmup_rounds=1)
+        packet_list: list = benchmark(_parse_all_packets)
 
         # Make sure the result actually makes sense
         assert len(packet_list) == 7200
+        assert_within_threshold(SIMPLE_PACKET_PARSING_THRESHOLDS_SECONDS)
     finally:
         # Ensure filehandler is closed
         packet_fh.close()
 
 
+COMPLEX_PACKET_PARSING_THRESHOLDS_SECONDS = {"default": 0.0104}
+
+
 @pytest.mark.benchmark
-def test_benchmark_complex_packet_parsing(benchmark, idex_test_data_dir):
+def test_benchmark_complex_packet_parsing(benchmark, idex_test_data_dir, assert_within_threshold):
     """Benchmark the time it takes to parse IDEX packets, which have a polymorphic structure"""
     packet_definition = definitions.XtcePacketDefinition.from_xtce(
         idex_test_data_dir / "idex_combined_science_definition.xml"
@@ -64,21 +71,17 @@ def test_benchmark_complex_packet_parsing(benchmark, idex_test_data_dir):
 
     try:
 
-        def _setup():
-            """Function that sets up for each benchmark round"""
+        def _parse_all_packets():
+            """Re-seek and re-create the generator each call, so this is safe to call repeatedly"""
             packet_fh.seek(0)
             ccsds_generator = generators.ccsds_generator(packet_fh, show_progress=True)
-            return (), {"generator": ccsds_generator}  # args, kwargs for benchmarked function
+            return [packet_definition.parse_bytes(binary_data) for binary_data in ccsds_generator]
 
-        def _make_packet_list(generator):
-            """Function wrapper for list that takes the generator as a kwarg"""
-            return [packet_definition.parse_bytes(binary_data) for binary_data in generator]
-
-        # The setup function is run before each "round" so "iterations" is automatically set to 1 and cannot be changed
-        packet_list: list = benchmark.pedantic(_make_packet_list, setup=_setup, rounds=20, warmup_rounds=1)
+        packet_list: list = benchmark(_parse_all_packets)
 
         # Make sure the result actually makes sense
         assert len(packet_list) == 78
+        assert_within_threshold(COMPLEX_PACKET_PARSING_THRESHOLDS_SECONDS)
     finally:
         # Ensure filehandler is closed
         packet_fh.close()

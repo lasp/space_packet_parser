@@ -215,6 +215,14 @@ The practical advice holds either way: load a definition once and reuse the resu
 {py:class}`~space_packet_parser.xtce.definitions.XtcePacketDefinition` across all the files you
 parse, rather than re-reading the XTCE document per file or per process.
 
+### Regression Guard
+
+`test_benchmark_ctim_xtce_parsing` also guards against a fixed bug: early versions re-parsed
+CTIM's shared base container from scratch once per each of its 38 concrete containers, taking load
+time from tens of milliseconds to several seconds. CI enforces a time threshold for every benchmark
+in `tests/benchmark/`, not just this one — see the `### Benchmarks` section of
+[Developer Documentation](developers.md) for how thresholds are defined and recalibrated.
+
 ## Parsing Individual Values Benchmarking
 
 In addition to the benchmarks discussed above, we also benchmarked the low level operations that

@@ -4,15 +4,21 @@ import pytest
 
 import space_packet_parser as spp
 
+# These use `benchmark.pedantic` with a fixed round count rather than auto-calibrated
+# rounds because the packet's read cursor advances on every call, so the input has to be
+# sized for a known call count up front.
+
+READ_AS_INT_ALIGNED_THRESHOLDS_SECONDS = {"default": 1.19e-06}
+
 
 @pytest.mark.benchmark
-def test_benchmark__read_as_int__aligned(benchmark):
+def test_benchmark__read_as_int__aligned(benchmark, assert_within_threshold):
     """Benchmark performance of reading byte-aligned ints from a bytes object
 
     This test essentially makes a packet with a long user data section of alternating ones and zeros
     """
-    rounds = 3
-    warmup_rounds = 1
+    rounds = 1000
+    warmup_rounds = 5
     test_byte = b"\x55" * 2  # 01 01 01 01
     n_iterations = 1000
     nbits = 16
@@ -29,16 +35,20 @@ def test_benchmark__read_as_int__aligned(benchmark):
     )
 
     assert value == expected_value
+    assert_within_threshold(READ_AS_INT_ALIGNED_THRESHOLDS_SECONDS)
+
+
+READ_AS_INT_NON_ALIGNED_THRESHOLDS_SECONDS = {"default": 1.48e-06}
 
 
 @pytest.mark.benchmark
-def test_benchmark__read_as_int__non_aligned(benchmark):
+def test_benchmark__read_as_int__non_aligned(benchmark, assert_within_threshold):
     """Benchmark performance of reading non-byte-aligned ints from a bytes object
 
     This test essentially makes a packet with a long user data section of alternating ones and zeros
     """
-    rounds = 3
-    warmup_rounds = 1
+    rounds = 1000
+    warmup_rounds = 5
     test_byte = b"\x55" * 3  # 01 01 01 01
     n_iterations = 1000
     nbits = 18
@@ -57,16 +67,20 @@ def test_benchmark__read_as_int__non_aligned(benchmark):
     )
 
     assert value == expected_value
+    assert_within_threshold(READ_AS_INT_NON_ALIGNED_THRESHOLDS_SECONDS)
+
+
+READ_AS_BYTES_ALIGNED_THRESHOLDS_SECONDS = {"default": 8.82e-07}
 
 
 @pytest.mark.benchmark
-def test_benchmark__read_as_bytes__aligned(benchmark):
+def test_benchmark__read_as_bytes__aligned(benchmark, assert_within_threshold):
     """Benchmark performance of reading full, aligned, bytes from a bytes object
 
     This test essentially makes a packet with a long user data section of alternating ones and zeros
     """
-    rounds = 3
-    warmup_rounds = 1
+    rounds = 1000
+    warmup_rounds = 5
     test_byte = b"\x55" * 2  # 01 01 01 01
     n_iterations = 1000
     nbits = 16
@@ -83,16 +97,20 @@ def test_benchmark__read_as_bytes__aligned(benchmark):
     )
 
     assert value == expected_value
+    assert_within_threshold(READ_AS_BYTES_ALIGNED_THRESHOLDS_SECONDS)
+
+
+READ_AS_BYTES_NON_ALIGNED_FULL_BYTES_THRESHOLDS_SECONDS = {"default": 1.62e-06}
 
 
 @pytest.mark.benchmark
-def test_benchmark__read_as_bytes__non_aligned_full_bytes(benchmark):
+def test_benchmark__read_as_bytes__non_aligned_full_bytes(benchmark, assert_within_threshold):
     """Benchmark performance of reading full bytes, not-byte-aligned (offset by 1 bit), from a bytes object
 
     This test essentially makes a packet with a long user data section of alternating ones and zeros
     """
-    rounds = 3
-    warmup_rounds = 1
+    rounds = 1000
+    warmup_rounds = 5
     test_byte = b"\x55" * 2  # 01 01 01 01
     n_iterations = 1000
     nbits = 16
@@ -110,17 +128,21 @@ def test_benchmark__read_as_bytes__non_aligned_full_bytes(benchmark):
     )
 
     assert value == expected_value
+    assert_within_threshold(READ_AS_BYTES_NON_ALIGNED_FULL_BYTES_THRESHOLDS_SECONDS)
+
+
+READ_AS_BYTES_PARTIAL_BYTES_THRESHOLDS_SECONDS = {"default": 1.59e-06}
 
 
 @pytest.mark.benchmark
-def test_benchmark__read_as_bytes__partial_bytes(benchmark):
+def test_benchmark__read_as_bytes__partial_bytes(benchmark, assert_within_threshold):
     """Benchmark performance of reading partial bytes from a bytes object, resulting
     in padded values.
 
     This test essentially makes a packet with a long user data section of alternating ones and zeros
     """
-    rounds = 3
-    warmup_rounds = 1
+    rounds = 1000
+    warmup_rounds = 5
     test_byte = b"\x55"  # 01 01 01 01
     n_iterations = 1000
     nbits = 6
@@ -137,3 +159,4 @@ def test_benchmark__read_as_bytes__partial_bytes(benchmark):
     )
 
     assert value == expected_value
+    assert_within_threshold(READ_AS_BYTES_PARTIAL_BYTES_THRESHOLDS_SECONDS)
