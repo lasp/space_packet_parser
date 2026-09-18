@@ -54,11 +54,64 @@ jobs:
 
       - name: Testing
         run: |
-          pytest --color=yes --cov --cov-report=xml
+          pytest --color=yes --cov --cov-report=xml --benchmark-disable
 
       - uses: codecov/codecov-action@v7
         with:
           use_oidc: true
+
+      - name: Benchmark regression gate
+        # Linux only: thresholds are calibrated for ubuntu-latest runners (see
+        # docs/source/developers.md#benchmarks). Runs outside of coverage
+        # instrumentation, which distorts timings.
+        id: benchmark_gate
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          SPP_BENCHMARK_GATE: "1"
+        run: |
+          pytest tests/benchmark/ --color=yes --benchmark-json=benchmark.json
+
+      - name: Record benchmark numbers
+        # Runs even if the gate failed, since that is when the numbers matter most.
+        if: ${{ !cancelled() && steps.benchmark_gate.outcome != 'skipped' }}
+        run: |
+          python - <<'EOF'
+          import json
+          import os
+          import sys
+
+          with open("benchmark.json") as f:
+              data = json.load(f)
+
+          lines = [
+              f"### Benchmark results — Python {sys.version_info.major}.{sys.version_info.minor}",
+              "",
+              "Thresholds compare against the normalized mean (mean / speed factor).",
+              "",
+              "| Test | Normalized mean (s) | Speed factor | Mean (s) | Min (s) | Max (s) | Rounds |",
+              "|---|---:|---:|---:|---:|---:|---:|",
+          ]
+          for bench in sorted(data["benchmarks"], key=lambda b: b["name"]):
+              stats = bench["stats"]
+              factor = bench.get("extra_info", {}).get("speed_factor", 1.0)
+              lines.append(
+                  f"| `{bench['name']}` | {stats['mean'] / factor:.9f} | {factor:.3f} | {stats['mean']:.9f} | "
+                  f"{stats['min']:.9f} | {stats['max']:.9f} | {stats['rounds']} |"
+              )
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write("\n".join(lines) + "\n\n")
+          EOF
+
+      - name: Upload benchmark numbers
+        # Same data as the step summary, in machine-readable form for recalibration.
+        if: ${{ !cancelled() && steps.benchmark_gate.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-py${{ matrix.python-version }}-attempt${{ github.run_attempt }}
+          path: benchmark.json
+          retention-days: 30
+          if-no-files-found: ignore
 
   # Run the example scripts and ensure there are no errors
   run-examples:

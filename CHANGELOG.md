@@ -36,6 +36,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `spp parse` accepts `--root-container` to name the root `SequenceContainer`, as `spp describe-xtce`
   already did, so definitions whose root is not called `CCSDSPacket` can be parsed from the CLI.
   [#275](https://github.com/lasp/space_packet_parser/pull/275)
+- CI now fails the build on a benchmark regression: every test in `tests/benchmark/` asserts its
+  mean run time against a threshold declared next to it, enforced on `ubuntu-latest` for each
+  supported Python version. Thresholds are scaled by a per-test measurement of the runner's
+  speed so that GitHub runner hardware variation does not trigger the gate.
+  [#147](https://github.com/lasp/space_packet_parser/issues/147),
+  [#287](https://github.com/lasp/space_packet_parser/issues/287)
 
 ### Fixed
 

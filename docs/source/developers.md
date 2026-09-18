@@ -13,6 +13,25 @@ To run all tests, run
 pytest tests
 ```
 
+### Benchmarks
+
+`tests/benchmark/` holds a [pytest-benchmark](https://pytest-benchmark.readthedocs.io/) suite
+covering XTCE definition loading, full packet parsing, and the low level bit-reading primitives.
+CI enforces a mean-time threshold for every benchmark on `ubuntu-latest` for each supported Python
+version; a regression past the threshold fails the build. Each test asserts against a threshold
+dict declared right above it, keyed by Python version with a `"default"` fallback.
+
+Thresholds are in seconds on a _nominal_ machine: `tests/benchmark/conftest.py` times a fixed
+pure-Python reference workload immediately before each benchmark and scales the threshold by how
+much slower than nominal the runner is, which removes most of the run-to-run variation in GitHub
+runner hardware. The check is enforced only when `SPP_BENCHMARK_GATE` is set, as the CI gate step
+does; a plain `pytest tests/benchmark/` just reports timings.
+
+To recalibrate, take the "Normalized mean" column from the benchmark step summary (or the
+`benchmark-py*` artifacts) of several recent CI runs and set each threshold about 1.5x the average
+normalized mean, never below the largest value observed. If the gate fails on code you did not
+touch, compare that job's normalized mean with the threshold before assuming a regression.
+
 ## Building Documentation with Sphinx
 
 Documentation is automatically built on ReadTheDocs in response to every PR and release,

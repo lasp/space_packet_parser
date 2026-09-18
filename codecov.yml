@@ -18,3 +18,4 @@ coverage:
   ignore:
     - "scripts/**/*" # Don't include utility scripts
     - "docs/**/*" # Don't include documentation
+    - "tests/benchmark/**" # Benchmark gate plumbing only runs uninstrumented
