@@ -42,6 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   speed so that GitHub runner hardware variation does not trigger the gate.
   [#147](https://github.com/lasp/space_packet_parser/issues/147),
   [#287](https://github.com/lasp/space_packet_parser/issues/287)
+- `CCSDSPacketBytes` now raises `ValueError` when constructed from fewer than six bytes, matching
+  `UDPPacketBytes`. Previously a short instance was accepted and its header properties raised a bare
+  `IndexError`. [#293](https://github.com/lasp/space_packet_parser/issues/293)
 
 ### Fixed
 

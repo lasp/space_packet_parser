@@ -728,8 +728,3 @@ def test_parse_bytes_unrecognized_packet_ccsds_bytes_without_pkt_apid():
 
     assert "APID=" not in str(exc_info.value)
     assert exc_info.value.partial_data["COUNTER"] == 7
-
-    # Even a CCSDSPacketBytes too short for a full header must not break error reporting
-    with pytest.raises(UnrecognizedPacketTypeError, match="incomplete, 1 of 6 bytes") as exc_info:
-        xdef.parse_bytes(space_packet_parser.generators.ccsds.CCSDSPacketBytes(b"\x07"))
-    assert exc_info.value.partial_data["COUNTER"] == 7

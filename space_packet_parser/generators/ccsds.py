@@ -35,15 +35,33 @@ class CCSDSPacketBytes(bytes):
     """Binary (bytes) representation of a CCSDS packet.
 
     Methods to extract the header fields are added to the raw bytes object.
+
+    Raises
+    ------
+    ValueError
+        If the packet is shorter than the CCSDS primary header (6 bytes).
     """
 
     HEADER_LENGTH_BYTES = 6
 
+    def __new__(cls, value: bytes):
+        """Create a new CCSDSPacketBytes object with validation.
+
+        Parameters
+        ----------
+        value : bytes
+            Raw bytes of a CCSDS packet.
+
+        Raises
+        ------
+        ValueError
+            If the packet is shorter than the CCSDS primary header (6 bytes).
+        """
+        if len(value) < cls.HEADER_LENGTH_BYTES:
+            raise ValueError(f"CCSDS packet must be at least {cls.HEADER_LENGTH_BYTES} bytes (got {len(value)} bytes)")
+        return super().__new__(cls, value)
+
     def __str__(self) -> str:
-        if len(self) < self.HEADER_LENGTH_BYTES:
-            # Too short to hold a full primary header. Render what we have rather than raising an IndexError
-            # from the header properties so this stays usable in diagnostic messages.
-            return f"CCSDSPacket Header: (incomplete, {len(self)} of {self.HEADER_LENGTH_BYTES} bytes: {self.hex()})"
         return (
             f"CCSDSPacket Header: ({self.version_number=}, {self.type=}, "
             f"{self.secondary_header_flag=}, {self.apid=}, {self.sequence_flags=}, "
