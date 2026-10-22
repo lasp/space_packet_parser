@@ -33,3 +33,20 @@ def test_nested_spacesystem_packet_parsing(nested_test_data_dir):
     assert packet_diagnostics["PKT_APID"].raw_value == 12
     assert packet_diagnostics["SENSOR_B/DIAGNOSTICS/STATUS"].raw_value == 3
     assert packet_diagnostics["SENSOR_B/DIAGNOSTICS/OFFSET"].raw_value == -1234
+
+
+def test_nested_spacesystem_base_container_in_child_folder(nested_test_data_dir):
+    """Test that a base container and a container entry that name a container in another child SpaceSystem resolve"""
+    nested_xtce = nested_test_data_dir / "nested_base_container.xml"
+    nested_definition = definitions.XtcePacketDefinition.from_xtce(xtce_document=nested_xtce)
+
+    # B/B_PKT has the base container A/A_BASE, which is picked by APID 5
+    packet_b = nested_definition.parse_bytes(create_ccsds_packet(data=bytes([7, 9]), apid=5))
+    assert packet_b["PKT_APID"].raw_value == 5
+    assert packet_b["A/A_VAL"].raw_value == 7
+    assert packet_b["B/B_VAL"].raw_value == 9
+
+    # C/C_WRAP has the container entry A/A_HELPER. It has no header, so it is the start container
+    packet_c = nested_definition.parse_bytes(bytes([7, 3]), root_container_name="C/C_WRAP")
+    assert packet_c["A/A_VAL"].raw_value == 7
+    assert packet_c["C/C_VAL"].raw_value == 3
