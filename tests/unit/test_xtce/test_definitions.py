@@ -806,50 +806,30 @@ def test_parse_bytes_unrecognized_packet_ccsds_bytes_without_pkt_apid():
     assert exc_info.value.partial_data["COUNTER"] == 7
 
 
-@pytest.mark.parametrize("space_system_path", ["/Root", "/Root/A", "/Root/A/B/C"])
 @pytest.mark.parametrize(
-    ("reference", "expected"),
+    ("space_system_path", "reference", "expected"),
     [
-        ("/Root/Name", "/Root/Name"),
-        ("/Root/A/Name", "/Root/A/Name"),
-        ("/Root/A/./Name", "/Root/A/Name"),
-        ("/Root/A/../B/Name", "/Root/B/Name"),
+        # Bare and "./" references are relative to the SpaceSystem that contains them
+        ("", "Name", "Name"),
+        ("A/B", "Name", "A/B/Name"),
+        ("A/B", "./Name", "A/B/Name"),
+        # Each ".." removes one SpaceSystem, and a ".." above the root is ignored
+        ("A/B", "../Name", "A/Name"),
+        ("A/B", "../../../Name", "Name"),
+        # An absolute reference starts with the root name, which is not part of the result
+        ("A/B", "/Root/Name", "Name"),
+        ("A/B", "/Root/C/./Name", "C/Name"),
+        ("A/B", "/Root/C/../D/Name", "D/Name"),
     ],
 )
-def test_resolve_reference_absolute(space_system_path, reference, expected):
-    """Test that a reference starting with "/" is returned as a clean full path, whatever SpaceSystem contains it"""
+def test_resolve_reference(space_system_path, reference, expected):
+    """Test that a reference gives the path from the root SpaceSystem, without the root name"""
     assert definitions.XtcePacketDefinition._resolve_reference(reference, space_system_path) == expected
 
 
-@pytest.mark.parametrize("space_system_path", ["/Root", "/Root/A", "/Root/A/B/C"])
-@pytest.mark.parametrize("reference", ["Name", "./Name"])
-def test_resolve_reference_inside_space_system(space_system_path, reference):
-    """Test that a bare reference and a "./" reference both give the path of the SpaceSystem plus the reference"""
-    resolved = definitions.XtcePacketDefinition._resolve_reference(reference, space_system_path)
-    assert resolved == f"{space_system_path}/Name"
-
-
-@pytest.mark.parametrize(
-    ("number_of_parents", "expected"),
-    [
-        (0, "/Root/A/B/C/Name"),
-        (1, "/Root/A/B/Name"),
-        (2, "/Root/A/Name"),
-        (3, "/Root/Name"),
-        (4, "/Name"),
-        (5, "/Name"),
-        (6, "/Name"),
-    ],
-)
-def test_resolve_reference_parent(number_of_parents, expected):
-    """Test that each ".." removes one SpaceSystem from the end of the path, and that extra ".." are ignored"""
-    reference = "../" * number_of_parents + "Name"
-    assert definitions.XtcePacketDefinition._resolve_reference(reference, "/Root/A/B/C") == expected
-
-
-def test_qualify_names():
-    """Test that every item name and every reference in the root SpaceSystem and in all its children becomes a full
-    path, and that nothing else in the document changes"""
+def test_flatten_space_systems():
+    """Test that every item gets a path from the root as its name and ends up in the three sets of the root
+    SpaceSystem, in document order, with every reference naming an existing item"""
     xtce_element_class = common.NamespaceAwareElement
     xtce_parser = ElementTree.XMLParser()
     xtce_parser.set_element_class_lookup(ElementTree.ElementDefaultClassLookup(element=xtce_element_class))
@@ -857,119 +837,51 @@ def test_qualify_names():
     xtce_element_class.set_ns_prefix("xtce")
     xtce_element_class.set_nsmap(root.nsmap)
 
-    # The attribute that refers to each kind of item, and the items of that kind
-    item_paths = {
-        "parameterTypeRef": "//xtce:ParameterTypeSet/*",
-        "parameterRef": "//xtce:ParameterSet/*",
-        "containerRef": "//xtce:ContainerSet/*",
+    # The attribute that refers to each kind of set item
+    reference_attributes = {
+        "ParameterTypeSet": "parameterTypeRef",
+        "ParameterSet": "parameterRef",
+        "ContainerSet": "containerRef",
     }
-    items = {
-        reference_attribute: root.xpath(item_path, namespaces=root.nsmap)
-        for reference_attribute, item_path in item_paths.items()
+    # The names each root set must hold: the root's items first, then those of each child in document order
+    expected_names = {
+        "ParameterTypeSet": [
+            "BYTE_Type",
+            "SENSOR_A/VALUE_Type",
+            "SENSOR_B/DIAGNOSTICS/VALUE_Type",
+        ],
+        "ParameterSet": [
+            "PKT_APID",
+            "SENSOR_A/READING_SMALL",
+            "SENSOR_A/READING_WIDE",
+            "SENSOR_B/DIAGNOSTICS/STATUS",
+            "SENSOR_B/DIAGNOSTICS/OFFSET",
+            "SENSOR_C/READING",
+        ],
+        "ContainerSet": [
+            "CCSDSPacket",
+            "SENSOR_B/DIAGNOSTICS/DIAGNOSTICS",
+        ],
     }
-    all_items = [item for kind_items in items.values() for item in kind_items]
 
-    # Parameter types, then parameters, then containers, each in document order
-    expected_names = [
-        "/Nested_Packets/BYTE_Type",
-        "/Nested_Packets/SENSOR_A/VALUE_Type",
-        "/Nested_Packets/SENSOR_B/DIAGNOSTICS/VALUE_Type",
-        "/Nested_Packets/PKT_APID",
-        "/Nested_Packets/SENSOR_A/READING_SMALL",
-        "/Nested_Packets/SENSOR_A/READING_WIDE",
-        "/Nested_Packets/SENSOR_B/DIAGNOSTICS/STATUS",
-        "/Nested_Packets/SENSOR_B/DIAGNOSTICS/OFFSET",
-        "/Nested_Packets/SENSOR_C/READING",
-        "/Nested_Packets/CCSDSPacket",
-        "/Nested_Packets/SENSOR_B/DIAGNOSTICS/DIAGNOSTICS",
-    ]
+    all_items = root.xpath(
+        "//xtce:ParameterTypeSet/* | //xtce:ParameterSet/* | //xtce:ContainerSet/*", namespaces=root.nsmap
+    )
 
     def unrewritten_parts():
-        """Tag and attributes of every element, without the attributes that _qualify_names rewrites"""
+        """Tag and attributes of every element, without the attributes that are rewritten. The order of the elements
+        changes when the items move, so the list is sorted."""
         parts = []
         for element in root.iter():
             rewritten = {"parameterRef", "parameterTypeRef", "containerRef"}
             if element in all_items:
                 rewritten.add("name")
-            parts.append(
-                (element.tag, {name: value for name, value in element.attrib.items() if name not in rewritten})
-            )
-        return parts
+            parts.append((element.tag, tuple(sorted((k, v) for k, v in element.attrib.items() if k not in rewritten))))
+        return sorted(parts)
 
     parts_before = unrewritten_parts()
 
-    definitions.XtcePacketDefinition._qualify_names(root, "/Nested_Packets")
-
-    # Each item name is the path of its SpaceSystem plus its own name
-    assert [item.attrib["name"] for item in all_items] == expected_names
-
-    # Each reference names an existing item of the right kind, and the names of one kind are unique
-    for reference_attribute, kind_items in items.items():
-        names = [item.attrib["name"] for item in kind_items]
-        assert len(set(names)) == len(names)
-        for referring_element in root.xpath(f"//*[@{reference_attribute}]"):
-            assert referring_element.attrib[reference_attribute] in names
-
-    # Everything except the item names and the references is as it was
-    assert unrewritten_parts() == parts_before
-
-
-@pytest.mark.parametrize(
-    ("container_keys", "space_system_name", "name", "expected"),
-    [
-        # Loaded from a file: the keys are full paths
-        (["/Root/CCSDSPacket"], "Root", "/Root/CCSDSPacket", "/Root/CCSDSPacket"),
-        (["/Root/CCSDSPacket"], "Root", "CCSDSPacket", "/Root/CCSDSPacket"),
-        (["/Root/SENSOR_B/DIAGNOSTICS"], "Root", "SENSOR_B/DIAGNOSTICS", "/Root/SENSOR_B/DIAGNOSTICS"),
-        (["/Root/CCSDSPacket"], "Root", "Missing", "/Root/Missing"),
-        # Created in Python code, not loaded from a file: the keys are short and there is no root name
-        (["CCSDSPacket"], None, "CCSDSPacket", "CCSDSPacket"),
-    ],
-)
-def test_resolve_container_name(container_keys, space_system_name, name, expected):
-    """Test that a name which is already a key is returned unchanged, and that any other name gets the root path in
-    front of it. A name that does not exist does not raise here. The lookup in parse_bytes raises the KeyError."""
-    container_set = [containers.SequenceContainer(name=key, entry_list=[]) for key in container_keys]
-    definition = definitions.XtcePacketDefinition(
-        container_set=container_set, root_container_name=container_keys[0], space_system_name=space_system_name
-    )
-
-    assert definition._resolve_container_name(name) == expected
-
-
-def test_move_items_to_root():
-    """Test that every item of the child SpaceSystems ends up in the three sets of the root SpaceSystem, in document
-    order and with nothing lost or doubled"""
-    xtce_element_class = common.NamespaceAwareElement
-    xtce_parser = ElementTree.XMLParser()
-    xtce_parser.set_element_class_lookup(ElementTree.ElementDefaultClassLookup(element=xtce_element_class))
-    root = ElementTree.fromstring(NESTED_SETS_XTCE, parser=xtce_parser)
-    xtce_element_class.set_ns_prefix("xtce")
-    xtce_element_class.set_nsmap(root.nsmap)
-
-    # Each kind of set, and the names it must hold in document order: the root first, then each child
-    expected_names = {
-        "ParameterTypeSet": [
-            "/Nested_Packets/BYTE_Type",
-            "/Nested_Packets/SENSOR_A/VALUE_Type",
-            "/Nested_Packets/SENSOR_B/DIAGNOSTICS/VALUE_Type",
-        ],
-        "ParameterSet": [
-            "/Nested_Packets/PKT_APID",
-            "/Nested_Packets/SENSOR_A/READING_SMALL",
-            "/Nested_Packets/SENSOR_A/READING_WIDE",
-            "/Nested_Packets/SENSOR_B/DIAGNOSTICS/STATUS",
-            "/Nested_Packets/SENSOR_B/DIAGNOSTICS/OFFSET",
-            "/Nested_Packets/SENSOR_C/READING",
-        ],
-        "ContainerSet": [
-            "/Nested_Packets/CCSDSPacket",
-            "/Nested_Packets/SENSOR_B/DIAGNOSTICS/DIAGNOSTICS",
-        ],
-    }
-
-    definitions.XtcePacketDefinition._qualify_names(root, "/Nested_Packets")
-    definitions.XtcePacketDefinition._move_items_to_root(root)
+    definitions.XtcePacketDefinition._flatten_space_systems(root, "", root)
 
     for set_name, names in expected_names.items():
         root_sets = root.findall(f"TelemetryMetaData/{set_name}")
@@ -980,8 +892,20 @@ def test_move_items_to_root():
         child_sets = root.findall(f".//SpaceSystem/TelemetryMetaData/{set_name}")
         assert all(len(child_set.findall("*")) == 0 for child_set in child_sets)
 
+        # Each reference of this kind names an existing item, and the names are unique
+        assert len(set(names)) == len(names)
+        for referring_element in root.xpath(f"//*[@{reference_attributes[set_name]}]"):
+            assert referring_element.attrib[reference_attributes[set_name]] in names
 
-def test_move_items_to_root_makes_missing_set():
+    # A relative reference ("./VALUE_Type") in SENSOR_B/DIAGNOSTICS names the type of that SpaceSystem
+    offset = root.xpath("//xtce:Parameter[@name='SENSOR_B/DIAGNOSTICS/OFFSET']", namespaces=root.nsmap)[0]
+    assert offset.attrib["parameterTypeRef"] == "SENSOR_B/DIAGNOSTICS/VALUE_Type"
+
+    # Everything except the item names and the references is as it was
+    assert unrewritten_parts() == parts_before
+
+
+def test_flatten_space_systems_makes_missing_set():
     """Test that a root SpaceSystem without a set gets one, holding the items of its child"""
     # The root has no TelemetryMetaData, so it has no ParameterSet. Its child has one parameter.
     xtce_string = """<xtce:SpaceSystem name="Root" xmlns:xtce="http://www.omg.org/spec/XTCE/20180204">
@@ -1000,10 +924,9 @@ def test_move_items_to_root_makes_missing_set():
     xtce_element_class.set_ns_prefix("xtce")
     xtce_element_class.set_nsmap(root.nsmap)
 
-    definitions.XtcePacketDefinition._qualify_names(root, "/Root")
-    definitions.XtcePacketDefinition._move_items_to_root(root)
+    definitions.XtcePacketDefinition._flatten_space_systems(root, "", root)
 
     # find adds the XTCE prefix, so this finds the new set only if it is in the XTCE namespace
     parameter_set = root.find("TelemetryMetaData/ParameterSet")
     assert parameter_set is not None
-    assert [item.attrib["name"] for item in parameter_set.findall("*")] == ["/Root/Child/READING"]
+    assert [item.attrib["name"] for item in parameter_set.findall("*")] == ["Child/READING"]
