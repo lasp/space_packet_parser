@@ -287,6 +287,117 @@ class XtcePacketDefinition(common.AttrComparable):
         return xtce_definition
 
     @staticmethod
+    def _resolve_reference(reference: str, space_system_path: str) -> str:
+        """Turn a reference from the XTCE document into the full path of the item it names
+
+        Parameters
+        ----------
+        reference : str
+            Absolute ("/Root/Sub/Name"), relative ("../Name", "./Name") or bare ("Name") reference.
+        space_system_path : str
+            Full path of the SpaceSystem that contains the reference, e.g. "/Root/Sub".
+
+        Returns
+        -------
+        : str
+            Full path, e.g. "/Root/Sub/Name".
+        """
+        # An absolute reference is the path. Any other reference, including a bare name, is relative to its own
+        # SpaceSystem.
+        path = reference if reference.startswith("/") else f"{space_system_path}/{reference}"
+
+        parts: list[str] = []
+        for part in path.split("/"):
+            if part in ("", "."):
+                continue
+            if part == "..":
+                # A ".." with no part left to remove is ignored. The lookup of the resulting path fails normally.
+                if parts:
+                    parts.pop()
+                continue
+            parts.append(part)
+
+        return "/" + "/".join(parts)
+
+    @staticmethod
+    def _qualify_names(space_system: ElementTree.Element, space_system_path: str) -> None:
+        """Rewrite, in place, every item name and every reference in a SpaceSystem and its children to a full path
+
+        Parameters
+        ----------
+        space_system : ElementTree.Element
+            The SpaceSystem element to rewrite.
+        space_system_path : str
+            Full path of this SpaceSystem, e.g. "/Root/Sub".
+        """
+        # The child SpaceSystems are beside TelemetryMetaData, not inside it, so everything in it belongs to this one
+        telemetry_metadata = space_system.find("TelemetryMetaData")
+        if telemetry_metadata is not None:
+            for set_name in ("ParameterTypeSet", "ParameterSet", "ContainerSet"):
+                for item in telemetry_metadata.findall(f"{set_name}/*"):
+                    item.attrib["name"] = f"{space_system_path}/{item.attrib['name']}"
+
+            for element in telemetry_metadata.iter():
+                for reference_attribute in ("parameterRef", "parameterTypeRef", "containerRef"):
+                    if reference_attribute in element.attrib:
+                        element.attrib[reference_attribute] = XtcePacketDefinition._resolve_reference(
+                            element.attrib[reference_attribute], space_system_path
+                        )
+
+        for child_space_system in space_system.findall("SpaceSystem"):
+            child_path = f"{space_system_path}/{child_space_system.attrib['name']}"
+            XtcePacketDefinition._qualify_names(child_space_system, child_path)
+
+    @staticmethod
+    def _move_items_to_root(root: ElementTree.Element) -> None:
+        """Move every item of the child SpaceSystems into the three sets of the root SpaceSystem
+
+        Parameters
+        ----------
+        root : ElementTree.Element
+            The root SpaceSystem element, after _qualify_names has run on it.
+        """
+        namespace = ElementTree.QName(root).namespace
+
+        def qualified(name: str) -> str:
+            return f"{{{namespace}}}{name}" if namespace else name
+
+        for set_name in ("ParameterTypeSet", "ParameterSet", "ContainerSet"):
+            root_set = root.find(f"TelemetryMetaData/{set_name}")
+            if root_set is None:
+                telemetry_metadata = root.find("TelemetryMetaData")
+                if telemetry_metadata is None:
+                    telemetry_metadata = ElementTree.SubElement(root, qualified("TelemetryMetaData"))
+                root_set = ElementTree.SubElement(telemetry_metadata, qualified(set_name))
+
+            # The child sets come in document order, so a parent comes before its children. The root's own set is not
+            # under a child SpaceSystem, so it is not in this list.
+            for child_set in root.findall(f".//SpaceSystem/TelemetryMetaData/{set_name}"):
+                for item in child_set.findall("*"):
+                    root_set.append(item)
+
+    def _resolve_container_name(self, name: str) -> str:
+        """Return the key in self.containers for a container name given by the user
+
+        Parameters
+        ----------
+        name : str
+            Container name or path, e.g. "CCSDSPacket" or "/Root/CCSDSPacket".
+
+        Returns
+        -------
+        : str
+            Key in self.containers.
+        """
+        # A definition created in Python code has short keys, so a name that is already a key is used as it is
+        if name in self.containers:
+            return name
+
+        # Any other name is relative to the root SpaceSystem. A name that does not exist is not an error here.
+        # The lookup of the result raises the normal KeyError.
+        return self._resolve_reference(name, f"/{self.space_system_name}")
+
+    @staticmethod
     def _parse_container_set(
         tree: ElementTree.Element, parameter_lookup: dict[str, parameters.Parameter]
     ) -> dict[str, containers.SequenceContainer]:
