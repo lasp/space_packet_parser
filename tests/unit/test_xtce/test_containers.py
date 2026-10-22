@@ -3,8 +3,9 @@
 import struct
 
 import pytest
+from lxml import etree as ElementTree
 
-from space_packet_parser import SpacePacket
+from space_packet_parser import SpacePacket, common
 from space_packet_parser.generators import ccsds
 from space_packet_parser.xtce import containers, encodings, parameter_types, parameters
 
@@ -106,3 +107,25 @@ def test_sequence_container_parse_from_space_packet(mock_container_and_packet):
         assert test_packet[param_name] == expected_value, (
             f"Parameter {param_name} value mismatch: expected {expected_value}, got {test_packet[param_name]}"
         )
+
+
+def test_get_container_element_finds_container_with_slash_in_name():
+    """Test that a container whose name holds "/" (a path from the root) is found by that name"""
+    xtce_string = """<xtce:SpaceSystem xmlns:xtce="http://www.omg.org/space/xtce" name="Root">
+      <xtce:TelemetryMetaData>
+        <xtce:ContainerSet>
+          <xtce:SequenceContainer name="CCSDSPacket"/>
+          <xtce:SequenceContainer name="A/A_BASE"/>
+        </xtce:ContainerSet>
+      </xtce:TelemetryMetaData>
+    </xtce:SpaceSystem>"""
+    xtce_element_class = common.NamespaceAwareElement
+    xtce_parser = ElementTree.XMLParser()
+    xtce_parser.set_element_class_lookup(ElementTree.ElementDefaultClassLookup(element=xtce_element_class))
+    root = ElementTree.fromstring(xtce_string, parser=xtce_parser)
+    xtce_element_class.set_ns_prefix("xtce")
+    xtce_element_class.set_nsmap(root.nsmap)
+
+    container_element = containers.SequenceContainer._get_container_element(ElementTree.ElementTree(root), "A/A_BASE")
+
+    assert container_element.attrib["name"] == "A/A_BASE"
