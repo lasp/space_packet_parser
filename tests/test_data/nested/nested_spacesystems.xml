@@ -1,0 +1,184 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xtce:SpaceSystem name="Nested_Packets"
+                  xmlns:xtce="http://www.omg.org/spec/XTCE/20180204"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204
+                                      https://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd">
+    <xtce:Header date="2026-10-21T00:00:00MST" version="1.0" validationStatus="Test"/>
+    <!-- Definition for testing nested SpaceSystems.
+         The root SpaceSystem holds the CCSDS primary header. Each child SpaceSystem holds one packet type.
+           - SENSOR_A refers to root items by absolute path (/Nested_Packets/...).
+           - SENSOR_B defines VALUE_Type, the same name as in SENSOR_A but a different encoding.
+           - DIAGNOSTICS is a child of SENSOR_B. It refers to VALUE_Type of SENSOR_B by relative path (../VALUE_Type). -->
+    <xtce:TelemetryMetaData>
+        <xtce:ParameterTypeSet>
+            <xtce:IntegerParameterType name="VERSION_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="3" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="TYPE_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="1" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="SEC_HDR_FLG_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="1" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="PKT_APID_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="11" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="SEQ_FLGS_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="2" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="SRC_SEQ_CTR_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="14" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="PKT_LEN_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="16" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="BYTE_Type" signed="false">
+                <xtce:UnitSet/>
+                <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+        </xtce:ParameterTypeSet>
+        <xtce:ParameterSet>
+            <xtce:Parameter name="VERSION" parameterTypeRef="VERSION_Type"/>
+            <xtce:Parameter name="TYPE" parameterTypeRef="TYPE_Type"/>
+            <xtce:Parameter name="SEC_HDR_FLG" parameterTypeRef="SEC_HDR_FLG_Type"/>
+            <xtce:Parameter name="PKT_APID" parameterTypeRef="PKT_APID_Type"/>
+            <xtce:Parameter name="SEQ_FLGS" parameterTypeRef="SEQ_FLGS_Type"/>
+            <xtce:Parameter name="SRC_SEQ_CTR" parameterTypeRef="SRC_SEQ_CTR_Type"/>
+            <xtce:Parameter name="PKT_LEN" parameterTypeRef="PKT_LEN_Type"/>
+        </xtce:ParameterSet>
+        <xtce:ContainerSet>
+            <xtce:SequenceContainer name="CCSDSPacket" abstract="true">
+                <xtce:LongDescription>Super-container for telemetry and command packets</xtce:LongDescription>
+                <xtce:EntryList>
+                    <xtce:ParameterRefEntry parameterRef="VERSION"/>
+                    <xtce:ParameterRefEntry parameterRef="TYPE"/>
+                    <xtce:ParameterRefEntry parameterRef="SEC_HDR_FLG"/>
+                    <xtce:ParameterRefEntry parameterRef="PKT_APID"/>
+                    <xtce:ParameterRefEntry parameterRef="SEQ_FLGS"/>
+                    <xtce:ParameterRefEntry parameterRef="SRC_SEQ_CTR"/>
+                    <xtce:ParameterRefEntry parameterRef="PKT_LEN"/>
+                </xtce:EntryList>
+            </xtce:SequenceContainer>
+            <xtce:SequenceContainer name="CCSDSTelemetryPacket" abstract="true">
+                <xtce:LongDescription>Super-container for all telemetry packets</xtce:LongDescription>
+                <xtce:EntryList/>
+                <xtce:BaseContainer containerRef="CCSDSPacket">
+                    <xtce:RestrictionCriteria>
+                        <xtce:BooleanExpression>
+                            <xtce:ANDedConditions>
+                                <xtce:Condition>
+                                    <xtce:ParameterInstanceRef parameterRef="VERSION" useCalibratedValue="false"/>
+                                    <xtce:ComparisonOperator>==</xtce:ComparisonOperator>
+                                    <xtce:Value>0</xtce:Value>
+                                </xtce:Condition>
+                                <xtce:Condition>
+                                    <xtce:ParameterInstanceRef parameterRef="TYPE" useCalibratedValue="false"/>
+                                    <xtce:ComparisonOperator>==</xtce:ComparisonOperator>
+                                    <xtce:Value>0</xtce:Value>
+                                </xtce:Condition>
+                            </xtce:ANDedConditions>
+                        </xtce:BooleanExpression>
+                    </xtce:RestrictionCriteria>
+                </xtce:BaseContainer>
+            </xtce:SequenceContainer>
+        </xtce:ContainerSet>
+    </xtce:TelemetryMetaData>
+
+    <xtce:SpaceSystem name="SENSOR_A">
+        <xtce:TelemetryMetaData>
+            <xtce:ParameterTypeSet>
+                <xtce:IntegerParameterType name="VALUE_Type" signed="false">
+                    <xtce:UnitSet/>
+                    <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
+                </xtce:IntegerParameterType>
+            </xtce:ParameterTypeSet>
+            <xtce:ParameterSet>
+                <xtce:Parameter name="READING_SMALL" parameterTypeRef="VALUE_Type" shortDescription="8-bit reading"/>
+                <xtce:Parameter name="READING_WIDE" parameterTypeRef="/Nested_Packets/PKT_LEN_Type" shortDescription="16-bit reading, type from the root"/>
+            </xtce:ParameterSet>
+            <xtce:ContainerSet>
+                <xtce:SequenceContainer name="SENSOR_A" shortDescription="Packet with APID 10">
+                    <xtce:EntryList>
+                        <xtce:ParameterRefEntry parameterRef="READING_SMALL"/>
+                        <xtce:ParameterRefEntry parameterRef="READING_WIDE"/>
+                    </xtce:EntryList>
+                    <xtce:BaseContainer containerRef="/Nested_Packets/CCSDSTelemetryPacket">
+                        <xtce:RestrictionCriteria>
+                            <xtce:ComparisonList>
+                                <xtce:Comparison parameterRef="/Nested_Packets/PKT_APID" value="10" useCalibratedValue="false"/>
+                            </xtce:ComparisonList>
+                        </xtce:RestrictionCriteria>
+                    </xtce:BaseContainer>
+                </xtce:SequenceContainer>
+            </xtce:ContainerSet>
+        </xtce:TelemetryMetaData>
+    </xtce:SpaceSystem>
+
+    <xtce:SpaceSystem name="SENSOR_B">
+        <xtce:TelemetryMetaData>
+            <xtce:ParameterTypeSet>
+                <xtce:IntegerParameterType name="VALUE_Type" signed="true">
+                    <xtce:UnitSet/>
+                    <xtce:IntegerDataEncoding sizeInBits="16" encoding="twosComplement" byteOrder="leastSignificantByteFirst"/>
+                </xtce:IntegerParameterType>
+            </xtce:ParameterTypeSet>
+            <xtce:ParameterSet>
+                <xtce:Parameter name="READING_SIGNED" parameterTypeRef="VALUE_Type" shortDescription="Signed 16-bit little-endian reading"/>
+                <xtce:Parameter name="FLAGS" parameterTypeRef="/Nested_Packets/BYTE_Type" shortDescription="8-bit flags, type from the root"/>
+            </xtce:ParameterSet>
+            <xtce:ContainerSet>
+                <xtce:SequenceContainer name="SENSOR_B" shortDescription="Packet with APID 11">
+                    <xtce:EntryList>
+                        <xtce:ParameterRefEntry parameterRef="READING_SIGNED"/>
+                        <xtce:ParameterRefEntry parameterRef="FLAGS"/>
+                    </xtce:EntryList>
+                    <xtce:BaseContainer containerRef="/Nested_Packets/CCSDSTelemetryPacket">
+                        <xtce:RestrictionCriteria>
+                            <xtce:ComparisonList>
+                                <xtce:Comparison parameterRef="/Nested_Packets/PKT_APID" value="11" useCalibratedValue="false"/>
+                            </xtce:ComparisonList>
+                        </xtce:RestrictionCriteria>
+                    </xtce:BaseContainer>
+                </xtce:SequenceContainer>
+            </xtce:ContainerSet>
+        </xtce:TelemetryMetaData>
+
+        <xtce:SpaceSystem name="DIAGNOSTICS">
+            <xtce:TelemetryMetaData>
+                <xtce:ParameterTypeSet>
+                    <xtce:IntegerParameterType name="STATUS_Type" signed="false">
+                        <xtce:UnitSet/>
+                        <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
+                    </xtce:IntegerParameterType>
+                </xtce:ParameterTypeSet>
+                <xtce:ParameterSet>
+                    <xtce:Parameter name="STATUS" parameterTypeRef="STATUS_Type" shortDescription="Type from this SpaceSystem"/>
+                    <xtce:Parameter name="OFFSET" parameterTypeRef="../VALUE_Type" shortDescription="Type from the parent SpaceSystem"/>
+                </xtce:ParameterSet>
+                <xtce:ContainerSet>
+                    <xtce:SequenceContainer name="DIAGNOSTICS" shortDescription="Packet with APID 12">
+                        <xtce:EntryList>
+                            <xtce:ParameterRefEntry parameterRef="STATUS"/>
+                            <xtce:ParameterRefEntry parameterRef="OFFSET"/>
+                        </xtce:EntryList>
+                        <xtce:BaseContainer containerRef="/Nested_Packets/CCSDSTelemetryPacket">
+                            <xtce:RestrictionCriteria>
+                                <xtce:ComparisonList>
+                                    <xtce:Comparison parameterRef="/Nested_Packets/PKT_APID" value="12" useCalibratedValue="false"/>
+                                </xtce:ComparisonList>
+                            </xtce:RestrictionCriteria>
+                        </xtce:BaseContainer>
+                    </xtce:SequenceContainer>
+                </xtce:ContainerSet>
+            </xtce:TelemetryMetaData>
+        </xtce:SpaceSystem>
+    </xtce:SpaceSystem>
+</xtce:SpaceSystem>

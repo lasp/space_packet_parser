@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xtce:SpaceSystem name="Nested_Base_Container"
+                  xmlns:xtce="http://www.omg.org/spec/XTCE/20180204"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.omg.org/spec/XTCE/20180204
+                                      https://www.omg.org/spec/XTCE/20180204/SpaceSystem.xsd">
+    <xtce:Header date="2026-10-22T00:00:00MST" version="1.0" validationStatus="Test"/>
+    <!-- Definition for testing containers that refer to containers in another child SpaceSystem.
+         The root SpaceSystem holds the CCSDS primary header, as three fields of 5, 11 and 32 bits.
+           - A holds A_BASE, the base container of B_PKT, and A_HELPER, an entry of C_WRAP.
+           - B_PKT refers to A_BASE by relative path (../A/A_BASE).
+           - C_WRAP refers to A_HELPER by relative path (../A/A_HELPER). -->
+    <xtce:TelemetryMetaData>
+        <xtce:ParameterTypeSet>
+            <xtce:IntegerParameterType name="U8_Type" signed="false">
+                <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="HDR_START_Type" signed="false">
+                <xtce:IntegerDataEncoding sizeInBits="5" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="PKT_APID_Type" signed="false">
+                <xtce:IntegerDataEncoding sizeInBits="11" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+            <xtce:IntegerParameterType name="HDR_END_Type" signed="false">
+                <xtce:IntegerDataEncoding sizeInBits="32" encoding="unsigned"/>
+            </xtce:IntegerParameterType>
+        </xtce:ParameterTypeSet>
+        <xtce:ParameterSet>
+            <xtce:Parameter name="HDR_START" parameterTypeRef="HDR_START_Type"/>
+            <xtce:Parameter name="PKT_APID" parameterTypeRef="PKT_APID_Type"/>
+            <xtce:Parameter name="HDR_END" parameterTypeRef="HDR_END_Type"/>
+        </xtce:ParameterSet>
+        <xtce:ContainerSet>
+            <xtce:SequenceContainer name="CCSDSPacket" abstract="true">
+                <xtce:EntryList>
+                    <xtce:ParameterRefEntry parameterRef="HDR_START"/>
+                    <xtce:ParameterRefEntry parameterRef="PKT_APID"/>
+                    <xtce:ParameterRefEntry parameterRef="HDR_END"/>
+                </xtce:EntryList>
+            </xtce:SequenceContainer>
+        </xtce:ContainerSet>
+    </xtce:TelemetryMetaData>
+
+    <xtce:SpaceSystem name="A">
+        <xtce:TelemetryMetaData>
+            <xtce:ParameterSet>
+                <xtce:Parameter name="A_VAL" parameterTypeRef="/Nested_Base_Container/U8_Type"/>
+            </xtce:ParameterSet>
+            <xtce:ContainerSet>
+                <xtce:SequenceContainer name="A_BASE" abstract="true">
+                    <xtce:EntryList>
+                        <xtce:ParameterRefEntry parameterRef="A_VAL"/>
+                    </xtce:EntryList>
+                    <xtce:BaseContainer containerRef="/Nested_Base_Container/CCSDSPacket">
+                        <xtce:RestrictionCriteria>
+                            <xtce:Comparison parameterRef="/Nested_Base_Container/PKT_APID" value="5" useCalibratedValue="false"/>
+                        </xtce:RestrictionCriteria>
+                    </xtce:BaseContainer>
+                </xtce:SequenceContainer>
+                <xtce:SequenceContainer name="A_HELPER">
+                    <xtce:EntryList>
+                        <xtce:ParameterRefEntry parameterRef="A_VAL"/>
+                    </xtce:EntryList>
+                </xtce:SequenceContainer>
+            </xtce:ContainerSet>
+        </xtce:TelemetryMetaData>
+    </xtce:SpaceSystem>
+
+    <xtce:SpaceSystem name="B">
+        <xtce:TelemetryMetaData>
+            <xtce:ParameterSet>
+                <xtce:Parameter name="B_VAL" parameterTypeRef="/Nested_Base_Container/U8_Type"/>
+            </xtce:ParameterSet>
+            <xtce:ContainerSet>
+                <xtce:SequenceContainer name="B_PKT">
+                    <xtce:EntryList>
+                        <xtce:ParameterRefEntry parameterRef="B_VAL"/>
+                    </xtce:EntryList>
+                    <xtce:BaseContainer containerRef="../A/A_BASE"/>
+                </xtce:SequenceContainer>
+            </xtce:ContainerSet>
+        </xtce:TelemetryMetaData>
+    </xtce:SpaceSystem>
+
+    <xtce:SpaceSystem name="C">
+        <xtce:TelemetryMetaData>
+            <xtce:ParameterSet>
+                <xtce:Parameter name="C_VAL" parameterTypeRef="/Nested_Base_Container/U8_Type"/>
+            </xtce:ParameterSet>
+            <xtce:ContainerSet>
+                <xtce:SequenceContainer name="C_WRAP">
+                    <xtce:EntryList>
+                        <xtce:ContainerRefEntry containerRef="../A/A_HELPER"/>
+                        <xtce:ParameterRefEntry parameterRef="C_VAL"/>
+                    </xtce:EntryList>
+                </xtce:SequenceContainer>
+            </xtce:ContainerSet>
+        </xtce:TelemetryMetaData>
+    </xtce:SpaceSystem>
+</xtce:SpaceSystem>

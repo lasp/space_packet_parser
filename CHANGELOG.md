@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Load nested `SpaceSystem` elements in `XtcePacketDefinition.from_xtce`. Previously only the root
+  `SpaceSystem` was read. An item in a nested `SpaceSystem` is now keyed, and labelled in a parsed
+  packet, by its path from the root, e.g. `SENSOR_B/DIAGNOSTICS/OFFSET`, so items with the same name in
+  different `SpaceSystem` elements stay separate. Absolute (`/Root/Name`) and relative (`../Name`)
+  references are resolved. Items in the root `SpaceSystem` keep their own names.
+  [#300](https://github.com/lasp/space_packet_parser/issues/300)
 - Add a runnable example, `examples/parsing_non_ccsds_packets.py`, demonstrating how to parse a
   packet format that has no CCSDS header by supplying a custom packet bytes generator that locates
   packets by a sync marker and reads a packet-defined length field. The Packet Bytes Generators

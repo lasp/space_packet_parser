@@ -8,6 +8,7 @@ from lxml import etree as ElementTree
 import space_packet_parser as spp
 import space_packet_parser.generators.ccsds
 import space_packet_parser.xtce.parameter_types
+from space_packet_parser import common
 from space_packet_parser.exceptions import UnrecognizedPacketTypeError
 from space_packet_parser.xtce import comparisons, containers, definitions, encodings, parameters
 
@@ -36,6 +37,76 @@ NO_CCSDS_XTCE = """<xtce:SpaceSystem name="NoCcsds" xmlns:xtce="http://www.omg.o
       </xtce:SequenceContainer>
     </xtce:ContainerSet>
   </xtce:TelemetryMetaData>
+</xtce:SpaceSystem>
+"""
+
+# Nested_Packets is the root. SENSOR_A, SENSOR_B and SENSOR_C are its children, and DIAGNOSTICS is the child of SENSOR_B.
+# SENSOR_B has no TelemetryMetaData, and SENSOR_C has a ParameterSet only.
+NESTED_SETS_XTCE = """<xtce:SpaceSystem name="Nested_Packets" xmlns:xtce="http://www.omg.org/spec/XTCE/20180204">
+  <xtce:TelemetryMetaData>
+    <xtce:ParameterTypeSet>
+      <xtce:IntegerParameterType name="BYTE_Type" signed="false">
+        <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
+      </xtce:IntegerParameterType>
+    </xtce:ParameterTypeSet>
+    <xtce:ParameterSet>
+      <xtce:Parameter name="PKT_APID" parameterTypeRef="BYTE_Type"/>
+    </xtce:ParameterSet>
+    <xtce:ContainerSet>
+      <xtce:SequenceContainer name="CCSDSPacket" abstract="true">
+        <xtce:EntryList><xtce:ParameterRefEntry parameterRef="PKT_APID"/></xtce:EntryList>
+      </xtce:SequenceContainer>
+    </xtce:ContainerSet>
+  </xtce:TelemetryMetaData>
+  <xtce:SpaceSystem name="SENSOR_A">
+    <xtce:TelemetryMetaData>
+      <xtce:ParameterTypeSet>
+        <xtce:IntegerParameterType name="VALUE_Type" signed="false">
+          <xtce:IntegerDataEncoding sizeInBits="8" encoding="unsigned"/>
+        </xtce:IntegerParameterType>
+      </xtce:ParameterTypeSet>
+      <xtce:ParameterSet>
+        <xtce:Parameter name="READING_SMALL" parameterTypeRef="VALUE_Type"/>
+        <xtce:Parameter name="READING_WIDE" parameterTypeRef="/Nested_Packets/BYTE_Type"/>
+      </xtce:ParameterSet>
+      <xtce:ContainerSet/>
+    </xtce:TelemetryMetaData>
+  </xtce:SpaceSystem>
+  <xtce:SpaceSystem name="SENSOR_B">
+    <xtce:SpaceSystem name="DIAGNOSTICS">
+      <xtce:TelemetryMetaData>
+        <xtce:ParameterTypeSet>
+          <xtce:IntegerParameterType name="VALUE_Type" signed="true">
+            <xtce:IntegerDataEncoding sizeInBits="16" encoding="twosComplement"/>
+          </xtce:IntegerParameterType>
+        </xtce:ParameterTypeSet>
+        <xtce:ParameterSet>
+          <xtce:Parameter name="STATUS" parameterTypeRef="VALUE_Type"/>
+          <xtce:Parameter name="OFFSET" parameterTypeRef="./VALUE_Type"/>
+        </xtce:ParameterSet>
+        <xtce:ContainerSet>
+          <xtce:SequenceContainer name="DIAGNOSTICS">
+            <xtce:EntryList>
+              <xtce:ParameterRefEntry parameterRef="STATUS"/>
+              <xtce:ParameterRefEntry parameterRef="/Nested_Packets/PKT_APID"/>
+            </xtce:EntryList>
+            <xtce:BaseContainer containerRef="/Nested_Packets/CCSDSPacket">
+              <xtce:RestrictionCriteria>
+                <xtce:Comparison parameterRef="/Nested_Packets/PKT_APID" value="12" useCalibratedValue="false"/>
+              </xtce:RestrictionCriteria>
+            </xtce:BaseContainer>
+          </xtce:SequenceContainer>
+        </xtce:ContainerSet>
+      </xtce:TelemetryMetaData>
+    </xtce:SpaceSystem>
+  </xtce:SpaceSystem>
+  <xtce:SpaceSystem name="SENSOR_C">
+    <xtce:TelemetryMetaData>
+      <xtce:ParameterSet>
+        <xtce:Parameter name="READING" parameterTypeRef="/Nested_Packets/BYTE_Type"/>
+      </xtce:ParameterSet>
+    </xtce:TelemetryMetaData>
+  </xtce:SpaceSystem>
 </xtce:SpaceSystem>
 """
 
@@ -733,3 +804,129 @@ def test_parse_bytes_unrecognized_packet_ccsds_bytes_without_pkt_apid():
     with pytest.raises(UnrecognizedPacketTypeError, match="incomplete, 1 of 6 bytes") as exc_info:
         xdef.parse_bytes(space_packet_parser.generators.ccsds.CCSDSPacketBytes(b"\x07"))
     assert exc_info.value.partial_data["COUNTER"] == 7
+
+
+@pytest.mark.parametrize(
+    ("space_system_path", "reference", "expected"),
+    [
+        # Bare and "./" references are relative to the SpaceSystem that contains them
+        ("", "Name", "Name"),
+        ("A/B", "Name", "A/B/Name"),
+        ("A/B", "./Name", "A/B/Name"),
+        # Each ".." removes one SpaceSystem, and a ".." above the root is ignored
+        ("A/B", "../Name", "A/Name"),
+        ("A/B", "../../../Name", "Name"),
+        # An absolute reference starts with the root name, which is not part of the result
+        ("A/B", "/Root/Name", "Name"),
+        ("A/B", "/Root/C/./Name", "C/Name"),
+        ("A/B", "/Root/C/../D/Name", "D/Name"),
+    ],
+)
+def test_resolve_reference(space_system_path, reference, expected):
+    """Test that a reference gives the path from the root SpaceSystem, without the root name"""
+    assert definitions.XtcePacketDefinition._resolve_reference(reference, space_system_path) == expected
+
+
+def test_flatten_space_systems():
+    """Test that every item gets a path from the root as its name and ends up in the three sets of the root
+    SpaceSystem, in document order, with every reference naming an existing item"""
+    xtce_element_class = common.NamespaceAwareElement
+    xtce_parser = ElementTree.XMLParser()
+    xtce_parser.set_element_class_lookup(ElementTree.ElementDefaultClassLookup(element=xtce_element_class))
+    root = ElementTree.fromstring(NESTED_SETS_XTCE, parser=xtce_parser)
+    xtce_element_class.set_ns_prefix("xtce")
+    xtce_element_class.set_nsmap(root.nsmap)
+
+    # The attribute that refers to each kind of set item
+    reference_attributes = {
+        "ParameterTypeSet": "parameterTypeRef",
+        "ParameterSet": "parameterRef",
+        "ContainerSet": "containerRef",
+    }
+    # The names each root set must hold: the root's items first, then those of each child in document order
+    expected_names = {
+        "ParameterTypeSet": [
+            "BYTE_Type",
+            "SENSOR_A/VALUE_Type",
+            "SENSOR_B/DIAGNOSTICS/VALUE_Type",
+        ],
+        "ParameterSet": [
+            "PKT_APID",
+            "SENSOR_A/READING_SMALL",
+            "SENSOR_A/READING_WIDE",
+            "SENSOR_B/DIAGNOSTICS/STATUS",
+            "SENSOR_B/DIAGNOSTICS/OFFSET",
+            "SENSOR_C/READING",
+        ],
+        "ContainerSet": [
+            "CCSDSPacket",
+            "SENSOR_B/DIAGNOSTICS/DIAGNOSTICS",
+        ],
+    }
+
+    all_items = root.xpath(
+        "//xtce:ParameterTypeSet/* | //xtce:ParameterSet/* | //xtce:ContainerSet/*", namespaces=root.nsmap
+    )
+
+    def unrewritten_parts():
+        """Tag and attributes of every element, without the attributes that are rewritten. The order of the elements
+        changes when the items move, so the list is sorted."""
+        parts = []
+        for element in root.iter():
+            rewritten = {"parameterRef", "parameterTypeRef", "containerRef"}
+            if element in all_items:
+                rewritten.add("name")
+            parts.append((element.tag, tuple(sorted((k, v) for k, v in element.attrib.items() if k not in rewritten))))
+        return sorted(parts)
+
+    parts_before = unrewritten_parts()
+
+    definitions.XtcePacketDefinition._flatten_space_systems(root, "", root)
+
+    for set_name, names in expected_names.items():
+        root_sets = root.findall(f"TelemetryMetaData/{set_name}")
+        assert len(root_sets) == 1
+        assert [item.attrib["name"] for item in root_sets[0].findall("*")] == names
+
+        # The sets of the child SpaceSystems may remain, but they are empty
+        child_sets = root.findall(f".//SpaceSystem/TelemetryMetaData/{set_name}")
+        assert all(len(child_set.findall("*")) == 0 for child_set in child_sets)
+
+        # Each reference of this kind names an existing item, and the names are unique
+        assert len(set(names)) == len(names)
+        for referring_element in root.xpath(f"//*[@{reference_attributes[set_name]}]"):
+            assert referring_element.attrib[reference_attributes[set_name]] in names
+
+    # A relative reference ("./VALUE_Type") in SENSOR_B/DIAGNOSTICS names the type of that SpaceSystem
+    offset = root.xpath("//xtce:Parameter[@name='SENSOR_B/DIAGNOSTICS/OFFSET']", namespaces=root.nsmap)[0]
+    assert offset.attrib["parameterTypeRef"] == "SENSOR_B/DIAGNOSTICS/VALUE_Type"
+
+    # Everything except the item names and the references is as it was
+    assert unrewritten_parts() == parts_before
+
+
+def test_flatten_space_systems_makes_missing_set():
+    """Test that a root SpaceSystem without a set gets one, holding the items of its child"""
+    # The root has no TelemetryMetaData, so it has no ParameterSet. Its child has one parameter.
+    xtce_string = """<xtce:SpaceSystem name="Root" xmlns:xtce="http://www.omg.org/spec/XTCE/20180204">
+      <xtce:SpaceSystem name="Child">
+        <xtce:TelemetryMetaData>
+          <xtce:ParameterSet>
+            <xtce:Parameter name="READING" parameterTypeRef="BYTE_Type"/>
+          </xtce:ParameterSet>
+        </xtce:TelemetryMetaData>
+      </xtce:SpaceSystem>
+    </xtce:SpaceSystem>"""
+    xtce_element_class = common.NamespaceAwareElement
+    xtce_parser = ElementTree.XMLParser()
+    xtce_parser.set_element_class_lookup(ElementTree.ElementDefaultClassLookup(element=xtce_element_class))
+    root = ElementTree.fromstring(xtce_string, parser=xtce_parser)
+    xtce_element_class.set_ns_prefix("xtce")
+    xtce_element_class.set_nsmap(root.nsmap)
+
+    definitions.XtcePacketDefinition._flatten_space_systems(root, "", root)
+
+    # find adds the XTCE prefix, so this finds the new set only if it is in the XTCE namespace
+    parameter_set = root.find("TelemetryMetaData/ParameterSet")
+    assert parameter_set is not None
+    assert [item.attrib["name"] for item in parameter_set.findall("*")] == ["Child/READING"]
