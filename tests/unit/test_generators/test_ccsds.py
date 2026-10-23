@@ -339,17 +339,19 @@ def test_ccsds_generator_packet_length_math(data_length_bytes):
     assert parsed_p.data_length == data_length_bytes - 1
 
 
-def test_ccsds_packet_bytes_str_short_input():
-    """Test that str(CCSDSPacketBytes) does not raise when there are fewer bytes than a full primary header
+def test_ccsds_packet_bytes_validation():
+    """Test that CCSDSPacketBytes validates minimum packet length."""
+    # Exactly a primary header (6 bytes) is accepted, and every header field can be read
+    header_only = ccsds.CCSDSPacketBytes(bytes(6))
+    assert header_only.header_values == (0, 0, 0, 0, 0, 0, 0)
 
-    The string form is used in diagnostic messages, so it must never fail on the failure path.
-    """
-    short_packet = ccsds.CCSDSPacketBytes(b"\x07")
-    rendered = str(short_packet)
-    assert "incomplete" in rendered
-    assert "1 of 6 bytes" in rendered
-    assert "07" in rendered
-
-    # A full header renders the parsed fields as before
+    # A full header renders the parsed fields
     full_header = ccsds.create_ccsds_packet(data=b"\x00", apid=11)
     assert "apid=11" in str(full_header)
+
+    # Too short - should raise ValueError
+    with pytest.raises(ValueError, match="CCSDS packet must be at least 6 bytes"):
+        ccsds.CCSDSPacketBytes(b"\x07")  # Only 1 byte
+
+    with pytest.raises(ValueError, match="CCSDS packet must be at least 6 bytes"):
+        ccsds.CCSDSPacketBytes(b"")  # Empty
