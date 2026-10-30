@@ -213,7 +213,9 @@ class SequenceContainer(common.Parseable, common.XmlObject):
         -------
         : ElementTree.Element
         """
-        containers = tree.getroot().find("TelemetryMetaData/ContainerSet").findall(f"SequenceContainer[@name='{name}']")
+        # The name is compared here, not in an XPath predicate, because a "/" in a name would be split as a path
+        container_set = tree.getroot().find("TelemetryMetaData/ContainerSet")
+        containers = [sc for sc in container_set.findall("SequenceContainer") if sc.attrib.get("name") == name]
         if len(containers) != 1:
             raise ValueError(
                 f"Found {len(containers)} matching container_set with name {name}. "

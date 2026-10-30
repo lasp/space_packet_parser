@@ -49,6 +49,12 @@ def jpss_test_data_dir(test_data_dir):
 
 
 @pytest.fixture
+def nested_test_data_dir(test_data_dir):
+    """Nested SpaceSystem test data directory"""
+    return test_data_dir / "nested"
+
+
+@pytest.fixture
 def clarreo_test_data_dir(test_data_dir):
     """CLARREO test data directory"""
     return test_data_dir / "clarreo"

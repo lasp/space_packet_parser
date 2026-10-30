@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_ROOT_CONTAINER = "CCSDSPacket"
 
+# The attributes of an XTCE element that name a Parameter, a ParameterType or a SequenceContainer
+REFERENCE_ATTRIBUTES = ("parameterRef", "parameterTypeRef", "containerRef")
+
 TAG_NAME_TO_PARAMETER_TYPE_OBJECT: dict[str, type[parameter_types.ParameterType]] = {
     "StringParameterType": parameter_types.StringParameterType,
     "IntegerParameterType": parameter_types.IntegerParameterType,
@@ -211,6 +214,9 @@ class XtcePacketDefinition(common.AttrComparable):
 
         Notes
         -----
+        The document may contain nested SpaceSystems. An item in a nested SpaceSystem is named by its path from the
+        root SpaceSystem, e.g. "SENSOR_B/DIAGNOSTICS/OFFSET". An item in the root SpaceSystem keeps its own name.
+
         This classmethod first parses the ParameterTypeSet element to build a dict of all ParameterType objects,
         keyed on the name of the parameter type.
         Then it parses the ParameterSet element to build a dict of all named Parameter objects, keyed on the
@@ -271,6 +277,9 @@ class XtcePacketDefinition(common.AttrComparable):
         else:
             date = None
 
+        # Move the items of nested SpaceSystems into the root sets, so the parsing below needs no change
+        cls._flatten_space_systems(space_system, "", space_system)
+
         parameter_type_lookup = cls._parse_parameter_type_set(tree)
         parameters_lookup = cls._parse_parameter_set(tree, parameter_type_lookup)
         container_lookup = cls._parse_container_set(tree, parameters_lookup)
@@ -285,6 +294,99 @@ class XtcePacketDefinition(common.AttrComparable):
         )
 
         return xtce_definition
+
+    @staticmethod
+    def _resolve_reference(reference: str, space_system_path: str) -> str:
+        """Turn a reference from the XTCE document into the key of the item it names
+
+        Parameters
+        ----------
+        reference : str
+            Absolute ("/Root/Sub/Name"), relative ("../Name", "./Name") or bare ("Name") reference.
+        space_system_path : str
+            Path from the root SpaceSystem to the SpaceSystem that contains the reference, e.g. "Sub". Empty for the
+            root SpaceSystem.
+
+        Returns
+        -------
+        : str
+            Path from the root SpaceSystem, without a leading "/", e.g. "Sub/Name". An item in the root SpaceSystem has
+            its bare name.
+        """
+        if reference.startswith("/"):
+            # An absolute reference starts with the name of the root SpaceSystem, which is not part of a key
+            path = reference.split("/")[2:]
+        else:
+            path = f"{space_system_path}/{reference}".split("/")
+
+        parts: list[str] = []
+        for part in path:
+            if part == "..":
+                # A ".." above the root is ignored
+                if parts:
+                    parts.pop()
+            elif part not in ("", "."):
+                parts.append(part)
+
+        return "/".join(parts)
+
+    @classmethod
+    def _flatten_space_systems(
+        cls, space_system: ElementTree.Element, space_system_path: str, root: ElementTree.Element
+    ) -> None:
+        """Give every item of a SpaceSystem and of its children a path from the root as its name, and move the items
+        into the three sets of the root SpaceSystem. The tree is changed in place.
+
+        Parameters
+        ----------
+        space_system : ElementTree.Element
+            The SpaceSystem element to flatten. Its children are flattened after it, parent before child.
+        space_system_path : str
+            Path from the root SpaceSystem to this SpaceSystem, e.g. "SENSOR_B/DIAGNOSTICS". Empty for the root.
+        root : ElementTree.Element
+            The root SpaceSystem element, which receives the items.
+        """
+        set_names = ("ParameterTypeSet", "ParameterSet", "ContainerSet")
+
+        if space_system is root:
+            # The new elements are in the XTCE namespace of the root
+            namespace = ElementTree.QName(root).namespace
+
+            def qualified(name: str) -> str:
+                return f"{{{namespace}}}{name}" if namespace else name
+
+            root_metadata = root.find("TelemetryMetaData")
+            if root_metadata is None:
+                root_metadata = ElementTree.SubElement(root, qualified("TelemetryMetaData"))
+            for set_name in set_names:
+                if root_metadata.find(set_name) is None:
+                    ElementTree.SubElement(root_metadata, qualified(set_name))
+
+        # The child SpaceSystems are beside TelemetryMetaData, not inside it, so everything in it belongs to this one
+        telemetry_metadata = space_system.find("TelemetryMetaData")
+        if telemetry_metadata is not None:
+            items = {set_name: telemetry_metadata.findall(f"{set_name}/*") for set_name in set_names}
+            for set_items in items.values():
+                for item in set_items:
+                    item.attrib["name"] = cls._resolve_reference(item.attrib["name"], space_system_path)
+
+            for element in telemetry_metadata.iter():
+                for reference_attribute in REFERENCE_ATTRIBUTES:
+                    if reference_attribute in element.attrib:
+                        element.attrib[reference_attribute] = cls._resolve_reference(
+                            element.attrib[reference_attribute], space_system_path
+                        )
+
+            # The references are rewritten before this, because the move takes the items out of telemetry_metadata
+            if space_system is not root:
+                for set_name, set_items in items.items():
+                    root_set = root.find(f"TelemetryMetaData/{set_name}")
+                    for item in set_items:
+                        root_set.append(item)
+
+        for child_space_system in space_system.findall("SpaceSystem"):
+            child_path = cls._resolve_reference(child_space_system.attrib["name"], space_system_path)
+            cls._flatten_space_systems(child_space_system, child_path, root)
 
     @staticmethod
     def _parse_container_set(
